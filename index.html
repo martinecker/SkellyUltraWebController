@@ -247,33 +247,8 @@
       margin: 0; transform: translateY(0); /* prevents baseline misalignment */
     }
 
-      /* Outline inputs when the chosen name already exists on device */
-  .warn-border { border-color: var(--warn) !important; box-shadow: 0 0 0 2px rgba(245,158,11,.18); }
-
-    /* Modern donate button that matches .btn look */
-    .topbar-right form.donate{ margin:0; display:flex; align-items:center; }
-    .btn.paypal{
-      display:inline-flex; align-items:center; gap:8px;
-      border:1px solid #1f2a3a; background:linear-gradient(180deg,#0d1219,#0b1016);
-      color:#dbeafe; border-radius:12px; padding:10px 12px; font-weight:700;
-    }
-    .btn.paypal:hover{ background:#101826; border-color:#2a3e57; }
-    .btn.paypal:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-    .btn.paypal .pp{
-      display:inline-block; width:18px; height:18px; border-radius:4px;
-      background:#0070e0; position:relative; overflow:hidden;
-    }
-    .btn.paypal .pp::after{ /* simple “P” mark */
-      content:'P'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      font-weight:900; color:#fff; font-size:12px; transform:translateY(-1px);
-    }
-    @media (max-width:520px){
-      .btn.paypal{ padding:8px 10px; }
-      .btn.paypal .txt{ display:none; } /* icon-only on tiny screens */
-    }
-
-    /* (Optional) Keep the original image as a fallback, but hide it */
-    .topbar-right form.donate input[type="image"]{ display:none; }
+    /* Outline inputs when the chosen name already exists on device */
+    .warn-border { border-color: var(--warn) !important; box-shadow: 0 0 0 2px rgba(245,158,11,.18); }
 
     /* Subcard (used for upcoming features) */
     .subcard{
