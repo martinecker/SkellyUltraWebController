@@ -31,22 +31,25 @@
     .grid{
       display:grid;
       grid-template-columns: var(--col-left) var(--col-mid) 1fr; /* left | middle | right */
-      grid-template-areas:
-        "dev         live   transfer"
-        "status      live   files"
-        "status      live   log";
       gap:10px;
       padding:20px;
-
-      /* make items in each row the same height */
-      align-items: stretch;
+      align-items: start; /* items flow naturally, no stretching */
     }
-    .area-dev{ grid-area:dev; }
-    .area-transfer{ grid-area:transfer; }
-    .area-live{ grid-area:live; }
-    .area-status{ grid-area:status; }
-    .area-log{ grid-area:log; }
-    .area-files{ grid-area:files; }
+    
+    /* Column containers */
+    .col-left, .col-mid, .col-right {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    /* Legacy area classes for backwards compatibility */
+    .area-dev{ grid-column: 1; }
+    .area-status{ grid-column: 1; }
+    .area-live{ grid-column: 2; }
+    .area-transfer{ grid-column: 3; }
+    .area-files{ grid-column: 3; }
+    .area-log{ grid-column: 3; }
 
     .move-grid { display:flex; gap:.75rem; align-items:center; }
     .iconToggle { border:2px solid transparent; border-radius:12px; padding:6px; background:transparent; cursor:pointer; opacity:.7 }
@@ -163,13 +166,6 @@
     @media (max-width:1200px){
       .grid{
         grid-template-columns: 1fr;
-        grid-template-areas:
-          "dev"
-          "status"
-          "live"
-          "transfer"
-          "files"
-          "log";
       }
     }
 
@@ -229,13 +225,6 @@
       :root{ --col-left: 1fr; --col-mid: 1fr; }
       .grid{
         grid-template-columns: 1fr;
-        grid-template-areas:
-          "dev"
-          "status"
-          "live"
-          "transfer"
-          "files"
-          "log";
       }
       #apEyeGrid{ grid-template-columns: repeat(6, 36px); }
     }
@@ -526,9 +515,11 @@
   </header>
 
   <div class="grid">
-    <!-- LEFT COL: Device / Commands -->
-    <section class="card area-dev">
-      <h2>Device / Commands</h2>
+    <!-- LEFT COLUMN -->
+    <div class="col-left">
+      <!-- Device / Commands -->
+      <section class="card area-dev">
+        <h2>Device / Commands</h2>
 
       <label>Filter by name (optional)</label>
       <input id="nameFilter" placeholder="Animated Skelly" value="Animated Skelly" />
@@ -591,10 +582,161 @@
         <div class="small muted" style="margin-top:6px">Payload auto-pads to <strong>16 hex chars (8 bytes)</strong> before CRC8 (poly 0x8C).</div>
       </div>
       
-    </section>
+      </section>
 
-    <!-- MIDDLE COL: File Transfer -->
-    <section class="card area-transfer">
+      <!-- Status -->
+      <section class="card area-status">
+        <h2>Current Status</h2>
+        <div class="row small" style="gap:12px; flex-wrap:wrap">
+          <div style="flex:1 1 180px"><div class="muted">Device Name</div><div id="statName">—</div></div>
+          <div style="flex:1 1 120px"><div class="muted">Show Mode</div><div id="statShowMode">—</div></div>
+          <div style="flex:1 1 160px"><div class="muted">Channels</div><div id="statChannels">—</div></div>
+          <div style="flex:1 1 160px"><div class="muted">Classic BT Name</div><div id="statBtName">—</div></div>
+          <div style="flex:1 1 220px"><div class="muted">Capacity</div><div id="statCapacity">—</div></div>
+          <div style="flex:1 1 140px"><div class="muted">File Order</div><div id="statOrder">—</div></div>
+          <div style="flex:1 1 100px"><div class="muted">PIN</div><div id="statPin">—</div></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MIDDLE COLUMN -->
+    <div class="col-mid">
+      <!-- Live Mode -->
+      <section class="card area-live">
+        <h2>Live Mode</h2>
+
+        <div class="actions">
+          <button class="btn" id="btnBT">Enable Live Mode</button>
+        </div>
+
+        <!-- Volume -->
+        <div class="spacer"></div>
+        <div>
+          <label>Volume (0–100%)</label>
+          <div class="row">
+            <input id="volRange" type="range" min="0" max="100" value="50" />
+            <input id="vol" type="number" min="0" max="100" value="50" />
+          </div>
+        </div>
+
+        <div class="spacer"></div>
+
+        <div class="spacer"></div>
+        <label>Movement</label>
+        <div id="liveMove" class="move-grid">
+          <button class="iconToggle" data-part="all"   title="All">
+            <img src="images/icon_action1_se.png" alt="All" />
+          </button>
+          <button class="iconToggle" data-part="head"  title="Head">
+            <img src="images/icon_action2_se.png" alt="Head" />
+          </button>
+          <button class="iconToggle" data-part="arm"   title="Arm">
+            <img src="images/icon_action3_se.png" alt="Arm" />
+          </button>
+          <button class="iconToggle" data-part="torso" title="Torso">
+            <img src="images/icon_action4_se.png" alt="Torso" />
+          </button>
+        </div>
+
+        <div class="spacer"></div>
+        <div>
+          <label>Eyes</label>
+          <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
+        </div>
+
+        <!-- Head Light Controls -->
+        <div class="light-group">
+          <h3>Head Light</h3>
+          
+          <label>Brightness (0–255)</label>
+          <div class="row">
+            <input id="headBrightnessRange" type="range" min="0" max="255" value="200" />
+            <input id="headBrightness" type="number" min="0" max="255" value="200" />
+          </div>
+
+          <label>Color</label>
+          <div class="row">
+            <input id="headColorPick" type="color" value="#ff0000" />
+            <input id="headR" type="number" min="0" max="255" value="255" />
+            <input id="headG" type="number" min="0" max="255" value="0" />
+            <input id="headB" type="number" min="0" max="255" value="0" />
+          </div>
+
+          <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
+            <button class="iconToggle" id="btnHeadColorCycle" title="Cycle all colors">
+              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:32px;height:32px" />
+            </button>
+            <span class="small muted">Cycle Colors</span>
+          </label>
+
+          <label>Effect Mode</label>
+          <div class="row">
+            <select id="headEffectMode" aria-label="Head effect mode">
+              <option value="1">Static</option>
+              <option value="2">Strobe</option>
+              <option value="3">Pulsing</option>
+            </select>
+          </div>
+
+          <div id="headEffectSpeedBlock" class="hidden">
+            <label>Effect Speed (0–255)</label>
+            <div class="row">
+              <input id="headEffectSpeedRange" type="range" min="0" max="255" value="0" />
+              <input id="headEffectSpeed" type="number" min="0" max="255" value="0" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Torso Light Controls -->
+        <div class="light-group">
+          <h3>Torso Light</h3>
+          
+          <label>Brightness (0–255)</label>
+          <div class="row">
+            <input id="torsoBrightnessRange" type="range" min="0" max="255" value="200" />
+            <input id="torsoBrightness" type="number" min="0" max="255" value="200" />
+          </div>
+
+          <label>Color</label>
+          <div class="row">
+            <input id="torsoColorPick" type="color" value="#ff0000" />
+            <input id="torsoR" type="number" min="0" max="255" value="255" />
+            <input id="torsoG" type="number" min="0" max="255" value="0" />
+            <input id="torsoB" type="number" min="0" max="255" value="0" />
+          </div>
+
+          <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
+            <button class="iconToggle" id="btnTorsoColorCycle" title="Cycle all colors">
+              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:32px;height:32px" />
+            </button>
+            <span class="small muted">Cycle Colors</span>
+          </label>
+
+          <label>Effect Mode</label>
+          <div class="row">
+            <select id="torsoEffectMode" aria-label="Torso effect mode">
+              <option value="1">Static</option>
+              <option value="2">Strobe</option>
+              <option value="3">Pulsing</option>
+            </select>
+          </div>
+
+          <div id="torsoEffectSpeedBlock" class="hidden">
+            <label>Effect Speed (0–255)</label>
+            <div class="row">
+              <input id="torsoEffectSpeedRange" type="range" min="0" max="255" value="0" />
+              <input id="torsoEffectSpeed" type="number" min="0" max="255" value="0" />
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-right">
+      <!-- File Transfer -->
+      <section class="card area-transfer">
       <h2>File Transfer</h2>
       <div class="small muted" style="margin:6px 0 10px">
         Once the file has been uploaded you will be able to modify its settings (either here or in the official app).
@@ -625,10 +767,10 @@
         <div id="progPct">0%</div>
       </div>
       <div class="progress"><div id="progBar" class="bar"></div></div>
-    </section>
+      </section>
 
-    <!-- MIDDLE COL: Text to Speech (bottom) -->
-    <section class="card area-empty" hidden>
+      <!-- Text to Speech (bottom) -->
+      <section class="card area-empty" hidden>
       <h2>Misc Speech Addons</h2>
       <div class="subcard upcoming" aria-disabled="true">
         <div class="subcard-head"><strong>Upcoming:</strong> Text To Speech
@@ -659,156 +801,10 @@
         </div>
       </div>
     
-    </section>
+      </section>
 
-
-    <!-- LEFT COL: Live Mode -->
-    <section class="card area-live">
-      <h2>Live Mode</h2>
-
-      <div class="actions">
-        <button class="btn" id="btnBT">Enable Live Mode</button>
-      </div>
-
-      <!-- Volume -->
-      <div class="spacer"></div>
-      <div>
-        <label>Volume (0–100%)</label>
-        <div class="row">
-          <input id="volRange" type="range" min="0" max="100" value="50" />
-          <input id="vol" type="number" min="0" max="100" value="50" />
-        </div>
-      </div>
-
-      <div class="spacer"></div>
-
-      <div class="spacer"></div>
-      <label>Movement</label>
-      <div id="liveMove" class="move-grid">
-        <button class="iconToggle" data-part="all"   title="All">
-          <img src="images/icon_action1_se.png" alt="All" />
-        </button>
-        <button class="iconToggle" data-part="head"  title="Head">
-          <img src="images/icon_action2_se.png" alt="Head" />
-        </button>
-        <button class="iconToggle" data-part="arm"   title="Arm">
-          <img src="images/icon_action3_se.png" alt="Arm" />
-        </button>
-        <button class="iconToggle" data-part="torso" title="Torso">
-          <img src="images/icon_action4_se.png" alt="Torso" />
-        </button>
-      </div>
-
-      <div class="spacer"></div>
-      <div>
-        <label>Eyes</label>
-        <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
-      </div>
-
-      <!-- Head Light Controls -->
-      <div class="light-group">
-        <h3>Head Light</h3>
-        
-        <label>Brightness (0–255)</label>
-        <div class="row">
-          <input id="headBrightnessRange" type="range" min="0" max="255" value="200" />
-          <input id="headBrightness" type="number" min="0" max="255" value="200" />
-        </div>
-
-        <label>Color</label>
-        <div class="row">
-          <input id="headColorPick" type="color" value="#ff0000" />
-          <input id="headR" type="number" min="0" max="255" value="255" />
-          <input id="headG" type="number" min="0" max="255" value="0" />
-          <input id="headB" type="number" min="0" max="255" value="0" />
-        </div>
-
-        <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
-          <button class="iconToggle" id="btnHeadColorCycle" title="Cycle all colors">
-            <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:32px;height:32px" />
-          </button>
-          <span class="small muted">Cycle Colors</span>
-        </label>
-
-        <label>Effect Mode</label>
-        <div class="row">
-          <select id="headEffectMode" aria-label="Head effect mode">
-            <option value="1">Static</option>
-            <option value="2">Strobe</option>
-            <option value="3">Pulsing</option>
-          </select>
-        </div>
-
-        <div id="headEffectSpeedBlock" class="hidden">
-          <label>Effect Speed (0–255)</label>
-          <div class="row">
-            <input id="headEffectSpeedRange" type="range" min="0" max="255" value="0" />
-            <input id="headEffectSpeed" type="number" min="0" max="255" value="0" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Torso Light Controls -->
-      <div class="light-group">
-        <h3>Torso Light</h3>
-        
-        <label>Brightness (0–255)</label>
-        <div class="row">
-          <input id="torsoBrightnessRange" type="range" min="0" max="255" value="200" />
-          <input id="torsoBrightness" type="number" min="0" max="255" value="200" />
-        </div>
-
-        <label>Color</label>
-        <div class="row">
-          <input id="torsoColorPick" type="color" value="#ff0000" />
-          <input id="torsoR" type="number" min="0" max="255" value="255" />
-          <input id="torsoG" type="number" min="0" max="255" value="0" />
-          <input id="torsoB" type="number" min="0" max="255" value="0" />
-        </div>
-
-        <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
-          <button class="iconToggle" id="btnTorsoColorCycle" title="Cycle all colors">
-            <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:32px;height:32px" />
-          </button>
-          <span class="small muted">Cycle Colors</span>
-        </label>
-
-        <label>Effect Mode</label>
-        <div class="row">
-          <select id="torsoEffectMode" aria-label="Torso effect mode">
-            <option value="1">Static</option>
-            <option value="2">Strobe</option>
-            <option value="3">Pulsing</option>
-          </select>
-        </div>
-
-        <div id="torsoEffectSpeedBlock" class="hidden">
-          <label>Effect Speed (0–255)</label>
-          <div class="row">
-            <input id="torsoEffectSpeedRange" type="range" min="0" max="255" value="0" />
-            <input id="torsoEffectSpeed" type="number" min="0" max="255" value="0" />
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- RIGHT COL: Status, Files, Log -->
-    
-    <section class="card area-status">
-      <h2>Current Status</h2>
-      <div class="row small" style="gap:12px; flex-wrap:wrap">
-        <div style="flex:1 1 180px"><div class="muted">Device Name</div><div id="statName">—</div></div>
-        <div style="flex:1 1 120px"><div class="muted">Show Mode</div><div id="statShowMode">—</div></div>
-        <div style="flex:1 1 160px"><div class="muted">Channels</div><div id="statChannels">—</div></div>
-        <div style="flex:1 1 160px"><div class="muted">Classic BT Name</div><div id="statBtName">—</div></div>
-        <div style="flex:1 1 220px"><div class="muted">Capacity</div><div id="statCapacity">—</div></div>
-        <div style="flex:1 1 140px"><div class="muted">File Order</div><div id="statOrder">—</div></div>
-        <div style="flex:1 1 100px"><div class="muted">PIN</div><div id="statPin">—</div></div>
-      </div>
-    </section>
-
-    <section class="card area-files">
+      <!-- Files on Device -->
+      <section class="card area-files">
       <h2>Files on Device</h2>
       <div class="actions">
         <button class="btn" id="btnRefreshFiles">Refresh List</button>
@@ -834,19 +830,20 @@
           <tbody></tbody>
         </table>
       </div>
-    </section>
+      </section>
 
-    <section class="card area-log">
-      <h2>Log</h2>
-      <div class="actions">
-        <button class="btn xs" id="btnClearLog">Clear</button>
-        <label class="small checkline">
-          <input type="checkbox" id="chkAutoscroll" checked /> Autoscroll
-        </label>
-      </div>
-      <div id="log" class="log" aria-live="polite"></div>
-    </section>
-
+      <!-- Log -->
+      <section class="card area-log">
+        <h2>Log</h2>
+        <div class="actions">
+          <button class="btn xs" id="btnClearLog">Clear</button>
+          <label class="small checkline">
+            <input type="checkbox" id="chkAutoscroll" checked /> Autoscroll
+          </label>
+        </div>
+        <div id="log" class="log" aria-live="polite"></div>
+      </section>
+    </div>
   </div>
 
   <footer>
