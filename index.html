@@ -96,13 +96,20 @@
     tbody td { padding:8px 10px; border-bottom:1px solid #1f242c; }
     tbody tr:hover { background:#0f1216; }
 
-    /* Menus & modals */
+    /* Modals & modals */
     .hidden { display:none !important; }
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; z-index:9999; padding: 20px; }
-    .modal-panel { width:min(720px, 92vw); max-height:calc(100vh - 40px); background:#1b0d0d; border:2px solid #7f1d1d; color:#fecaca; border-radius:16px; padding:22px; box-shadow: 0 20px 60px rgba(0,0,0,.5); overflow-y:auto; }
+    .modal-panel { width:min(820px, 92vw); max-height:calc(100vh - 40px); background:#1b0d0d; border:2px solid #7f1d1d; color:#fecaca; border-radius:16px; padding:22px; box-shadow: 0 20px 60px rgba(0,0,0,.5); overflow-y:auto; }
     .modal-panel h3 { margin:0 0 8px; font-size:22px; color:#fecaca; }
     .modal-panel p { margin:8px 0; line-height:1.5; }
     .modal-actions { display:flex; gap:10px; margin-top:16px; justify-content:flex-end; }
+    
+    /* Edit modal specific: wider number inputs */
+    #editModal input[type="number"] {
+      width: 70px;
+      min-width: 70px;
+      flex: 0 0 70px !important;
+    }
 
     /* Movement icons */
     .iconToggle {
@@ -262,7 +269,7 @@
     .dropdown label{ display:flex; align-items:center; gap:8px; }
 
     /* Modals breathe on small screens */
-    .modal-panel { width:min(680px, 94vw); }
+    .modal-panel { width:min(780px, 94vw); }
 
     /* Fine-tune the file/live grids for phone widths */
     @media (max-width: 600px){
