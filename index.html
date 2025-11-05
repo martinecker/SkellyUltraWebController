@@ -120,17 +120,61 @@
     .light-group {
       border: 1px solid #28303a;
       border-radius: 12px;
-      padding: 14px;
-      margin-top: 16px;
+      padding: 12px;
+      margin-top: 12px;
       background: rgba(15, 19, 24, 0.5);
     }
     .light-group h3 {
-      margin: 0 0 12px 0;
+      margin: 0 0 8px 0;
       font-size: 13px;
       color: #22d3ee;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       font-weight: 600;
+    }
+    
+    /* Side-by-side light controls */
+    .lights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+    /* Compact control rows */
+    .compact-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .compact-row label {
+      margin: 0;
+      font-size: 11px;
+      min-width: 75px;
+    }
+    .compact-row input[type="range"] {
+      flex: 1;
+      min-width: 0;
+    }
+    .compact-row input[type="number"] {
+      width: 70px;
+      flex: 0 0 70px;
+    }
+    .compact-row input[type="color"] {
+      width: 36px;
+      height: 32px;
+      flex: 0 0 36px;
+    }
+    .compact-row select {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    @media (max-width: 600px) {
+      .lights-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* Segmented control for color scope */
@@ -610,16 +654,11 @@
         </div>
 
         <!-- Volume -->
-        <div class="spacer"></div>
-        <div>
-          <label>Volume (0–100%)</label>
-          <div class="row">
-            <input id="volRange" type="range" min="0" max="100" value="50" />
-            <input id="vol" type="number" min="0" max="100" value="50" />
-          </div>
+        <div class="compact-row">
+          <label>Volume</label>
+          <input id="volRange" type="range" min="0" max="100" value="50" />
+          <input id="vol" type="number" min="0" max="100" value="50" />
         </div>
-
-        <div class="spacer"></div>
 
         <div class="spacer"></div>
         <label>Movement</label>
@@ -639,38 +678,36 @@
         </div>
 
         <div class="spacer"></div>
-        <div>
-          <label>Eyes</label>
-          <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
-        </div>
+        <label>Eyes</label>
+        <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
 
         <!-- Head Light Controls -->
         <div class="light-group">
           <h3>Head Light</h3>
           
-          <label>Brightness (0–255)</label>
-          <div class="row">
+          <div class="compact-row">
+            <label>Brightness</label>
             <input id="headBrightnessRange" type="range" min="0" max="255" value="200" />
             <input id="headBrightness" type="number" min="0" max="255" value="200" />
           </div>
 
-          <label>Color</label>
-          <div class="row">
+          <div class="compact-row">
+            <label>Color</label>
             <input id="headColorPick" type="color" value="#ff0000" />
             <input id="headR" type="number" min="0" max="255" value="255" />
             <input id="headG" type="number" min="0" max="255" value="0" />
             <input id="headB" type="number" min="0" max="255" value="0" />
           </div>
 
-          <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
-            <button class="iconToggle" id="btnHeadColorCycle" title="Cycle all colors">
-              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:32px;height:32px" />
+          <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+            <button class="iconToggle" id="btnHeadColorCycle" title="Cycle all colors" style="padding:4px;">
+              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:28px;height:28px" />
             </button>
-            <span class="small muted">Cycle Colors</span>
-          </label>
+            <span class="small muted">Cycle</span>
+          </div>
 
-          <label>Effect Mode</label>
-          <div class="row">
+          <div class="compact-row">
+            <label>Effect</label>
             <select id="headEffectMode" aria-label="Head effect mode">
               <option value="1">Static</option>
               <option value="2">Strobe</option>
@@ -678,12 +715,10 @@
             </select>
           </div>
 
-          <div id="headEffectSpeedBlock" class="hidden">
-            <label>Effect Speed (0–255)</label>
-            <div class="row">
-              <input id="headEffectSpeedRange" type="range" min="0" max="255" value="0" />
-              <input id="headEffectSpeed" type="number" min="0" max="255" value="0" />
-            </div>
+          <div id="headEffectSpeedBlock" class="compact-row hidden">
+            <label>Speed</label>
+            <input id="headEffectSpeedRange" type="range" min="0" max="255" value="0" />
+            <input id="headEffectSpeed" type="number" min="0" max="255" value="0" />
           </div>
         </div>
 
@@ -691,29 +726,29 @@
         <div class="light-group">
           <h3>Torso Light</h3>
           
-          <label>Brightness (0–255)</label>
-          <div class="row">
+          <div class="compact-row">
+            <label>Brightness</label>
             <input id="torsoBrightnessRange" type="range" min="0" max="255" value="200" />
             <input id="torsoBrightness" type="number" min="0" max="255" value="200" />
           </div>
 
-          <label>Color</label>
-          <div class="row">
+          <div class="compact-row">
+            <label>Color</label>
             <input id="torsoColorPick" type="color" value="#ff0000" />
             <input id="torsoR" type="number" min="0" max="255" value="255" />
             <input id="torsoG" type="number" min="0" max="255" value="0" />
             <input id="torsoB" type="number" min="0" max="255" value="0" />
           </div>
 
-          <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
-            <button class="iconToggle" id="btnTorsoColorCycle" title="Cycle all colors">
-              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:32px;height:32px" />
+          <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+            <button class="iconToggle" id="btnTorsoColorCycle" title="Cycle all colors" style="padding:4px;">
+              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:28px;height:28px" />
             </button>
-            <span class="small muted">Cycle Colors</span>
-          </label>
+            <span class="small muted">Cycle</span>
+          </div>
 
-          <label>Effect Mode</label>
-          <div class="row">
+          <div class="compact-row">
+            <label>Effect</label>
             <select id="torsoEffectMode" aria-label="Torso effect mode">
               <option value="1">Static</option>
               <option value="2">Strobe</option>
@@ -721,12 +756,10 @@
             </select>
           </div>
 
-          <div id="torsoEffectSpeedBlock" class="hidden">
-            <label>Effect Speed (0–255)</label>
-            <div class="row">
-              <input id="torsoEffectSpeedRange" type="range" min="0" max="255" value="0" />
-              <input id="torsoEffectSpeed" type="number" min="0" max="255" value="0" />
-            </div>
+          <div id="torsoEffectSpeedBlock" class="compact-row hidden">
+            <label>Speed</label>
+            <input id="torsoEffectSpeedRange" type="range" min="0" max="255" value="0" />
+            <input id="torsoEffectSpeed" type="number" min="0" max="255" value="0" />
           </div>
         </div>
 
