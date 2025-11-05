@@ -4,6 +4,7 @@ A modern web-based Bluetooth controller for Home Depot's 6.5 ft Skelly Ultra ani
 
 ![Skelly Ultra Web Controller](screenshot.jpg)
 
+There is a companion project that provides a Home Assistant integration here https://github.com/martinecker/SkellyUltra
 
 ## ✨ Features
 
