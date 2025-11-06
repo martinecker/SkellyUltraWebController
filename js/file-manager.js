@@ -50,7 +50,7 @@ export class FileManager {
     this.state.resetFiles();
     this.state.updateFilesMetadata({ activeFetch: true });
 
-    // Send query command
+    // Send query command for files
     await this.ble.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
 
     // Set timeout for no response
@@ -70,7 +70,7 @@ export class FileManager {
   /**
    * Check if file list is complete and trigger follow-up queries
    */
-  finalizeFilesIfDone() {
+  async finalizeFilesIfDone() {
     if (!this.state.files.activeFetch || !this.state.files.expected) {
       return;
     }
@@ -85,6 +85,12 @@ export class FileManager {
 
       if (!this.state.files.afterCompleteSent) {
         this.state.updateFilesMetadata({ afterCompleteSent: true });
+        
+        // Send follow-up queries for capacity and order after file list is complete
+        if (this.ble.isConnected()) {
+          await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
+          await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+        }
       }
     }
   }

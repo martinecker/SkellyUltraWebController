@@ -33,7 +33,7 @@ export const TRANSFER_CONFIG = {
 
 // Timeout Values (milliseconds)
 export const TIMEOUTS = {
-  ACK: 3000,
+  ACK: 5000,
   ACK_LONG: 5000,
   FILE_TRANSFER: 240000,
   FILE_LIST: 6000,

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-06T07:23:41.101318
+ * Generated: 2025-11-06T07:44:54.026565
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -60,7 +60,7 @@ const TRANSFER_CONFIG = {
 
 // Timeout Values (milliseconds)
 const TIMEOUTS = {
-  ACK: 3000,
+  ACK: 5000,
   ACK_LONG: 5000,
   FILE_TRANSFER: 240000,
   FILE_LIST: 6000,
@@ -1138,7 +1138,7 @@ class FileManager {
     this.state.resetFiles();
     this.state.updateFilesMetadata({ activeFetch: true });
 
-    // Send query command
+    // Send query command for files
     await this.ble.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
 
     // Set timeout for no response
@@ -1158,7 +1158,7 @@ class FileManager {
   /**
    * Check if file list is complete and trigger follow-up queries
    */
-  finalizeFilesIfDone() {
+  async finalizeFilesIfDone() {
     if (!this.state.files.activeFetch || !this.state.files.expected) {
       return;
     }
@@ -1173,6 +1173,12 @@ class FileManager {
 
       if (!this.state.files.afterCompleteSent) {
         this.state.updateFilesMetadata({ afterCompleteSent: true });
+        
+        // Send follow-up queries for capacity and order after file list is complete
+        if (this.ble.isConnected()) {
+          await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
+          await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+        }
       }
     }
   }
@@ -1836,7 +1842,7 @@ class ProtocolParser {
     });
 
     this.log(
-      `Capacity ${capacityKB}KB filesReported=${count} extra=0x${field4.toString(16).toUpperCase()}`
+      `Capacity ${capacityKB}KB remaining, filesReported=${count}, extra=0x${field4.toString(16).toUpperCase()}`
     );
   }
 
@@ -2424,7 +2430,7 @@ class EditModalManager {
       if (success) {
         this.log('Delete confirmed, refreshing file list...', LOG_CLASSES.WARNING);
         // Refresh the file list
-        await this.fileManager.startFetchFiles(false);
+        await this.fileManager.startFetchFiles();
         this.close();
       } else {
         this.log('Delete confirmation timeout or failed', LOG_CLASSES.WARNING);
@@ -4031,7 +4037,7 @@ class SkellyApp {
     if ($('#statCapacity')) {
       $('#statCapacity').textContent =
         device.capacity != null
-          ? `${device.capacity} KB (${device.filesReported ?? '—'} files)`
+          ? `${device.capacity} KB remaining (${device.filesReported ?? '—'} files)`
           : '—';
     }
     

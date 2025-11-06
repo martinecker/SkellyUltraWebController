@@ -391,7 +391,7 @@ export class EditModalManager {
       if (success) {
         this.log('Delete confirmed, refreshing file list...', LOG_CLASSES.WARNING);
         // Refresh the file list
-        await this.fileManager.startFetchFiles(false);
+        await this.fileManager.startFetchFiles();
         this.close();
       } else {
         this.log('Delete confirmation timeout or failed', LOG_CLASSES.WARNING);
