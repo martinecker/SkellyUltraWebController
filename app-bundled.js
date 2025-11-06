@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-06T07:44:54.026565
+ * Generated: 2025-11-06T07:48:11.929060
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3938,7 +3938,7 @@ class SkellyApp {
       
       // Start file sync after initial queries
       setTimeout(() => {
-        this.fileManager.startFetchFiles(true);
+        this.fileManager.startFetchFiles(false);
       }, 300);
     } catch (error) {
       console.error('Connection error:', error);

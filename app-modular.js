@@ -1110,7 +1110,7 @@ class SkellyApp {
       
       // Start file sync after initial queries
       setTimeout(() => {
-        this.fileManager.startFetchFiles(true);
+        this.fileManager.startFetchFiles(false);
       }, 300);
     } catch (error) {
       console.error('Connection error:', error);
