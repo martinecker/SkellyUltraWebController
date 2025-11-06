@@ -97,9 +97,16 @@ export class FileManager {
 
   /**
    * Determine safe chunk size based on BLE MTU
+   * @param {number|null} override - Optional override chunk size from user
    * @returns {number} Safe chunk size in bytes
    */
-  getChunkSize() {
+  getChunkSize(override = null) {
+    // If user has specified an override, use it
+    if (override !== null && typeof override === 'number' && override >= 50 && override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE) {
+      this.log(`Using override chunk size: ${override} bytes`, LOG_CLASSES.INFO);
+      return override;
+    }
+    
     // Try to get MTU from the BLE manager
     const mtu = this.ble.getMtuSize();
     
@@ -121,9 +128,10 @@ export class FileManager {
    * Upload file to device
    * @param {Uint8Array} fileBytes - File data
    * @param {string} fileName - Target filename
+   * @param {number|null} chunkSizeOverride - Optional chunk size override
    * @returns {Promise<void>}
    */
-  async uploadFile(fileBytes, fileName) {
+  async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
     if (!this.ble.isConnected()) {
       this.log('Not connected — cannot send file.', LOG_CLASSES.WARNING);
       throw new Error('Device not connected');
@@ -134,7 +142,7 @@ export class FileManager {
     try {
       // === Phase 1: Start Transfer (C0) ===
       const size = fileBytes.length;
-      const chunkSize = this.getChunkSize(); // Use dynamic chunk size based on MTU
+      const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
       const maxPackets = Math.ceil(size / chunkSize);
       const nameHex = utf16leHex(fileName);
 

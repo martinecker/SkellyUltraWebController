@@ -15,6 +15,8 @@ export const STORAGE_KEYS = {
   RISK_ACK: 'skelly_ack_v2',
   ADV_RAW: 'skelly_adv_raw',
   ADV_FEDC: 'skelly_adv_fedc',
+  CHUNK_OVERRIDE: 'skelly_chunk_override',
+  CHUNK_SIZE: 'skelly_chunk_size',
 };
 
 // Protocol Padding Defaults (bytes)

@@ -798,6 +798,22 @@
 
       <label>Device filename</label>
       <input id="fileName" placeholder="example.mp3" />
+      
+      <div class="spacer"></div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+        <label class="small checkline" style="margin:0">
+          <input id="chkChunkOverride" type="checkbox"> Override chunk size
+        </label>
+        <div id="chunkOverrideOpts" class="hidden" style="display:flex; align-items:center; gap:10px; flex:1; min-width:300px">
+          <input id="chunkSizeSlider" type="range" min="50" max="500" value="250" step="10" style="flex:1; min-width:150px" />
+          <span class="small" style="white-space:nowrap"><span id="chunkSizeValue">250</span> bytes</span>
+        </div>
+      </div>
+      <div class="small muted" style="margin-top:6px">
+        ⚠️ If transfers fail frequently, try reducing the chunk size. Larger values may be faster but less reliable.
+      </div>
+
+      <div class="spacer"></div>
       <div class="actions">
         <button class="btn primary" id="btnSendFile">Send to Device</button>
         <button class="btn danger" id="btnCancelFile" disabled>Cancel</button>

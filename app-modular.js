@@ -829,6 +829,56 @@ class SkellyApp {
       await this.handleFileSelection(e.target.files?.[0]);
     });
 
+    // Chunk size override controls
+    const chkChunkOverride = $('#chkChunkOverride');
+    const chunkOverrideOpts = $('#chunkOverrideOpts');
+    const chunkSizeSlider = $('#chunkSizeSlider');
+    const chunkSizeValue = $('#chunkSizeValue');
+
+    // Load saved preferences from localStorage
+    const savedOverride = localStorage.getItem(STORAGE_KEYS.CHUNK_OVERRIDE) === 'true';
+    const savedChunkSize = parseInt(localStorage.getItem(STORAGE_KEYS.CHUNK_SIZE), 10);
+
+    // Initialize slider with saved or auto-determined chunk size
+    if (chunkSizeSlider && chunkSizeValue) {
+      const autoChunkSize = this.fileManager.getChunkSize();
+      const initialSize = (savedChunkSize >= 50 && savedChunkSize <= 500) ? savedChunkSize : autoChunkSize;
+      chunkSizeSlider.value = initialSize;
+      chunkSizeValue.textContent = initialSize;
+    }
+
+    // Restore checkbox state and visibility
+    if (chkChunkOverride) {
+      chkChunkOverride.checked = savedOverride;
+      if (savedOverride) {
+        chunkOverrideOpts?.classList.remove('hidden');
+      }
+    }
+
+    // Toggle chunk override options
+    chkChunkOverride?.addEventListener('change', (e) => {
+      chunkOverrideOpts?.classList.toggle('hidden', !e.target.checked);
+      
+      // Save preference
+      localStorage.setItem(STORAGE_KEYS.CHUNK_OVERRIDE, e.target.checked.toString());
+      
+      // If enabling override, update slider to current auto value (if not previously saved)
+      if (e.target.checked && chunkSizeSlider && chunkSizeValue && !savedChunkSize) {
+        const autoChunkSize = this.fileManager.getChunkSize();
+        chunkSizeSlider.value = autoChunkSize;
+        chunkSizeValue.textContent = autoChunkSize;
+      }
+    });
+
+    // Update chunk size display when slider changes and save to localStorage
+    chunkSizeSlider?.addEventListener('input', (e) => {
+      if (chunkSizeValue) {
+        chunkSizeValue.textContent = e.target.value;
+      }
+      // Save preference
+      localStorage.setItem(STORAGE_KEYS.CHUNK_SIZE, e.target.value);
+    });
+
     // Send file button
     $('#btnSendFile')?.addEventListener('click', async () => {
       await this.handleFileSend();
@@ -1065,8 +1115,16 @@ class SkellyApp {
 
     this.checkFileNameConflict(finalName);
 
+    // Check if chunk size override is enabled
+    let chunkSizeOverride = null;
+    const chkChunkOverride = $('#chkChunkOverride');
+    const chunkSizeSlider = $('#chunkSizeSlider');
+    if (chkChunkOverride?.checked && chunkSizeSlider) {
+      chunkSizeOverride = parseInt(chunkSizeSlider.value, 10);
+    }
+
     try {
-      await this.fileManager.uploadFile(fileBytes, finalName);
+      await this.fileManager.uploadFile(fileBytes, finalName, chunkSizeOverride);
     } catch (error) {
       this.logger.log(`Upload error: ${error.message}`, LOG_CLASSES.WARNING);
     }

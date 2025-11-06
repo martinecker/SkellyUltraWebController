@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-06T08:10:15.544869
+ * Generated: 2025-11-06T08:32:00.605654
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -42,6 +42,8 @@ const STORAGE_KEYS = {
   RISK_ACK: 'skelly_ack_v2',
   ADV_RAW: 'skelly_adv_raw',
   ADV_FEDC: 'skelly_adv_fedc',
+  CHUNK_OVERRIDE: 'skelly_chunk_override',
+  CHUNK_SIZE: 'skelly_chunk_size',
 };
 
 // Protocol Padding Defaults (bytes)
@@ -1207,9 +1209,16 @@ class FileManager {
 
   /**
    * Determine safe chunk size based on BLE MTU
+   * @param {number|null} override - Optional override chunk size from user
    * @returns {number} Safe chunk size in bytes
    */
-  getChunkSize() {
+  getChunkSize(override = null) {
+    // If user has specified an override, use it
+    if (override !== null && typeof override === 'number' && override >= 50 && override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE) {
+      this.log(`Using override chunk size: ${override} bytes`, LOG_CLASSES.INFO);
+      return override;
+    }
+    
     // Try to get MTU from the BLE manager
     const mtu = this.ble.getMtuSize();
     
@@ -1231,9 +1240,10 @@ class FileManager {
    * Upload file to device
    * @param {Uint8Array} fileBytes - File data
    * @param {string} fileName - Target filename
+   * @param {number|null} chunkSizeOverride - Optional chunk size override
    * @returns {Promise<void>}
    */
-  async uploadFile(fileBytes, fileName) {
+  async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
     if (!this.ble.isConnected()) {
       this.log('Not connected — cannot send file.', LOG_CLASSES.WARNING);
       throw new Error('Device not connected');
@@ -1244,7 +1254,7 @@ class FileManager {
     try {
       // === Phase 1: Start Transfer (C0) ===
       const size = fileBytes.length;
-      const chunkSize = this.getChunkSize(); // Use dynamic chunk size based on MTU
+      const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
       const maxPackets = Math.ceil(size / chunkSize);
       const nameHex = utf16leHex(fileName);
 
@@ -3701,6 +3711,56 @@ class SkellyApp {
       await this.handleFileSelection(e.target.files?.[0]);
     });
 
+    // Chunk size override controls
+    const chkChunkOverride = $('#chkChunkOverride');
+    const chunkOverrideOpts = $('#chunkOverrideOpts');
+    const chunkSizeSlider = $('#chunkSizeSlider');
+    const chunkSizeValue = $('#chunkSizeValue');
+
+    // Load saved preferences from localStorage
+    const savedOverride = localStorage.getItem(STORAGE_KEYS.CHUNK_OVERRIDE) === 'true';
+    const savedChunkSize = parseInt(localStorage.getItem(STORAGE_KEYS.CHUNK_SIZE), 10);
+
+    // Initialize slider with saved or auto-determined chunk size
+    if (chunkSizeSlider && chunkSizeValue) {
+      const autoChunkSize = this.fileManager.getChunkSize();
+      const initialSize = (savedChunkSize >= 50 && savedChunkSize <= 500) ? savedChunkSize : autoChunkSize;
+      chunkSizeSlider.value = initialSize;
+      chunkSizeValue.textContent = initialSize;
+    }
+
+    // Restore checkbox state and visibility
+    if (chkChunkOverride) {
+      chkChunkOverride.checked = savedOverride;
+      if (savedOverride) {
+        chunkOverrideOpts?.classList.remove('hidden');
+      }
+    }
+
+    // Toggle chunk override options
+    chkChunkOverride?.addEventListener('change', (e) => {
+      chunkOverrideOpts?.classList.toggle('hidden', !e.target.checked);
+      
+      // Save preference
+      localStorage.setItem(STORAGE_KEYS.CHUNK_OVERRIDE, e.target.checked.toString());
+      
+      // If enabling override, update slider to current auto value (if not previously saved)
+      if (e.target.checked && chunkSizeSlider && chunkSizeValue && !savedChunkSize) {
+        const autoChunkSize = this.fileManager.getChunkSize();
+        chunkSizeSlider.value = autoChunkSize;
+        chunkSizeValue.textContent = autoChunkSize;
+      }
+    });
+
+    // Update chunk size display when slider changes and save to localStorage
+    chunkSizeSlider?.addEventListener('input', (e) => {
+      if (chunkSizeValue) {
+        chunkSizeValue.textContent = e.target.value;
+      }
+      // Save preference
+      localStorage.setItem(STORAGE_KEYS.CHUNK_SIZE, e.target.value);
+    });
+
     // Send file button
     $('#btnSendFile')?.addEventListener('click', async () => {
       await this.handleFileSend();
@@ -3937,8 +3997,16 @@ class SkellyApp {
 
     this.checkFileNameConflict(finalName);
 
+    // Check if chunk size override is enabled
+    let chunkSizeOverride = null;
+    const chkChunkOverride = $('#chkChunkOverride');
+    const chunkSizeSlider = $('#chunkSizeSlider');
+    if (chkChunkOverride?.checked && chunkSizeSlider) {
+      chunkSizeOverride = parseInt(chunkSizeSlider.value, 10);
+    }
+
     try {
-      await this.fileManager.uploadFile(fileBytes, finalName);
+      await this.fileManager.uploadFile(fileBytes, finalName, chunkSizeOverride);
     } catch (error) {
       this.logger.log(`Upload error: ${error.message}`, LOG_CLASSES.WARNING);
     }
