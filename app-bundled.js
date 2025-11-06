@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-04T16:35:43.652324
+ * Generated: 2025-11-06T07:23:41.101318
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1625,11 +1625,12 @@ class AudioConverter {
  * Protocol Response Parser
  */
 class ProtocolParser {
-  constructor(stateManager, fileManager, logger, onPlayPauseCallback = null) {
+  constructor(stateManager, fileManager, logger, onPlayPauseCallback = null, onDeleteCallback = null) {
     this.state = stateManager;
     this.fileManager = fileManager;
     this.log = logger;
     this.onPlayPause = onPlayPauseCallback;
+    this.onDelete = onDeleteCallback;
   }
 
   /**
@@ -2014,6 +2015,11 @@ class ProtocolParser {
   parseDeleteAck(hex) {
     const ok = parseInt(hex.slice(4, 6), 16) === 0;
     this.log(`Delete ${ok ? 'OK' : 'FAIL'}`);
+    
+    // Notify callback if provided
+    if (this.onDelete) {
+      this.onDelete(ok);
+    }
   }
 
   /**
@@ -2056,6 +2062,10 @@ class EditModalManager {
       name: '',
       eye: 1,
     };
+
+    // Delete state
+    this.deletePending = false;
+    this.deleteResolve = null;
 
     this.initializeModal();
   }
@@ -2380,9 +2390,48 @@ class EditModalManager {
       const cluster = Math.max(0, parseInt($('#edCluster')?.value || '0', 10));
       const clusterHex = cluster.toString(16).padStart(8, '0').toUpperCase();
 
+      // Disable delete button and show waiting state
+      const deleteBtn = $('#edDelete');
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+      }
+
+      // Set up promise to wait for delete confirmation
+      this.deletePending = true;
+      const deletePromise = new Promise((resolve) => {
+        this.deleteResolve = resolve;
+      });
+
+      // Send delete command
       await this.ble.send(buildCommand('C7', serialHex + clusterHex, 8));
       this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
-      this.close();
+      
+      // Wait for BBC7 response (with timeout)
+      const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => resolve(false), 5000); // 5 second timeout
+      });
+
+      this.log('Waiting for delete confirmation...', LOG_CLASSES.INFO);
+      const success = await Promise.race([deletePromise, timeoutPromise]);
+
+      // Reset button state
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Delete';
+      }
+
+      if (success) {
+        this.log('Delete confirmed, refreshing file list...', LOG_CLASSES.WARNING);
+        // Refresh the file list
+        await this.fileManager.startFetchFiles(false);
+        this.close();
+      } else {
+        this.log('Delete confirmation timeout or failed', LOG_CLASSES.WARNING);
+      }
+
+      this.deletePending = false;
+      this.deleteResolve = null;
     });
 
     // Apply All button - sends all settings to device
@@ -2762,6 +2811,16 @@ class EditModalManager {
   }
 
   /**
+   * Handle delete confirmation from protocol parser
+   * @param {boolean} success - Whether delete was successful
+   */
+  handleDeleteConfirmation(success) {
+    if (this.deletePending && this.deleteResolve) {
+      this.deleteResolve(success);
+    }
+  }
+
+  /**
    * Close the edit modal
    */
   close() {
@@ -2861,16 +2920,7 @@ class SkellyApp {
       this.audioConverter = new AudioConverter(this.logger.log.bind(this.logger));
       console.log('Audio converter created');
 
-      // Initialize protocol parser
-      this.parser = new ProtocolParser(
-        this.state, 
-        this.fileManager, 
-        this.logger.log.bind(this.logger),
-        this.handlePlayPauseMessage.bind(this)
-      );
-      console.log('Protocol parser created');
-
-      // Initialize edit modal manager
+      // Initialize edit modal manager (before parser so we can pass callback)
       this.editModal = new EditModalManager(
         this.ble,
         this.state,
@@ -2879,6 +2929,16 @@ class SkellyApp {
         this.logger.log.bind(this.logger)
       );
       console.log('Edit modal manager created');
+
+      // Initialize protocol parser with callbacks
+      this.parser = new ProtocolParser(
+        this.state, 
+        this.fileManager, 
+        this.logger.log.bind(this.logger),
+        this.handlePlayPauseMessage.bind(this),
+        this.editModal.handleDeleteConfirmation.bind(this.editModal)
+      );
+      console.log('Protocol parser created');
 
       // Register protocol parser with BLE manager
       this.ble.onNotification((hex, bytes) => {

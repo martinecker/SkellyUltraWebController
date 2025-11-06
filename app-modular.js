@@ -98,16 +98,7 @@ class SkellyApp {
       this.audioConverter = new AudioConverter(this.logger.log.bind(this.logger));
       console.log('Audio converter created');
 
-      // Initialize protocol parser
-      this.parser = new ProtocolParser(
-        this.state, 
-        this.fileManager, 
-        this.logger.log.bind(this.logger),
-        this.handlePlayPauseMessage.bind(this)
-      );
-      console.log('Protocol parser created');
-
-      // Initialize edit modal manager
+      // Initialize edit modal manager (before parser so we can pass callback)
       this.editModal = new EditModalManager(
         this.ble,
         this.state,
@@ -116,6 +107,16 @@ class SkellyApp {
         this.logger.log.bind(this.logger)
       );
       console.log('Edit modal manager created');
+
+      // Initialize protocol parser with callbacks
+      this.parser = new ProtocolParser(
+        this.state, 
+        this.fileManager, 
+        this.logger.log.bind(this.logger),
+        this.handlePlayPauseMessage.bind(this),
+        this.editModal.handleDeleteConfirmation.bind(this.editModal)
+      );
+      console.log('Protocol parser created');
 
       // Register protocol parser with BLE manager
       this.ble.onNotification((hex, bytes) => {
@@ -1208,7 +1209,7 @@ class SkellyApp {
     if ($('#statCapacity')) {
       $('#statCapacity').textContent =
         device.capacity != null
-          ? `${device.capacity} KB (${device.filesReported ?? '—'} files)`
+          ? `${device.capacity} KB remaining (${device.filesReported ?? '—'} files)`
           : '—';
     }
     

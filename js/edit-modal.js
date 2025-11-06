@@ -30,6 +30,10 @@ export class EditModalManager {
       eye: 1,
     };
 
+    // Delete state
+    this.deletePending = false;
+    this.deleteResolve = null;
+
     this.initializeModal();
   }
 
@@ -353,9 +357,48 @@ export class EditModalManager {
       const cluster = Math.max(0, parseInt($('#edCluster')?.value || '0', 10));
       const clusterHex = cluster.toString(16).padStart(8, '0').toUpperCase();
 
+      // Disable delete button and show waiting state
+      const deleteBtn = $('#edDelete');
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+      }
+
+      // Set up promise to wait for delete confirmation
+      this.deletePending = true;
+      const deletePromise = new Promise((resolve) => {
+        this.deleteResolve = resolve;
+      });
+
+      // Send delete command
       await this.ble.send(buildCommand('C7', serialHex + clusterHex, 8));
       this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
-      this.close();
+      
+      // Wait for BBC7 response (with timeout)
+      const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => resolve(false), 5000); // 5 second timeout
+      });
+
+      this.log('Waiting for delete confirmation...', LOG_CLASSES.INFO);
+      const success = await Promise.race([deletePromise, timeoutPromise]);
+
+      // Reset button state
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Delete';
+      }
+
+      if (success) {
+        this.log('Delete confirmed, refreshing file list...', LOG_CLASSES.WARNING);
+        // Refresh the file list
+        await this.fileManager.startFetchFiles(false);
+        this.close();
+      } else {
+        this.log('Delete confirmation timeout or failed', LOG_CLASSES.WARNING);
+      }
+
+      this.deletePending = false;
+      this.deleteResolve = null;
     });
 
     // Apply All button - sends all settings to device
@@ -732,6 +775,16 @@ export class EditModalManager {
 
     // Show modal
     this.modal?.classList.remove('hidden');
+  }
+
+  /**
+   * Handle delete confirmation from protocol parser
+   * @param {boolean} success - Whether delete was successful
+   */
+  handleDeleteConfirmation(success) {
+    if (this.deletePending && this.deleteResolve) {
+      this.deleteResolve(success);
+    }
   }
 
   /**

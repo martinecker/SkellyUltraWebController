@@ -18,11 +18,12 @@ import {
  * Protocol Response Parser
  */
 export class ProtocolParser {
-  constructor(stateManager, fileManager, logger, onPlayPauseCallback = null) {
+  constructor(stateManager, fileManager, logger, onPlayPauseCallback = null, onDeleteCallback = null) {
     this.state = stateManager;
     this.fileManager = fileManager;
     this.log = logger;
     this.onPlayPause = onPlayPauseCallback;
+    this.onDelete = onDeleteCallback;
   }
 
   /**
@@ -228,7 +229,7 @@ export class ProtocolParser {
     });
 
     this.log(
-      `Capacity ${capacityKB}KB filesReported=${count} extra=0x${field4.toString(16).toUpperCase()}`
+      `Capacity ${capacityKB}KB remaining, filesReported=${count}, extra=0x${field4.toString(16).toUpperCase()}`
     );
   }
 
@@ -407,6 +408,11 @@ export class ProtocolParser {
   parseDeleteAck(hex) {
     const ok = parseInt(hex.slice(4, 6), 16) === 0;
     this.log(`Delete ${ok ? 'OK' : 'FAIL'}`);
+    
+    // Notify callback if provided
+    if (this.onDelete) {
+      this.onDelete(ok);
+    }
   }
 
   /**
