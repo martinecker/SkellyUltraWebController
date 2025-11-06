@@ -49,6 +49,28 @@ export class BLEManager {
   }
 
   /**
+   * Get the BLE MTU size if available
+   * @returns {number|null} MTU size in bytes, or null if not available
+   */
+  getMtuSize() {
+    try {
+      // Web Bluetooth API doesn't expose MTU directly in most browsers
+      // Some browsers may have it on the server object
+      if (this.server && typeof this.server.mtu === 'number') {
+        return this.server.mtu;
+      }
+      
+      // Check if device has mtu property (non-standard)
+      if (this.device && typeof this.device.mtu === 'number') {
+        return this.device.mtu;
+      }
+    } catch (error) {
+      // Silently fail - MTU not available
+    }
+    return null;
+  }
+
+  /**
    * Connect to a BLE device
    * @param {string} nameFilter - Optional device name prefix filter
    * @returns {Promise<void>}

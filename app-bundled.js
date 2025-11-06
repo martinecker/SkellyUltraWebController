@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-06T07:48:11.929060
+ * Generated: 2025-11-06T08:10:15.544869
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -51,9 +51,9 @@ const PADDING = {
 
 // File Transfer Configuration
 const TRANSFER_CONFIG = {
-  MTU_SIZE: 512,
-  MTU_OVERHEAD: 12, // BLE (3) + command (2) + safety margin (7)
-  CHUNK_SIZE: 500,  // MTU - overhead for reliable transmission
+  MAX_CHUNK_SIZE: 500,       // Maximum bytes per chunk (tested maximum)
+  DEFAULT_CHUNK_SIZE: 250,   // Conservative default for unknown MTU
+  ATT_OVERHEAD: 3,           // ATT protocol overhead bytes
   CHUNK_DELAY_MS: 50,
   EDIT_CHUNK_DELAY_MS: 12,
 };
@@ -811,6 +811,28 @@ class BLEManager {
   }
 
   /**
+   * Get the BLE MTU size if available
+   * @returns {number|null} MTU size in bytes, or null if not available
+   */
+  getMtuSize() {
+    try {
+      // Web Bluetooth API doesn't expose MTU directly in most browsers
+      // Some browsers may have it on the server object
+      if (this.server && typeof this.server.mtu === 'number') {
+        return this.server.mtu;
+      }
+      
+      // Check if device has mtu property (non-standard)
+      if (this.device && typeof this.device.mtu === 'number') {
+        return this.device.mtu;
+      }
+    } catch (error) {
+      // Silently fail - MTU not available
+    }
+    return null;
+  }
+
+  /**
    * Connect to a BLE device
    * @param {string} nameFilter - Optional device name prefix filter
    * @returns {Promise<void>}
@@ -1184,6 +1206,28 @@ class FileManager {
   }
 
   /**
+   * Determine safe chunk size based on BLE MTU
+   * @returns {number} Safe chunk size in bytes
+   */
+  getChunkSize() {
+    // Try to get MTU from the BLE manager
+    const mtu = this.ble.getMtuSize();
+    
+    if (mtu !== null && typeof mtu === 'number' && mtu > 0) {
+      // Calculate safe chunk size (MTU minus ATT overhead)
+      const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
+      // Cap at tested maximum
+      const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
+      this.log(`Using MTU-based chunk size: ${chunkSize} bytes (MTU=${mtu})`, LOG_CLASSES.INFO);
+      return chunkSize;
+    }
+    
+    // MTU not available, use conservative default
+    this.log(`Using default chunk size: ${TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE} bytes (MTU unknown)`, LOG_CLASSES.INFO);
+    return TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE;
+  }
+
+  /**
    * Upload file to device
    * @param {Uint8Array} fileBytes - File data
    * @param {string} fileName - Target filename
@@ -1200,7 +1244,7 @@ class FileManager {
     try {
       // === Phase 1: Start Transfer (C0) ===
       const size = fileBytes.length;
-      const chunkSize = TRANSFER_CONFIG.CHUNK_SIZE;
+      const chunkSize = this.getChunkSize(); // Use dynamic chunk size based on MTU
       const maxPackets = Math.ceil(size / chunkSize);
       const nameHex = utf16leHex(fileName);
 

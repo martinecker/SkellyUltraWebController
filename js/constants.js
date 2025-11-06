@@ -24,9 +24,9 @@ export const PADDING = {
 
 // File Transfer Configuration
 export const TRANSFER_CONFIG = {
-  MTU_SIZE: 512,
-  MTU_OVERHEAD: 12, // BLE (3) + command (2) + safety margin (7)
-  CHUNK_SIZE: 500,  // MTU - overhead for reliable transmission
+  MAX_CHUNK_SIZE: 500,       // Maximum bytes per chunk (tested maximum)
+  DEFAULT_CHUNK_SIZE: 250,   // Conservative default for unknown MTU
+  ATT_OVERHEAD: 3,           // ATT protocol overhead bytes
   CHUNK_DELAY_MS: 50,
   EDIT_CHUNK_DELAY_MS: 12,
 };

@@ -96,6 +96,28 @@ export class FileManager {
   }
 
   /**
+   * Determine safe chunk size based on BLE MTU
+   * @returns {number} Safe chunk size in bytes
+   */
+  getChunkSize() {
+    // Try to get MTU from the BLE manager
+    const mtu = this.ble.getMtuSize();
+    
+    if (mtu !== null && typeof mtu === 'number' && mtu > 0) {
+      // Calculate safe chunk size (MTU minus ATT overhead)
+      const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
+      // Cap at tested maximum
+      const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
+      this.log(`Using MTU-based chunk size: ${chunkSize} bytes (MTU=${mtu})`, LOG_CLASSES.INFO);
+      return chunkSize;
+    }
+    
+    // MTU not available, use conservative default
+    this.log(`Using default chunk size: ${TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE} bytes (MTU unknown)`, LOG_CLASSES.INFO);
+    return TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE;
+  }
+
+  /**
    * Upload file to device
    * @param {Uint8Array} fileBytes - File data
    * @param {string} fileName - Target filename
@@ -112,7 +134,7 @@ export class FileManager {
     try {
       // === Phase 1: Start Transfer (C0) ===
       const size = fileBytes.length;
-      const chunkSize = TRANSFER_CONFIG.CHUNK_SIZE;
+      const chunkSize = this.getChunkSize(); // Use dynamic chunk size based on MTU
       const maxPackets = Math.ceil(size / chunkSize);
       const nameHex = utf16leHex(fileName);
 
