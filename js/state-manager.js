@@ -18,7 +18,8 @@ export class StateManager {
       channels: [],
       volume: null,
       capacity: null,
-      filesReported: null,
+      filesReported: null,  // Count reported by device in capacity query
+      filesReceived: null,  // Count of files actually received in file list
       order: null, // Music play order
       pin: null, // Device PIN
     };

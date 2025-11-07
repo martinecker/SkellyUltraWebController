@@ -1267,8 +1267,26 @@ class SkellyApp {
     if ($('#statCapacity')) {
       $('#statCapacity').textContent =
         device.capacity != null
-          ? `${device.capacity} KB remaining (${device.filesReported ?? '—'} files)`
+          ? `${device.capacity} KB remaining`
           : '—';
+    }
+    
+    if ($('#statFileCount')) {
+      const reported = device.filesReported ?? '—';
+      const received = device.filesReceived ?? '—';
+      const mismatch = (device.filesReported != null && device.filesReceived != null && 
+                        device.filesReported !== device.filesReceived);
+      
+      $('#statFileCount').textContent = `${received} / ${reported}`;
+      
+      // Add warning styling if counts don't match
+      if (mismatch) {
+        $('#statFileCount').style.color = 'var(--warn)';
+        $('#statFileCount').title = 'Received count differs from reported count';
+      } else {
+        $('#statFileCount').style.color = '';
+        $('#statFileCount').title = '';
+      }
     }
     
     if ($('#statOrder')) {

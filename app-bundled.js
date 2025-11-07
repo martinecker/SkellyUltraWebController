@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-06T08:32:00.605654
+ * Generated: 2025-11-07T07:27:22.136424
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -428,7 +428,8 @@ class StateManager {
       channels: [],
       volume: null,
       capacity: null,
-      filesReported: null,
+      filesReported: null,  // Count reported by device in capacity query
+      filesReceived: null,  // Count of files actually received in file list
       order: null, // Music play order
       pin: null, // Device PIN
     };
@@ -1192,6 +1193,10 @@ class FileManager {
       if (this.state.files.fetchTimer) {
         clearTimeout(this.state.files.fetchTimer);
       }
+
+      // Update the received file count
+      const filesReceived = this.state.files.items.size;
+      this.state.updateDevice({ filesReceived });
 
       this.log('File list complete ✔', LOG_CLASSES.WARNING);
 
@@ -4149,8 +4154,26 @@ class SkellyApp {
     if ($('#statCapacity')) {
       $('#statCapacity').textContent =
         device.capacity != null
-          ? `${device.capacity} KB remaining (${device.filesReported ?? '—'} files)`
+          ? `${device.capacity} KB remaining`
           : '—';
+    }
+    
+    if ($('#statFileCount')) {
+      const reported = device.filesReported ?? '—';
+      const received = device.filesReceived ?? '—';
+      const mismatch = (device.filesReported != null && device.filesReceived != null && 
+                        device.filesReported !== device.filesReceived);
+      
+      $('#statFileCount').textContent = `${received} / ${reported}`;
+      
+      // Add warning styling if counts don't match
+      if (mismatch) {
+        $('#statFileCount').style.color = 'var(--warn)';
+        $('#statFileCount').title = 'Received count differs from reported count';
+      } else {
+        $('#statFileCount').style.color = '';
+        $('#statFileCount').title = '';
+      }
     }
     
     if ($('#statOrder')) {

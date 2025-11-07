@@ -81,6 +81,10 @@ export class FileManager {
         clearTimeout(this.state.files.fetchTimer);
       }
 
+      // Update the received file count
+      const filesReceived = this.state.files.items.size;
+      this.state.updateDevice({ filesReceived });
+
       this.log('File list complete ✔', LOG_CLASSES.WARNING);
 
       if (!this.state.files.afterCompleteSent) {
