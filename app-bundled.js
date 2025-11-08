@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-07T07:50:03.547311
+ * Generated: 2025-11-07T16:27:10.258219
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3716,6 +3716,14 @@ class SkellyApp {
       await this.handleFileSelection(e.target.files?.[0]);
     });
 
+    // Bitrate override toggle
+    const chkBitrateOverride = $('#chkBitrateOverride');
+    const convertOpts = $('#convertOpts');
+    
+    chkBitrateOverride?.addEventListener('change', (e) => {
+      convertOpts?.classList.toggle('hidden', !e.target.checked);
+    });
+
     // Chunk size override controls
     const chkChunkOverride = $('#chkChunkOverride');
     const chunkOverrideOpts = $('#chunkOverrideOpts');
@@ -3920,7 +3928,9 @@ class SkellyApp {
 
       // If convert box is already checked, convert right away
       if ($('#chkConvert')?.checked) {
-        const kbps = parseInt($('#mp3Kbps')?.value || '32', 10);
+        const kbps = $('#chkBitrateOverride')?.checked 
+          ? parseInt($('#mp3Kbps')?.value || '32', 10)
+          : 32; // Use default 32 kbps if not overriding
         this.logger.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
         const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
         fileBytes = result.u8;
@@ -3966,7 +3976,9 @@ class SkellyApp {
     // If user toggled "Convert" AFTER selecting the file, convert now
     try {
       if ($('#chkConvert')?.checked && pickerData.file) {
-        const kbps = parseInt($('#mp3Kbps')?.value || '32', 10);
+        const kbps = $('#chkBitrateOverride')?.checked 
+          ? parseInt($('#mp3Kbps')?.value || '32', 10)
+          : 32; // Use default 32 kbps if not overriding
         this.logger.log(`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`);
         const result = await this.audioConverter.convertToDeviceMp3(pickerData.file, kbps);
         fileBytes = result.u8;

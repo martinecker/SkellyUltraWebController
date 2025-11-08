@@ -520,6 +520,7 @@
           <option value="16">16 kbps</option>
           <option value="24">24 kbps</option>
           <option value="32" selected>32 kbps</option>
+          <option value="64">64 kbps</option>
         </select>
         <span class="small muted">Converts input before uploading.</span>
       </div>
@@ -784,16 +785,21 @@
       </div>
       <label>Choose file</label>
       <input id="fileInput" type="file" />
-      <label class="small checkline mt-8">
-        <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3, 8 kHz mono)
-      </label>
-      <div id="convertOpts" class="row hidden" style="align-items:center">
-        <select id="mp3Kbps" aria-label="MP3 bitrate">
-          <option value="16">16 kbps</option>
-          <option value="24">24 kbps</option>
-          <option value="32" selected>32 kbps</option>
-        </select>
-        <span class="small muted">Output replaces selected file before upload.</span>
+      <div style="display:flex; align-items:center; gap:16px; margin-top:8px; flex-wrap:wrap">
+        <label class="small checkline" style="margin:0">
+          <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3, 8 kHz mono)
+        </label>
+        <label class="small checkline" style="margin:0">
+          <input id="chkBitrateOverride" type="checkbox"> Override bitrate
+        </label>
+        <div id="convertOpts" class="hidden" style="display:flex; align-items:center; gap:8px">
+          <select id="mp3Kbps" aria-label="MP3 bitrate">
+            <option value="16">16 kbps</option>
+            <option value="24">24 kbps</option>
+            <option value="32" selected>32 kbps</option>
+            <option value="64">64 kbps</option>
+          </select>
+        </div>
       </div>
 
 
