@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-07T16:27:10.258219
+ * Generated: 2025-11-07T18:50:23.708282
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -44,6 +44,8 @@ const STORAGE_KEYS = {
   ADV_FEDC: 'skelly_adv_fedc',
   CHUNK_OVERRIDE: 'skelly_chunk_override',
   CHUNK_SIZE: 'skelly_chunk_size',
+  BITRATE_OVERRIDE: 'skelly_bitrate_override',
+  BITRATE: 'skelly_bitrate',
 };
 
 // Protocol Padding Defaults (bytes)
@@ -3719,9 +3721,34 @@ class SkellyApp {
     // Bitrate override toggle
     const chkBitrateOverride = $('#chkBitrateOverride');
     const convertOpts = $('#convertOpts');
+    const mp3Kbps = $('#mp3Kbps');
     
+    // Load saved bitrate preferences from localStorage
+    const savedBitrateOverride = localStorage.getItem(STORAGE_KEYS.BITRATE_OVERRIDE) === 'true';
+    const savedBitrate = localStorage.getItem(STORAGE_KEYS.BITRATE);
+    
+    // Restore checkbox state and visibility
+    if (chkBitrateOverride) {
+      chkBitrateOverride.checked = savedBitrateOverride;
+      if (savedBitrateOverride) {
+        convertOpts?.classList.remove('hidden');
+      }
+    }
+    
+    // Restore bitrate selection
+    if (mp3Kbps && savedBitrate) {
+      mp3Kbps.value = savedBitrate;
+    }
+    
+    // Toggle bitrate options and save preference
     chkBitrateOverride?.addEventListener('change', (e) => {
       convertOpts?.classList.toggle('hidden', !e.target.checked);
+      localStorage.setItem(STORAGE_KEYS.BITRATE_OVERRIDE, e.target.checked.toString());
+    });
+    
+    // Save bitrate selection when changed
+    mp3Kbps?.addEventListener('change', (e) => {
+      localStorage.setItem(STORAGE_KEYS.BITRATE, e.target.value);
     });
 
     // Chunk size override controls

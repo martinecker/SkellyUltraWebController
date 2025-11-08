@@ -17,6 +17,8 @@ export const STORAGE_KEYS = {
   ADV_FEDC: 'skelly_adv_fedc',
   CHUNK_OVERRIDE: 'skelly_chunk_override',
   CHUNK_SIZE: 'skelly_chunk_size',
+  BITRATE_OVERRIDE: 'skelly_bitrate_override',
+  BITRATE: 'skelly_bitrate',
 };
 
 // Protocol Padding Defaults (bytes)
