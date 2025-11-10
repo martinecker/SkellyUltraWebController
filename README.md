@@ -2,6 +2,8 @@
 
 A modern web-based Bluetooth controller for Home Depot's 6.5 ft Skelly Ultra animatronic skeleton. Control lights, sounds, animations, and file management directly from your browser using Web Bluetooth API.
 
+A live version of this project is hosted here https://martinecker.github.io/SkellyUltraWebController/
+
 ![Skelly Ultra Web Controller](screenshot.jpg)
 
 There is a companion project that provides a Home Assistant integration here https://github.com/martinecker/SkellyUltra
