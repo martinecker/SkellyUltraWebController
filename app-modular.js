@@ -1552,10 +1552,22 @@ class SkellyApp {
     }
 
     const summary = $('#filesSummary');
+    const lastRefreshEl = $('#filesLastRefresh');
+    
     if (summary) {
       const got = files.length;
       const expected = this.state.files.expected;
       summary.textContent = `Received ${got}${expected ? ` / ${expected}` : ''}`;
+    }
+    
+    if (lastRefreshEl) {
+      const lastRefresh = this.state.files.lastRefresh;
+      if (lastRefresh) {
+        const timeStr = lastRefresh.toLocaleTimeString();
+        lastRefreshEl.textContent = `Last refresh: ${timeStr}`;
+      } else {
+        lastRefreshEl.textContent = '';
+      }
     }
   }
 

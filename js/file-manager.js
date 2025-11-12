@@ -76,7 +76,7 @@ export class FileManager {
     }
 
     if (this.state.isFileListComplete()) {
-      this.state.updateFilesMetadata({ activeFetch: false });
+      this.state.updateFilesMetadata({ activeFetch: false, lastRefresh: new Date() });
       if (this.state.files.fetchTimer) {
         clearTimeout(this.state.files.fetchTimer);
       }

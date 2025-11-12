@@ -38,6 +38,7 @@ export class StateManager {
       activeFetch: false,
       fetchTimer: null,
       afterCompleteSent: false,
+      lastRefresh: null, // Timestamp of last successful refresh
     };
 
     // Transfer state

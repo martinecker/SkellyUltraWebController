@@ -871,7 +871,10 @@
       <h2>Files on Device</h2>
       <div class="actions">
         <button class="btn" id="btnRefreshFiles">Refresh List</button>
-        <span class="small muted" id="filesSummary">—</span>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span class="small muted" id="filesSummary">—</span>
+          <span class="small muted" id="filesLastRefresh"></span>
+        </div>
         <input id="filesFilter" placeholder="Filter by name…" style="max-width:200px" />
       </div>
       <div class="spacer"></div>

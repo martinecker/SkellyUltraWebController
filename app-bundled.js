@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-07T18:50:23.708282
+ * Generated: 2025-11-12T07:20:32.005009
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -450,6 +450,7 @@ class StateManager {
       activeFetch: false,
       fetchTimer: null,
       afterCompleteSent: false,
+      lastRefresh: null, // Timestamp of last successful refresh
     };
 
     // Transfer state
@@ -1191,7 +1192,7 @@ class FileManager {
     }
 
     if (this.state.isFileListComplete()) {
-      this.state.updateFilesMetadata({ activeFetch: false });
+      this.state.updateFilesMetadata({ activeFetch: false, lastRefresh: new Date() });
       if (this.state.files.fetchTimer) {
         clearTimeout(this.state.files.fetchTimer);
       }
@@ -4441,10 +4442,22 @@ class SkellyApp {
     }
 
     const summary = $('#filesSummary');
+    const lastRefreshEl = $('#filesLastRefresh');
+    
     if (summary) {
       const got = files.length;
       const expected = this.state.files.expected;
       summary.textContent = `Received ${got}${expected ? ` / ${expected}` : ''}`;
+    }
+    
+    if (lastRefreshEl) {
+      const lastRefresh = this.state.files.lastRefresh;
+      if (lastRefresh) {
+        const timeStr = lastRefresh.toLocaleTimeString();
+        lastRefreshEl.textContent = `Last refresh: ${timeStr}`;
+      } else {
+        lastRefreshEl.textContent = '';
+      }
     }
   }
 
