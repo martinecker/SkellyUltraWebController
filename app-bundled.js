@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T23:13:03.962467
+ * Generated: 2025-11-14T07:20:54.842470
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -2504,6 +2504,13 @@ class EditModalManager {
     // Close button
     $('#edClose')?.addEventListener('click', () => this.close());
 
+    // Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
+        this.close();
+      }
+    });
+
     // Delete button (C7)
     $('#edDelete')?.addEventListener('click', async () => {
       if (!this.ble.isConnected()) {
@@ -3156,6 +3163,7 @@ class SkellyApp {
     }
 
     this.initializeWarningModal();
+    this.initializeConnectionModal();
     this.initializeAdvancedMenu();
     this.initializeQueryButtons();
     this.initializeMediaControls();
@@ -3210,6 +3218,58 @@ class SkellyApp {
 
     $('#riskCancel')?.addEventListener('click', () => {
       window.location.href = 'about:blank';
+    });
+  }
+
+  /**
+   * Initialize connection modal
+   */
+  initializeConnectionModal() {
+    const connectModal = $('#connectModal');
+    const connectNameFilter = $('#connectNameFilter');
+    const connectFilterByName = $('#connectFilterByName');
+    const connectAllDevices = $('#connectAllDevices');
+    
+    // Enable/disable name filter input based on radio selection
+    const updateFilterState = () => {
+      if (connectNameFilter) {
+        connectNameFilter.disabled = !connectFilterByName?.checked;
+      }
+    };
+    
+    connectFilterByName?.addEventListener('change', updateFilterState);
+    connectAllDevices?.addEventListener('change', updateFilterState);
+    
+    // Initialize state
+    updateFilterState();
+    
+    // Close modal function
+    const closeModal = () => {
+      connectModal?.classList.add('hidden');
+    };
+    
+    // Cancel button
+    $('#connectCancel')?.addEventListener('click', closeModal);
+    
+    // Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !connectModal?.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+    
+    // Connect button
+    $('#connectOk')?.addEventListener('click', async () => {
+      connectModal?.classList.add('hidden');
+      
+      // Determine filter value
+      let nameFilter = '';
+      if (connectFilterByName?.checked) {
+        nameFilter = connectNameFilter?.value || '';
+      }
+      
+      // Perform connection
+      await this.performConnection(nameFilter);
     });
   }
 
@@ -4433,11 +4493,19 @@ class SkellyApp {
   }
 
   /**
-   * Handle connect button
+   * Handle connect button - show connection modal
    */
   async handleConnect() {
-    console.log('handleConnect called');
-    const nameFilter = $('#nameFilter')?.value || '';
+    console.log('handleConnect called - showing modal');
+    const connectModal = $('#connectModal');
+    connectModal?.classList.remove('hidden');
+  }
+
+  /**
+   * Perform actual connection with filter
+   */
+  async performConnection(nameFilter) {
+    console.log('performConnection called');
     try {
       console.log('Calling ble.connect with filter:', nameFilter);
       await this.ble.connect(nameFilter);

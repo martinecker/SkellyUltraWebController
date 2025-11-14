@@ -199,9 +199,8 @@
     .eye-opt { border:1px solid #28303a; background:#0f1318; border-radius:8px; padding:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
     .eye-opt.selected { outline:2px solid var(--accent); }
 
-    /* Disconnected state: dim + disable most cards except Device and Log */
+    /* Disconnected state: dim + disable most cards except Log */
     body.disconnected .grid .card { opacity:.6; pointer-events:none; }
-    body.disconnected .area-dev.card,
     body.disconnected .area-log.card { opacity:1; pointer-events:auto !important; }
     body.disconnected #status { color: var(--err); }
 
@@ -375,6 +374,33 @@
   </div>
 </div>
 
+<!-- Connection options modal -->
+<div id="connectModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
+  <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;max-width:480px;">
+    <h3 id="connectTitle">Connect to Device</h3>
+    <p>Choose how you want to discover devices:</p>
+    
+    <div style="margin: 20px 0;">
+      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
+        <input type="radio" name="connectFilter" id="connectFilterByName" value="filter" checked style="margin: 0; width: 18px;">
+        <label for="connectFilterByName" style="cursor: pointer; white-space: nowrap; margin: 0;">Filter by name</label>
+      </div>
+      <div style="margin-left: 26px; margin-bottom: 12px;">
+        <input id="connectNameFilter" type="text" placeholder="Animated Skelly" value="Animated Skelly" style="width: 100%;" />
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center;">
+        <input type="radio" name="connectFilter" id="connectAllDevices" value="all" style="margin: 0; width: 18px;">
+        <label for="connectAllDevices" style="cursor: pointer; white-space: nowrap; margin: 0;">All devices</label>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button id="connectCancel" class="btn">Cancel</button>
+      <button id="connectOk" class="btn primary">Connect</button>
+    </div>
+  </div>
+</div>
 
   <!-- Slow upload heads-up -->
   <div id="slowModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="slowTitle">
@@ -610,43 +636,39 @@
       <section class="card area-dev">
         <h2>Device / Commands</h2>
 
-      <label>Filter by name (optional)</label>
-      <input id="nameFilter" placeholder="Animated Skelly" value="Animated Skelly" />
-
-      <div class="spacer"></div>
       <div>
         <label>Queries</label>
-        <div class="actions">
-          <button class="btn cmd" data-q="AAE0">Get Device Params</button>
-          <button class="btn cmd" data-q="AAE1">Get Live Mode</button>
-          <button class="btn cmd" data-q="AAE5">Get Volume</button>
-          <button class="btn cmd" data-q="AAE6">Get BT Name</button>
-          <button class="btn cmd" data-q="AAEE">Get Version</button>
-          <button class="btn cmd" data-q="AAD2">Get Capacity</button>
-          <button class="btn cmd" data-q="AAD1">Get File Order</button>
-          <button class="btn" id="btnGetAll" style="font-weight: bold; background: #4CAF50;">Get All</button>
+          <div class="actions">
+            <button class="btn cmd" data-q="AAE0">Get Device Params</button>
+            <button class="btn cmd" data-q="AAE1">Get Live Mode</button>
+            <button class="btn cmd" data-q="AAE5">Get Volume</button>
+            <button class="btn cmd" data-q="AAE6">Get BT Name</button>
+            <button class="btn cmd" data-q="AAEE">Get Version</button>
+            <button class="btn cmd" data-q="AAD2">Get Capacity</button>
+            <button class="btn cmd" data-q="AAD1">Get File Order</button>
+            <button class="btn" id="btnGetAll" style="font-weight: bold; background: #4CAF50;">Get All</button>
+          </div>
+
         </div>
 
-      </div>
-
-      <div class="spacer"></div>
-      <div>
-        <label>Commands</label>
-        <div class="compact-row">
-          <label>Device Name</label>
-          <input id="deviceNameInput" type="text" maxlength="22" placeholder="Animated Skelly" style="flex:1; font-family:monospace;" />
-          <button class="btn" id="btnSetDeviceName">Set</button>
+        <div class="spacer"></div>
+        <div>
+          <label>Commands</label>
+          <div class="compact-row">
+            <label>Device Name</label>
+            <input id="deviceNameInput" type="text" maxlength="22" placeholder="Animated Skelly" style="flex:1; font-family:monospace;" />
+            <button class="btn" id="btnSetDeviceName">Set</button>
+          </div>
+          <div class="compact-row">
+            <label>PIN</label>
+            <input id="pinInput" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0000" style="width:80px; text-align:center; font-family:monospace;" />
+            <button class="btn" id="btnSetPin">Set PIN</button>
+          </div>
         </div>
-        <div class="compact-row">
-          <label>PIN</label>
-          <input id="pinInput" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0000" style="width:80px; text-align:center; font-family:monospace;" />
-          <button class="btn" id="btnSetPin">Set PIN</button>
-        </div>
-      </div>
 
-      <!-- Raw Command (advanced) -->
-      <div class="spacer"></div>
-      <div id="advRawBlock" class="hidden">
+        <!-- Raw Command (advanced) -->
+        <div class="spacer"></div>
+        <div id="advRawBlock" class="hidden">
         <label>Raw Command (hex after AA+TAG+payload[≤8B]+CRC8 auto)</label>
         <div class="row">
           <select id="tag">
@@ -967,7 +989,7 @@
     <span class="muted">Tip: Requires Chrome/Edge (desktop or Android) over HTTPS. Web Bluetooth isn’t supported in Firefox on desktop.</span>
     <span class="muted">Source code: 
       <a href="https://github.com/martinecker/SkellyUltraWebController" target="_blank" rel="noopener">
-        github.com/martinecker/SkellyUltra/tree/main/web_skelly
+        github.com/martinecker/SkellyUltraWebController
       </a>
       <div>based on
         <a href="https://github.com/tinkertims/tinkertims.github.io" target="_blank" rel="noopener">

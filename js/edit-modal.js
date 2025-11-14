@@ -342,6 +342,13 @@ export class EditModalManager {
     // Close button
     $('#edClose')?.addEventListener('click', () => this.close());
 
+    // Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
+        this.close();
+      }
+    });
+
     // Delete button (C7)
     $('#edDelete')?.addEventListener('click', async () => {
       if (!this.ble.isConnected()) {
