@@ -379,6 +379,31 @@ class SkellyApp {
       this.logger.log(`Sent raw command: ${tag} with payload: ${payload || '(empty)'}`);
     });
 
+    // Set Device Name button
+    $('#btnSetDeviceName')?.addEventListener('click', async () => {
+      if (!this.ble.isConnected()) {
+        this.logger.log('Not connected', LOG_CLASSES.WARNING);
+        return;
+      }
+
+      const deviceNameInput = $('#deviceNameInput');
+      const deviceName = deviceNameInput?.value || '';
+
+      // Validate device name: must not be empty and max 22 chars
+      if (!deviceName || deviceName.trim().length === 0) {
+        this.logger.log('Device name cannot be empty', LOG_CLASSES.WARNING);
+        return;
+      }
+
+      if (deviceName.length > 22) {
+        this.logger.log('Device name cannot exceed 22 characters', LOG_CLASSES.WARNING);
+        return;
+      }
+
+      const pin = this.state.device.pin || '0000';
+      await this.setPinAndName(pin, deviceName);
+    });
+
     // Set PIN button
     $('#btnSetPin')?.addEventListener('click', async () => {
       if (!this.ble.isConnected()) {
@@ -395,9 +420,13 @@ class SkellyApp {
         return;
       }
 
-      const btName = this.state.device.btName || '';
+      const deviceNameInput = $('#deviceNameInput');
+      const deviceName = deviceNameInput?.value || '';
+      
+      // Use current device name if available, otherwise use entered name or default to btName
+      const btName = deviceName || this.state.device.btName || '';
       if (!btName) {
-        this.logger.log('BT name not available. Query device first.', LOG_CLASSES.WARNING);
+        this.logger.log('Device name not available. Enter a device name first.', LOG_CLASSES.WARNING);
         return;
       }
 
@@ -410,6 +439,17 @@ class SkellyApp {
       pinInput.addEventListener('input', (e) => {
         // Remove non-digit characters
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      });
+    }
+
+    // Device name input validation - enforce max length
+    const deviceNameInput = $('#deviceNameInput');
+    if (deviceNameInput) {
+      deviceNameInput.addEventListener('input', (e) => {
+        // Enforce max length of 22 characters
+        if (e.target.value.length > 22) {
+          e.target.value = e.target.value.substring(0, 22);
+        }
       });
     }
   }
@@ -447,7 +487,8 @@ class SkellyApp {
     await this.ble.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
     this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
     
-    // Query device params to get the updated PIN back from the device
+    // Query device params to get the updated name and PIN back from the device
+    await this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8));
     await this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
   }
 
@@ -1598,6 +1639,12 @@ class SkellyApp {
     // Update PIN input field
     if ($('#pinInput') && device.pin) {
       $('#pinInput').value = device.pin;
+    }
+    
+    // Update device name input field (remove "(Live)" suffix if present)
+    if ($('#deviceNameInput') && device.btName) {
+      const displayName = device.btName.replace(/\s*\(Live\)\s*$/i, '');
+      $('#deviceNameInput').value = displayName;
     }
   }
 
