@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T20:33:18.224019
+ * Generated: 2025-11-13T20:52:00.843970
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3958,6 +3958,11 @@ class SkellyApp {
       }
       return;
     }
+
+    // Immediately update order in state to trigger UI resort
+    const ordersAsString = JSON.stringify(enabledSerials);
+    this.state.updateDevice({ order: ordersAsString });
+    this.state.notify('files');
 
     this.logger.log(`Updating file order: ${enabledSerials.length} files enabled`, LOG_CLASSES.INFO);
     await this.fileManager.updateFileOrder(enabledSerials);

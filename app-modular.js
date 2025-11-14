@@ -1017,6 +1017,11 @@ class SkellyApp {
       return;
     }
 
+    // Immediately update order in state to trigger UI resort
+    const ordersAsString = JSON.stringify(enabledSerials);
+    this.state.updateDevice({ order: ordersAsString });
+    this.state.notify('files');
+
     this.logger.log(`Updating file order: ${enabledSerials.length} files enabled`, LOG_CLASSES.INFO);
     await this.fileManager.updateFileOrder(enabledSerials);
   }
