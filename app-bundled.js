@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T16:15:27.820564
+ * Generated: 2025-11-13T16:26:19.729419
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -4416,20 +4416,22 @@ class SkellyApp {
       // If parsing fails, use empty array
     }
     
-    // Sort files by order array if available, otherwise by serial
+    // Sort files: enabled (in order) first by order position, disabled (not in order) last by serial
     const files = Array.from(this.state.files.items.values())
       .filter((file) => !query || (file.name || '').toLowerCase().includes(query))
       .sort((a, b) => {
-        if (fileOrder.length > 0) {
-          const indexA = fileOrder.indexOf(a.serial);
-          const indexB = fileOrder.indexOf(b.serial);
-          // If both in order array, sort by order
-          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-          // If only one in order array, it comes first
-          if (indexA !== -1) return -1;
-          if (indexB !== -1) return 1;
-        }
-        // Fallback to serial number sorting
+        const indexA = fileOrder.indexOf(a.serial);
+        const indexB = fileOrder.indexOf(b.serial);
+        const inOrderA = indexA !== -1;
+        const inOrderB = indexB !== -1;
+        
+        // Both enabled: sort by order position
+        if (inOrderA && inOrderB) return indexA - indexB;
+        // Only A enabled: A comes first
+        if (inOrderA) return -1;
+        // Only B enabled: B comes first
+        if (inOrderB) return 1;
+        // Both disabled: sort by serial
         return a.serial - b.serial;
       });
 
@@ -4489,8 +4491,12 @@ class SkellyApp {
         ? `<button class="btn sm" data-action="stop" data-serial="${file.serial}">⏹ Stop</button>`
         : `<button class="btn sm" data-action="play" data-serial="${file.serial}">▶ Play</button>`;
       
+      // Check if file is in the order array (enabled)
+      const isEnabled = fileOrder.indexOf(file.serial) !== -1;
+      
       tr.innerHTML = `
         <td>${rowIndex}</td>
+        <td style="text-align:center"><input type="checkbox" ${isEnabled ? 'checked' : ''} disabled /></td>
         <td>${escapeHtml(file.name || '')}</td>
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
