@@ -968,6 +968,68 @@ class SkellyApp {
 
       await this.handleFileEnableToggle();
     });
+
+    // Drag and drop handlers for file reordering
+    let draggedRow = null;
+
+    $('#filesTable tbody')?.addEventListener('dragstart', (e) => {
+      const row = e.target.closest('tr.draggable-row');
+      if (!row) return;
+      
+      draggedRow = row;
+      row.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    $('#filesTable tbody')?.addEventListener('dragend', (e) => {
+      const row = e.target.closest('tr.draggable-row');
+      if (row) {
+        row.style.opacity = '1';
+      }
+      draggedRow = null;
+    });
+
+    $('#filesTable tbody')?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const row = e.target.closest('tr.draggable-row');
+      if (!row || !draggedRow || row === draggedRow) return;
+      
+      e.dataTransfer.dropEffect = 'move';
+      
+      // Visual feedback - add border to indicate drop position
+      const tbody = row.parentElement;
+      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+      const draggedIndex = rows.indexOf(draggedRow);
+      const targetIndex = rows.indexOf(row);
+      
+      if (draggedIndex < targetIndex) {
+        row.style.borderBottom = '2px solid #4CAF50';
+        row.style.borderTop = '';
+      } else {
+        row.style.borderTop = '2px solid #4CAF50';
+        row.style.borderBottom = '';
+      }
+    });
+
+    $('#filesTable tbody')?.addEventListener('dragleave', (e) => {
+      const row = e.target.closest('tr.draggable-row');
+      if (row) {
+        row.style.borderTop = '';
+        row.style.borderBottom = '';
+      }
+    });
+
+    $('#filesTable tbody')?.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const targetRow = e.target.closest('tr.draggable-row');
+      if (!targetRow || !draggedRow || targetRow === draggedRow) return;
+      
+      // Clear visual feedback
+      targetRow.style.borderTop = '';
+      targetRow.style.borderBottom = '';
+      
+      await this.handleFileDrop(draggedRow, targetRow);
+    });
   }
 
   /**
@@ -995,6 +1057,44 @@ class SkellyApp {
    */
   handleEditFile(item) {
     this.editModal.open(item);
+  }
+
+  /**
+   * Handle file drop for reordering
+   * @param {HTMLElement} draggedRow - The row being dragged
+   * @param {HTMLElement} targetRow - The row being dropped onto
+   */
+  async handleFileDrop(draggedRow, targetRow) {
+    if (!this.ble.isConnected()) {
+      this.logger.log('Not connected', LOG_CLASSES.WARNING);
+      return;
+    }
+
+    const tbody = draggedRow.parentElement;
+    const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+    const draggedIndex = rows.indexOf(draggedRow);
+    const targetIndex = rows.indexOf(targetRow);
+    
+    if (draggedIndex === targetIndex) return;
+
+    // Reorder rows in DOM
+    if (draggedIndex < targetIndex) {
+      targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
+    } else {
+      targetRow.parentNode.insertBefore(draggedRow, targetRow);
+    }
+
+    // Collect new order from DOM
+    const enabledSerials = Array.from(tbody.querySelectorAll('tr.draggable-row'))
+      .map(row => parseInt(row.dataset.serial, 10));
+
+    // Update state and device
+    const ordersAsString = JSON.stringify(enabledSerials);
+    this.state.updateDevice({ order: ordersAsString });
+    this.state.notify('files'); // This will re-render the table with new numbers
+
+    this.logger.log(`Reordered files: ${enabledSerials.length} files`, LOG_CLASSES.INFO);
+    await this.fileManager.updateFileOrder(enabledSerials);
   }
 
   /**
@@ -1642,7 +1742,19 @@ class SkellyApp {
       // Check if file is in the order array (enabled)
       const isEnabled = fileOrder.indexOf(file.serial) !== -1;
       
+      // Make row draggable if enabled
+      if (isEnabled) {
+        tr.draggable = true;
+        tr.dataset.serial = file.serial;
+        tr.classList.add('draggable-row');
+      }
+      
+      const dragHandle = isEnabled 
+        ? '<span class="drag-handle" style="cursor:move;user-select:none;font-size:18px;color:#888;">≡</span>'
+        : '';
+      
       tr.innerHTML = `
+        <td style="text-align:center;padding:4px 8px;">${dragHandle}</td>
         <td>${rowIndex}</td>
         <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? 'checked' : ''} /></td>
         <td>${escapeHtml(file.name || '')}</td>
