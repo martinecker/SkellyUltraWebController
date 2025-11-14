@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T21:03:20.091926
+ * Generated: 2025-11-13T21:07:16.561698
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3766,22 +3766,35 @@ class SkellyApp {
    * Initialize file controls
    */
   initializeFileControls() {
-    // File refresh
+    this.initializeFileListControls();
+    this.initializeBitrateControls();
+    this.initializeChunkSizeControls();
+    this.initializeFileTransferControls();
+    this.initializeFileTableHandlers();
+    this.initializeFileDragAndDrop();
+  }
+
+  /**
+   * Initialize file list refresh and filter controls
+   */
+  initializeFileListControls() {
     $('#btnRefreshFiles')?.addEventListener('click', () => {
       this.fileManager.startFetchFiles();
     });
 
-    // File filter
     $('#filesFilter')?.addEventListener('input', () => {
       this.updateFilesTable();
     });
 
-    // File input
     $('#fileInput')?.addEventListener('change', async (e) => {
       await this.handleFileSelection(e.target.files?.[0]);
     });
+  }
 
-    // Bitrate override toggle
+  /**
+   * Initialize bitrate override controls
+   */
+  initializeBitrateControls() {
     const chkBitrateOverride = $('#chkBitrateOverride');
     const convertOpts = $('#convertOpts');
     const mp3Kbps = $('#mp3Kbps');
@@ -3813,8 +3826,12 @@ class SkellyApp {
     mp3Kbps?.addEventListener('change', (e) => {
       localStorage.setItem(STORAGE_KEYS.BITRATE, e.target.value);
     });
+  }
 
-    // Chunk size override controls
+  /**
+   * Initialize chunk size override controls
+   */
+  initializeChunkSizeControls() {
     const chkChunkOverride = $('#chkChunkOverride');
     const chunkOverrideOpts = $('#chunkOverrideOpts');
     const chunkSizeSlider = $('#chunkSizeSlider');
@@ -3860,20 +3877,27 @@ class SkellyApp {
       if (chunkSizeValue) {
         chunkSizeValue.textContent = e.target.value;
       }
-      // Save preference
       localStorage.setItem(STORAGE_KEYS.CHUNK_SIZE, e.target.value);
     });
+  }
 
-    // Send file button
+  /**
+   * Initialize file transfer controls (send/cancel)
+   */
+  initializeFileTransferControls() {
     $('#btnSendFile')?.addEventListener('click', async () => {
       await this.handleFileSend();
     });
 
-    // Cancel transfer
     $('#btnCancelFile')?.addEventListener('click', async () => {
       await this.fileManager.cancelTransfer();
     });
+  }
 
+  /**
+   * Initialize file table button and checkbox handlers
+   */
+  initializeFileTableHandlers() {
     // Files table button handler (Play and Edit)
     $('#filesTable')?.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-action]');
@@ -3910,11 +3934,18 @@ class SkellyApp {
 
       await this.handleFileEnableToggle();
     });
+  }
 
-    // Drag and drop handlers for file reordering
+  /**
+   * Initialize drag and drop handlers for file reordering
+   */
+  initializeFileDragAndDrop() {
     let draggedRow = null;
 
-    $('#filesTable tbody')?.addEventListener('dragstart', (e) => {
+    const tbody = $('#filesTable tbody');
+    if (!tbody) return;
+
+    tbody.addEventListener('dragstart', (e) => {
       const row = e.target.closest('tr.draggable-row');
       if (!row) return;
       
@@ -3923,7 +3954,7 @@ class SkellyApp {
       e.dataTransfer.effectAllowed = 'move';
     });
 
-    $('#filesTable tbody')?.addEventListener('dragend', (e) => {
+    tbody.addEventListener('dragend', (e) => {
       const row = e.target.closest('tr.draggable-row');
       if (row) {
         row.style.opacity = '1';
@@ -3931,7 +3962,7 @@ class SkellyApp {
       draggedRow = null;
     });
 
-    $('#filesTable tbody')?.addEventListener('dragover', (e) => {
+    tbody.addEventListener('dragover', (e) => {
       e.preventDefault();
       const row = e.target.closest('tr.draggable-row');
       if (!row || !draggedRow || row === draggedRow) return;
@@ -3939,7 +3970,6 @@ class SkellyApp {
       e.dataTransfer.dropEffect = 'move';
       
       // Visual feedback - add border to indicate drop position
-      const tbody = row.parentElement;
       const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
       const draggedIndex = rows.indexOf(draggedRow);
       const targetIndex = rows.indexOf(row);
@@ -3953,7 +3983,7 @@ class SkellyApp {
       }
     });
 
-    $('#filesTable tbody')?.addEventListener('dragleave', (e) => {
+    tbody.addEventListener('dragleave', (e) => {
       const row = e.target.closest('tr.draggable-row');
       if (row) {
         row.style.borderTop = '';
@@ -3961,7 +3991,7 @@ class SkellyApp {
       }
     });
 
-    $('#filesTable tbody')?.addEventListener('drop', async (e) => {
+    tbody.addEventListener('drop', async (e) => {
       e.preventDefault();
       const targetRow = e.target.closest('tr.draggable-row');
       if (!targetRow || !draggedRow || targetRow === draggedRow) return;
