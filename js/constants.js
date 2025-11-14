@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   CHUNK_SIZE: 'skelly_chunk_size',
   BITRATE_OVERRIDE: 'skelly_bitrate_override',
   BITRATE: 'skelly_bitrate',
+  SHOW_FILE_DETAILS: 'skelly_show_file_details',
 };
 
 // Protocol Padding Defaults (bytes)
@@ -72,6 +73,7 @@ export const COMMANDS = {
   RESUME: 'C5',            // Resume transfer
   PLAY_PAUSE: 'C6',        // Play/pause file
   DELETE: 'C7',            // Delete file
+  SET_ORDER: 'C9',         // Set file order
   
   // Device Queries
   QUERY_PARAMS: 'E0',      // Query device parameters
@@ -79,7 +81,7 @@ export const COMMANDS = {
   QUERY_VOLUME: 'E5',      // Query volume
   QUERY_BT_NAME: 'E6',     // Query Bluetooth name
   QUERY_FILES: 'D0',       // Query file list
-  QUERY_ORDER: 'D1',       // Query play order
+  QUERY_ORDER: 'D1',       // Query file order
   QUERY_CAPACITY: 'D2',    // Query storage capacity
   
   // Media Controls

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T16:05:54.466507
+ * Generated: 2025-11-13T16:15:27.820564
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -46,6 +46,7 @@ const STORAGE_KEYS = {
   CHUNK_SIZE: 'skelly_chunk_size',
   BITRATE_OVERRIDE: 'skelly_bitrate_override',
   BITRATE: 'skelly_bitrate',
+  SHOW_FILE_DETAILS: 'skelly_show_file_details',
 };
 
 // Protocol Padding Defaults (bytes)
@@ -99,7 +100,7 @@ const COMMANDS = {
   RESUME: 'C5',            // Resume transfer
   PLAY_PAUSE: 'C6',        // Play/pause file
   DELETE: 'C7',            // Delete file
-  CHANGE_ORDER: 'C9',      // Change file order: AA C9 <enabled file count> <file order> 00 <file serial> <name length in bytes> 5C 55 <name>
+  SET_ORDER: 'C9',         // Set file order
   
   // Device Queries
   QUERY_PARAMS: 'E0',      // Query device parameters
@@ -1980,7 +1981,6 @@ class ProtocolParser {
     // Update expected count
     if (total && !this.state.files.expected) {
       this.state.updateFilesMetadata({ expected: total });
-      this.log(`Expected file count set to: ${total}`);
     }
 
     // Add file to list
@@ -3172,10 +3172,12 @@ class SkellyApp {
     const advMenu = $('#advMenu');
     const advRaw = $('#advRaw');
     const advFEDC = $('#advFEDC');
+    const advFileDetails = $('#advFileDetails');
 
     // Load saved state
     advRaw.checked = localStorage.getItem(STORAGE_KEYS.ADV_RAW) === '1';
     advFEDC.checked = localStorage.getItem(STORAGE_KEYS.ADV_FEDC) === '1';
+    advFileDetails.checked = localStorage.getItem(STORAGE_KEYS.SHOW_FILE_DETAILS) === '1';
 
     // Toggle menu
     $('#btnAdvanced')?.addEventListener('click', (e) => {
@@ -3191,10 +3193,11 @@ class SkellyApp {
     });
 
     // Save state on change
-    [advRaw, advFEDC].forEach((el) => {
+    [advRaw, advFEDC, advFileDetails].forEach((el) => {
       el?.addEventListener('change', () => {
         localStorage.setItem(STORAGE_KEYS.ADV_RAW, advRaw.checked ? '1' : '0');
         localStorage.setItem(STORAGE_KEYS.ADV_FEDC, advFEDC.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEYS.SHOW_FILE_DETAILS, advFileDetails.checked ? '1' : '0');
         this.applyAdvancedVisibility();
       });
     });
@@ -3207,8 +3210,15 @@ class SkellyApp {
    */
   applyAdvancedVisibility() {
     const advRaw = $('#advRaw');
+    const advFileDetails = $('#advFileDetails');
     
     $('#advRawBlock')?.classList.toggle('hidden', !advRaw?.checked);
+    
+    // Toggle detail columns visibility
+    const showDetails = advFileDetails?.checked;
+    document.querySelectorAll('.detail-column').forEach(col => {
+      col.style.display = showDetails ? '' : 'none';
+    });
   }
 
   /**
@@ -4486,9 +4496,9 @@ class SkellyApp {
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
         <td><img class="eye-thumb" src="images/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
-        <td>${file.serial}</td>
-        <td>${file.db}</td>
-        <td>${file.cluster}</td>
+        <td class="detail-column">${file.serial}</td>
+        <td class="detail-column">${file.db}</td>
+        <td class="detail-column">${file.cluster}</td>
         <td>
           ${playButtonHtml}
           <button class="btn sm" data-action="edit" data-serial="${file.serial}"
@@ -4517,6 +4527,13 @@ class SkellyApp {
         lastRefreshEl.textContent = '';
       }
     }
+    
+    // Apply detail column visibility based on advanced settings
+    const advFileDetails = $('#advFileDetails');
+    const showDetails = advFileDetails?.checked;
+    document.querySelectorAll('.detail-column').forEach(col => {
+      col.style.display = showDetails ? '' : 'none';
+    });
   }
 
   /**

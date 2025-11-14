@@ -276,10 +276,12 @@ class SkellyApp {
     const advMenu = $('#advMenu');
     const advRaw = $('#advRaw');
     const advFEDC = $('#advFEDC');
+    const advFileDetails = $('#advFileDetails');
 
     // Load saved state
     advRaw.checked = localStorage.getItem(STORAGE_KEYS.ADV_RAW) === '1';
     advFEDC.checked = localStorage.getItem(STORAGE_KEYS.ADV_FEDC) === '1';
+    advFileDetails.checked = localStorage.getItem(STORAGE_KEYS.SHOW_FILE_DETAILS) === '1';
 
     // Toggle menu
     $('#btnAdvanced')?.addEventListener('click', (e) => {
@@ -295,10 +297,11 @@ class SkellyApp {
     });
 
     // Save state on change
-    [advRaw, advFEDC].forEach((el) => {
+    [advRaw, advFEDC, advFileDetails].forEach((el) => {
       el?.addEventListener('change', () => {
         localStorage.setItem(STORAGE_KEYS.ADV_RAW, advRaw.checked ? '1' : '0');
         localStorage.setItem(STORAGE_KEYS.ADV_FEDC, advFEDC.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEYS.SHOW_FILE_DETAILS, advFileDetails.checked ? '1' : '0');
         this.applyAdvancedVisibility();
       });
     });
@@ -311,8 +314,15 @@ class SkellyApp {
    */
   applyAdvancedVisibility() {
     const advRaw = $('#advRaw');
+    const advFileDetails = $('#advFileDetails');
     
     $('#advRawBlock')?.classList.toggle('hidden', !advRaw?.checked);
+    
+    // Toggle detail columns visibility
+    const showDetails = advFileDetails?.checked;
+    document.querySelectorAll('.detail-column').forEach(col => {
+      col.style.display = showDetails ? '' : 'none';
+    });
   }
 
   /**
@@ -1590,9 +1600,9 @@ class SkellyApp {
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
         <td><img class="eye-thumb" src="images/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
-        <td>${file.serial}</td>
-        <td>${file.db}</td>
-        <td>${file.cluster}</td>
+        <td class="detail-column">${file.serial}</td>
+        <td class="detail-column">${file.db}</td>
+        <td class="detail-column">${file.cluster}</td>
         <td>
           ${playButtonHtml}
           <button class="btn sm" data-action="edit" data-serial="${file.serial}"
@@ -1621,6 +1631,13 @@ class SkellyApp {
         lastRefreshEl.textContent = '';
       }
     }
+    
+    // Apply detail column visibility based on advanced settings
+    const advFileDetails = $('#advFileDetails');
+    const showDetails = advFileDetails?.checked;
+    document.querySelectorAll('.detail-column').forEach(col => {
+      col.style.display = showDetails ? '' : 'none';
+    });
   }
 
   /**
