@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T21:35:06.146053
+ * Generated: 2025-11-13T21:44:04.798537
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -107,6 +107,7 @@ const COMMANDS = {
   QUERY_LIVE: 'AAE1',        // Query live status
   QUERY_VOLUME: 'AAE5',      // Query volume
   QUERY_BT_NAME: 'AAE6',     // Query Bluetooth name
+  QUERY_VERSION: 'AAEE',     // Query version
   QUERY_FILES: 'AAD0',       // Query file list
   QUERY_ORDER: 'AAD1',       // Query file order
   QUERY_CAPACITY: 'AAD2',    // Query storage capacity
@@ -3290,7 +3291,15 @@ class SkellyApp {
       }
       
       this.logger.log('Executing all queries...', LOG_CLASSES.INFO);
-      const queries = ['E0', 'E1', 'E5', 'E6', 'EE', 'D2', 'D1'];
+      const queries = [
+        COMMANDS.QUERY_PARAMS,
+        COMMANDS.QUERY_LIVE,
+        COMMANDS.QUERY_VOLUME,
+        COMMANDS.QUERY_BT_NAME,
+        COMMANDS.QUERY_VERSION,
+        COMMANDS.QUERY_CAPACITY,
+        COMMANDS.QUERY_ORDER
+      ];
       
       for (const tag of queries) {
         await this.ble.send(buildCommand(tag, '', 8));

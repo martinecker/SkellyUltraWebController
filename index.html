@@ -622,13 +622,13 @@
       <div>
         <label>Queries</label>
         <div class="actions">
-          <button class="btn cmd" data-q="E0" data-code="E0">Get Device Params</button>
-          <button class="btn cmd" data-q="E1" data-code="E1">Get Live Mode</button>
-          <button class="btn cmd" data-q="E5" data-code="E5">Get Volume</button>
-          <button class="btn cmd" data-q="E6" data-code="E6">Get BT Name</button>
-          <button class="btn cmd" data-q="EE" data-code="EE">Get Version</button>
-          <button class="btn cmd" data-q="D2" data-code="D2">Get Capacity</button>
-          <button class="btn cmd" data-q="D1" data-code="D1">Get File Order</button>
+          <button class="btn cmd" data-q="AAE0" data-code="AAE0">Get Device Params</button>
+          <button class="btn cmd" data-q="AAE1" data-code="AAE1">Get Live Mode</button>
+          <button class="btn cmd" data-q="AAE5" data-code="AAE5">Get Volume</button>
+          <button class="btn cmd" data-q="AAE6" data-code="AAE6">Get BT Name</button>
+          <button class="btn cmd" data-q="AAEE" data-code="AAEE">Get Version</button>
+          <button class="btn cmd" data-q="AAD2" data-code="AAD2">Get Capacity</button>
+          <button class="btn cmd" data-q="AAD1" data-code="AAD1">Get File Order</button>
           <button class="btn" id="btnGetAll" style="font-weight: bold; background: #4CAF50;">Get All</button>
         </div>
 
@@ -640,35 +640,31 @@
         <label>Raw Command (hex after AA+TAG+payload[≤8B]+CRC8 auto)</label>
         <div class="row">
           <select id="tag">
-            <option value="E0">E0 (Query Device Params)</option>
-            <option value="E1">E1 (Query Live Status)</option>
-            <option value="E5">E5 (Query Volume)</option>
-            <option value="E6">E6 (Query Classic BT Name)</option>
-            <option value="EE">EE</option>
-            <option value="D0">D0 (Query File List)</option>
-            <option value="D1">D1 (Query File Order)</option>
-            <option value="D2">D2 (Query Remaining Capacity)</option>
-            <option value="FA">FA (Set Volume)</option>
-            <option value="FC">FC (Play/Pause)</option>
-            <option value="FD">FD (Enable Live Audio)</option>
-            <option value="FE">FE</option>
-            <option value="F2">F2 (Set Light Effect Mode)</option>
-            <option value="F3">F3 (Set Light Brightness)</option>
-            <option value="F4">F4 (Set Light RGB+Color Cycle)</option>
-            <option value="F5">F5</option>
-            <option value="F6">F6 (Set Light Effect Speed)</option>
-            <option value="F9">F9 (Set Eye Icon)</option>
-            <option value="C0">C0 (Start Data Transfer)</option>
-            <option value="C1">C1 (Send Data Chunk)</option>
-            <option value="C2">C2 (End Data Transfer)</option>
-            <option value="C3">C3 (Commit File Transfer)</option>
-            <option value="C4">C4 (Cancel Data Transfer)</option>
-            <option value="C6">C6 (Play/Pause File)</option>
-            <option value="C7">C7 (Delete File)</option>
-            <option value="C8">C8</option>
-            <option value="C9">C9</option>
-            <option value="CA">CA (Set Movement Action)</option>
-            <option value="CB">CB</option>
+            <option value="AAE0">AAE0 (Query Device Params)</option>
+            <option value="AAE1">AAE1 (Query Live Status)</option>
+            <option value="AAE5">AAE5 (Query Volume)</option>
+            <option value="AAE6">AAE6 (Query Classic BT Name)</option>
+            <option value="AAEE">AAEE (Query Version)</option>
+            <option value="AAD0">AAD0 (Query File List)</option>
+            <option value="AAD1">AAD1 (Query File Order)</option>
+            <option value="AAD2">AAD2 (Query Remaining Capacity)</option>
+            <option value="AAFA">AAFA (Set Volume)</option>
+            <option value="AAFC">AAFC (Play/Pause)</option>
+            <option value="AAFD">AAFD (Enable Live Audio)</option>
+            <option value="AAF2">AAF2 (Set Light Effect Mode)</option>
+            <option value="AAF3">AAF3 (Set Light Brightness)</option>
+            <option value="AAF4">AAF4 (Set Light RGB+Color Cycle)</option>
+            <option value="AAF6">AAF6 (Set Light Effect Speed)</option>
+            <option value="AAF9">AAF9 (Set Eye Icon)</option>
+            <option value="AAC0">AAC0 (Start Data Transfer)</option>
+            <option value="AAC1">AAC1 (Send Data Chunk)</option>
+            <option value="AAC2">AAC2 (End Data Transfer)</option>
+            <option value="AAC3">AAC3 (Commit File Transfer)</option>
+            <option value="AAC4">AAC4 (Cancel Data Transfer)</option>
+            <option value="AAC6">AAC6 (Play/Pause File)</option>
+            <option value="AAC7">AAC7 (Delete File)</option>
+            <option value="AAC9">AAC9 (Set File Order)</option>
+            <option value="AACA">AACA (Set Movement Action)</option>
           </select>
           <input id="payload" placeholder="payload hex (optional)" />
         </div>

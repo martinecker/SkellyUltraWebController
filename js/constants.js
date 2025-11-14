@@ -80,6 +80,7 @@ export const COMMANDS = {
   QUERY_LIVE: 'AAE1',        // Query live status
   QUERY_VOLUME: 'AAE5',      // Query volume
   QUERY_BT_NAME: 'AAE6',     // Query Bluetooth name
+  QUERY_VERSION: 'AAEE',     // Query version
   QUERY_FILES: 'AAD0',       // Query file list
   QUERY_ORDER: 'AAD1',       // Query file order
   QUERY_CAPACITY: 'AAD2',    // Query storage capacity

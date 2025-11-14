@@ -348,7 +348,15 @@ class SkellyApp {
       }
       
       this.logger.log('Executing all queries...', LOG_CLASSES.INFO);
-      const queries = ['E0', 'E1', 'E5', 'E6', 'EE', 'D2', 'D1'];
+      const queries = [
+        COMMANDS.QUERY_PARAMS,
+        COMMANDS.QUERY_LIVE,
+        COMMANDS.QUERY_VOLUME,
+        COMMANDS.QUERY_BT_NAME,
+        COMMANDS.QUERY_VERSION,
+        COMMANDS.QUERY_CAPACITY,
+        COMMANDS.QUERY_ORDER
+      ];
       
       for (const tag of queries) {
         await this.ble.send(buildCommand(tag, '', 8));
