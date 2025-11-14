@@ -65,40 +65,40 @@ export const MOVEMENT_BITS = {
 // BLE Command Tags
 export const COMMANDS = {
   // File Transfer
-  START_TRANSFER: 'C0',    // Initialize file transfer
-  CHUNK_DATA: 'C1',        // Send data chunk
-  END_TRANSFER: 'C2',      // End file transfer
-  CONFIRM_TRANSFER: 'C3',  // Confirm file transfer
-  CANCEL: 'C4',            // Cancel transfer
-  RESUME: 'C5',            // Resume transfer
-  PLAY_PAUSE: 'C6',        // Play/pause file
-  DELETE: 'C7',            // Delete file
-  SET_ORDER: 'C9',         // Set file order
+  START_TRANSFER: 'AAC0',    // Initialize file transfer
+  CHUNK_DATA: 'AAC1',        // Send data chunk
+  END_TRANSFER: 'AAC2',      // End file transfer
+  CONFIRM_TRANSFER: 'AAC3',  // Confirm file transfer
+  CANCEL: 'AAC4',            // Cancel transfer
+  RESUME: 'AAC5',            // Resume transfer
+  PLAY_PAUSE: 'AAC6',        // Play/pause file
+  DELETE: 'AAC7',            // Delete file
+  SET_ORDER: 'AAC9',         // Set file order
   
   // Device Queries
-  QUERY_PARAMS: 'E0',      // Query device parameters
-  QUERY_LIVE: 'E1',        // Query live status
-  QUERY_VOLUME: 'E5',      // Query volume
-  QUERY_BT_NAME: 'E6',     // Query Bluetooth name
-  QUERY_FILES: 'D0',       // Query file list
-  QUERY_ORDER: 'D1',       // Query file order
-  QUERY_CAPACITY: 'D2',    // Query storage capacity
+  QUERY_PARAMS: 'AAE0',      // Query device parameters
+  QUERY_LIVE: 'AAE1',        // Query live status
+  QUERY_VOLUME: 'AAE5',      // Query volume
+  QUERY_BT_NAME: 'AAE6',     // Query Bluetooth name
+  QUERY_FILES: 'AAD0',       // Query file list
+  QUERY_ORDER: 'AAD1',       // Query file order
+  QUERY_CAPACITY: 'AAD2',    // Query storage capacity
   
   // Media Controls
-  SET_VOLUME: 'FA',        // Set volume (0-255)
-  MEDIA_PLAY: 'FC',        // Play media (payload: 01)
-  MEDIA_PAUSE: 'FC',       // Pause media (payload: 00)
-  ENABLE_CLASSIC_BT: 'FD', // Enable classic Bluetooth audio, aka live mode (payload: 01)
+  SET_VOLUME: 'AAFA',        // Set volume (0-255)
+  MEDIA_PLAY: 'AAFC',        // Play media (payload: 01)
+  MEDIA_PAUSE: 'AAFC',       // Pause media (payload: 00)
+  ENABLE_CLASSIC_BT: 'AAFD', // Enable classic Bluetooth audio, aka live mode (payload: 01)
   
   // Lighting
-  SET_MODE: 'F2',          // Set effect mode (1=static, 2=strobe, 3=pulsing)
-  SET_BRIGHTNESS: 'F3',    // Set brightness (0-255)
-  SET_RGB: 'F4',           // Set RGB color (with optional loop for color cycling)
-  SET_SPEED: 'F6',         // Set effect speed (for strobe/pulsing)
+  SET_MODE: 'AAF2',          // Set effect mode (1=static, 2=strobe, 3=pulsing)
+  SET_BRIGHTNESS: 'AAF3',    // Set brightness (0-255)
+  SET_RGB: 'AAF4',           // Set RGB color (with optional loop for color cycling)
+  SET_SPEED: 'AAF6',         // Set effect speed (for strobe/pulsing)
   
   // Appearance
-  SET_EYE: 'F9',           // Set eye icon
-  SET_MOVEMENT: 'CA',      // Set movement animation
+  SET_EYE: 'AAF9',           // Set eye icon
+  SET_MOVEMENT: 'AACA',      // Set movement animation
 };
 
 // Response Prefixes

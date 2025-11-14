@@ -105,8 +105,8 @@ export function decodeUtf16le(u8) {
 }
 
 /**
- * Build a BLE command with proper formatting and CRC
- * @param {string} tag - Command tag (2 hex chars)
+ * Build command with CRC
+ * @param {string} tag - Command tag (4 hex chars including AA prefix)
  * @param {string} payloadHex - Payload as hex string
  * @param {number} minBytes - Minimum payload bytes (for padding)
  * @returns {Uint8Array} - Complete command bytes with CRC
@@ -115,7 +115,7 @@ export function buildCommand(tag, payloadHex = '', minBytes = PADDING.DEFAULT) {
   const p = (payloadHex || '').replace(/\s+/g, '').toUpperCase();
   const minLen = Math.max(0, (minBytes | 0) * 2);
   const padded = p.length < minLen ? p + '0'.repeat(minLen - p.length) : p;
-  const base = 'AA' + tag.toUpperCase() + padded;
+  const base = tag.toUpperCase() + padded;
   const crcValue = crc8(hexToBytes(base));
   return hexToBytes(base + crcValue);
 }
