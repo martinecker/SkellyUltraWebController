@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-12T07:20:32.005009
+ * Generated: 2025-11-13T16:05:54.466507
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -99,6 +99,7 @@ const COMMANDS = {
   RESUME: 'C5',            // Resume transfer
   PLAY_PAUSE: 'C6',        // Play/pause file
   DELETE: 'C7',            // Delete file
+  CHANGE_ORDER: 'C9',      // Change file order: AA C9 <enabled file count> <file order> 00 <file serial> <name length in bytes> 5C 55 <name>
   
   // Device Queries
   QUERY_PARAMS: 'E0',      // Query device parameters
@@ -106,7 +107,7 @@ const COMMANDS = {
   QUERY_VOLUME: 'E5',      // Query volume
   QUERY_BT_NAME: 'E6',     // Query Bluetooth name
   QUERY_FILES: 'D0',       // Query file list
-  QUERY_ORDER: 'D1',       // Query play order
+  QUERY_ORDER: 'D1',       // Query file order
   QUERY_CAPACITY: 'D2',    // Query storage capacity
   
   // Media Controls
@@ -447,9 +448,8 @@ class StateManager {
     this.files = {
       expected: null,
       items: new Map(), // serial -> file object
-      activeFetch: false,
+      activeFetch: false, // When true, UI is disabled waiting for complete list
       fetchTimer: null,
-      afterCompleteSent: false,
       lastRefresh: null, // Timestamp of last successful refresh
     };
 
@@ -547,13 +547,12 @@ class StateManager {
   // === File State Methods ===
 
   /**
-   * Reset file list
+   * Reset file list state and clear old items
    */
   resetFiles() {
     this.files.expected = null;
-    this.files.items.clear();
+    this.files.items.clear(); // Clear old items immediately at start of refresh
     this.files.activeFetch = false;
-    this.files.afterCompleteSent = false;
     if (this.files.fetchTimer) {
       clearTimeout(this.files.fetchTimer);
       this.files.fetchTimer = null;
@@ -568,7 +567,10 @@ class StateManager {
    */
   setFile(serial, fileData) {
     this.files.items.set(serial, fileData);
-    this.notify('files');
+    // Never notify during active fetch - wait until order arrives
+    if (!this.files.activeFetch) {
+      this.notify('files');
+    }
   }
 
   /**
@@ -1154,15 +1156,15 @@ class FileManager {
 
   /**
    * Start fetching file list from device
-   * @param {boolean} triggerChain - Whether to trigger subsequent queries
    * @returns {Promise<void>}
    */
-  async startFetchFiles(triggerChain = false) {
+  async startFetchFiles() {
     if (!this.ble.isConnected()) {
       this.log('Not connected — cannot refresh files.', LOG_CLASSES.WARNING);
       return;
     }
 
+    // Clear old list and start fresh
     this.state.resetFiles();
     this.state.updateFilesMetadata({ activeFetch: true });
 
@@ -1177,10 +1179,7 @@ class FileManager {
       }
     }, TIMEOUTS.FILE_LIST);
 
-    this.state.updateFilesMetadata({
-      fetchTimer: timer,
-      afterCompleteSent: !triggerChain,
-    });
+    this.state.updateFilesMetadata({ fetchTimer: timer });
   }
 
   /**
@@ -1192,7 +1191,8 @@ class FileManager {
     }
 
     if (this.state.isFileListComplete()) {
-      this.state.updateFilesMetadata({ activeFetch: false, lastRefresh: new Date() });
+      // Keep activeFetch true - will be cleared when order arrives
+      this.state.updateFilesMetadata({ lastRefresh: new Date() });
       if (this.state.files.fetchTimer) {
         clearTimeout(this.state.files.fetchTimer);
       }
@@ -1202,15 +1202,14 @@ class FileManager {
       this.state.updateDevice({ filesReceived });
 
       this.log('File list complete ✔', LOG_CLASSES.WARNING);
-
-      if (!this.state.files.afterCompleteSent) {
-        this.state.updateFilesMetadata({ afterCompleteSent: true });
-        
-        // Send follow-up queries for capacity and order after file list is complete
-        if (this.ble.isConnected()) {
-          await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
-          await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
-        }
+      
+      // Send follow-up queries - order response will trigger UI update
+      if (this.ble.isConnected()) {
+        await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
+        await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+      } else {
+        this.log('Not connected - cannot send follow-up queries', LOG_CLASSES.WARNING);
+        this.state.updateFilesMetadata({ activeFetch: false });
       }
     }
   }
@@ -1926,6 +1925,12 @@ class ProtocolParser {
     
     this.state.updateDevice({ order: ordersAsString });
     this.log(`File Order: ${ordersAsString}`);
+    
+    // Order arrival completes the refresh - enable UI and trigger update
+    if (this.state.files.activeFetch) {
+      this.state.updateFilesMetadata({ activeFetch: false });
+      this.state.notify('files');
+    }
   }
 
   /**
@@ -1975,6 +1980,7 @@ class ProtocolParser {
     // Update expected count
     if (total && !this.state.files.expected) {
       this.state.updateFilesMetadata({ expected: total });
+      this.log(`Expected file count set to: ${total}`);
     }
 
     // Add file to list
@@ -3706,7 +3712,7 @@ class SkellyApp {
   initializeFileControls() {
     // File refresh
     $('#btnRefreshFiles')?.addEventListener('click', () => {
-      this.fileManager.startFetchFiles(false);
+      this.fileManager.startFetchFiles();
     });
 
     // File filter
@@ -4085,18 +4091,16 @@ class SkellyApp {
       await this.ble.connect(nameFilter);
       console.log('Connected successfully');
       
-      // Query device state in sequence: live mode, params, volume, BT name, capacity, order
+      // Query device state in sequence: live mode, params, volume, BT name
       await this.ble.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
       setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
       setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
       setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8)), 200);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8)), 250);
       
-      // Start file sync after initial queries
+      // Start file list fetch - this will query capacity and order after files are received
       setTimeout(() => {
-        this.fileManager.startFetchFiles(false);
-      }, 300);
+        this.fileManager.startFetchFiles();
+      }, 200);
     } catch (error) {
       console.error('Connection error:', error);
       this.logger.log(`Connection failed: ${error.message}`, LOG_CLASSES.WARNING);
@@ -4361,15 +4365,67 @@ class SkellyApp {
     const tbody = $('#filesTable tbody');
     if (!tbody) return;
 
+    // Disable table during active fetch
+    const table = $('#filesTable');
+    const isRefreshing = this.state.files.activeFetch;
+    if (table) {
+      if (isRefreshing) {
+        table.style.opacity = '0.5';
+        table.style.pointerEvents = 'none';
+      } else {
+        table.style.opacity = '1';
+        table.style.pointerEvents = 'auto';
+      }
+    }
+
     tbody.innerHTML = '';
 
+    // Show refreshing message if no files yet and currently fetching
+    if (isRefreshing && this.state.files.items.size === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 10; // Span all columns
+      td.textContent = 'Refreshing...';
+      td.style.textAlign = 'center';
+      td.style.fontStyle = 'italic';
+      td.style.color = '#888';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+
     const query = ($('#filesFilter')?.value || '').toLowerCase().trim();
+    
+    // Get file order from device state
+    let fileOrder = [];
+    try {
+      if (this.state.device.order) {
+        fileOrder = JSON.parse(this.state.device.order);
+      }
+    } catch (e) {
+      // If parsing fails, use empty array
+    }
+    
+    // Sort files by order array if available, otherwise by serial
     const files = Array.from(this.state.files.items.values())
       .filter((file) => !query || (file.name || '').toLowerCase().includes(query))
-      .sort((a, b) => a.serial - b.serial);
+      .sort((a, b) => {
+        if (fileOrder.length > 0) {
+          const indexA = fileOrder.indexOf(a.serial);
+          const indexB = fileOrder.indexOf(b.serial);
+          // If both in order array, sort by order
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          // If only one in order array, it comes first
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+        }
+        // Fallback to serial number sorting
+        return a.serial - b.serial;
+      });
 
     const canEdit = true; // Edit feature is now always enabled
 
+    let rowIndex = 1;
     for (const file of files) {
       const tr = document.createElement('tr');
       const eyeImgIdx = file.eye;
@@ -4424,14 +4480,15 @@ class SkellyApp {
         : `<button class="btn sm" data-action="play" data-serial="${file.serial}">▶ Play</button>`;
       
       tr.innerHTML = `
-        <td>${file.serial}</td>
-        <td>${file.cluster}</td>
+        <td>${rowIndex}</td>
         <td>${escapeHtml(file.name || '')}</td>
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
         <td><img class="eye-thumb" src="images/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
+        <td>${file.serial}</td>
         <td>${file.db}</td>
+        <td>${file.cluster}</td>
         <td>
           ${playButtonHtml}
           <button class="btn sm" data-action="edit" data-serial="${file.serial}"
@@ -4439,6 +4496,7 @@ class SkellyApp {
         </td>
       `;
       tbody.appendChild(tr);
+      rowIndex++;
     }
 
     const summary = $('#filesSummary');

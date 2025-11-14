@@ -816,7 +816,7 @@ class SkellyApp {
   initializeFileControls() {
     // File refresh
     $('#btnRefreshFiles')?.addEventListener('click', () => {
-      this.fileManager.startFetchFiles(false);
+      this.fileManager.startFetchFiles();
     });
 
     // File filter
@@ -1195,18 +1195,16 @@ class SkellyApp {
       await this.ble.connect(nameFilter);
       console.log('Connected successfully');
       
-      // Query device state in sequence: live mode, params, volume, BT name, capacity, order
+      // Query device state in sequence: live mode, params, volume, BT name
       await this.ble.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
       setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
       setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
       setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8)), 200);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8)), 250);
       
-      // Start file sync after initial queries
+      // Start file list fetch - this will query capacity and order after files are received
       setTimeout(() => {
-        this.fileManager.startFetchFiles(false);
-      }, 300);
+        this.fileManager.startFetchFiles();
+      }, 200);
     } catch (error) {
       console.error('Connection error:', error);
       this.logger.log(`Connection failed: ${error.message}`, LOG_CLASSES.WARNING);
@@ -1471,15 +1469,67 @@ class SkellyApp {
     const tbody = $('#filesTable tbody');
     if (!tbody) return;
 
+    // Disable table during active fetch
+    const table = $('#filesTable');
+    const isRefreshing = this.state.files.activeFetch;
+    if (table) {
+      if (isRefreshing) {
+        table.style.opacity = '0.5';
+        table.style.pointerEvents = 'none';
+      } else {
+        table.style.opacity = '1';
+        table.style.pointerEvents = 'auto';
+      }
+    }
+
     tbody.innerHTML = '';
 
+    // Show refreshing message if no files yet and currently fetching
+    if (isRefreshing && this.state.files.items.size === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 10; // Span all columns
+      td.textContent = 'Refreshing...';
+      td.style.textAlign = 'center';
+      td.style.fontStyle = 'italic';
+      td.style.color = '#888';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+
     const query = ($('#filesFilter')?.value || '').toLowerCase().trim();
+    
+    // Get file order from device state
+    let fileOrder = [];
+    try {
+      if (this.state.device.order) {
+        fileOrder = JSON.parse(this.state.device.order);
+      }
+    } catch (e) {
+      // If parsing fails, use empty array
+    }
+    
+    // Sort files by order array if available, otherwise by serial
     const files = Array.from(this.state.files.items.values())
       .filter((file) => !query || (file.name || '').toLowerCase().includes(query))
-      .sort((a, b) => a.serial - b.serial);
+      .sort((a, b) => {
+        if (fileOrder.length > 0) {
+          const indexA = fileOrder.indexOf(a.serial);
+          const indexB = fileOrder.indexOf(b.serial);
+          // If both in order array, sort by order
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          // If only one in order array, it comes first
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+        }
+        // Fallback to serial number sorting
+        return a.serial - b.serial;
+      });
 
     const canEdit = true; // Edit feature is now always enabled
 
+    let rowIndex = 1;
     for (const file of files) {
       const tr = document.createElement('tr');
       const eyeImgIdx = file.eye;
@@ -1534,14 +1584,15 @@ class SkellyApp {
         : `<button class="btn sm" data-action="play" data-serial="${file.serial}">▶ Play</button>`;
       
       tr.innerHTML = `
-        <td>${file.serial}</td>
-        <td>${file.cluster}</td>
+        <td>${rowIndex}</td>
         <td>${escapeHtml(file.name || '')}</td>
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
         <td><img class="eye-thumb" src="images/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
+        <td>${file.serial}</td>
         <td>${file.db}</td>
+        <td>${file.cluster}</td>
         <td>
           ${playButtonHtml}
           <button class="btn sm" data-action="edit" data-serial="${file.serial}"
@@ -1549,6 +1600,7 @@ class SkellyApp {
         </td>
       `;
       tbody.appendChild(tr);
+      rowIndex++;
     }
 
     const summary = $('#filesSummary');

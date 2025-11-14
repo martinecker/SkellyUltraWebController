@@ -35,9 +35,8 @@ export class StateManager {
     this.files = {
       expected: null,
       items: new Map(), // serial -> file object
-      activeFetch: false,
+      activeFetch: false, // When true, UI is disabled waiting for complete list
       fetchTimer: null,
-      afterCompleteSent: false,
       lastRefresh: null, // Timestamp of last successful refresh
     };
 
@@ -135,13 +134,12 @@ export class StateManager {
   // === File State Methods ===
 
   /**
-   * Reset file list
+   * Reset file list state and clear old items
    */
   resetFiles() {
     this.files.expected = null;
-    this.files.items.clear();
+    this.files.items.clear(); // Clear old items immediately at start of refresh
     this.files.activeFetch = false;
-    this.files.afterCompleteSent = false;
     if (this.files.fetchTimer) {
       clearTimeout(this.files.fetchTimer);
       this.files.fetchTimer = null;
@@ -156,7 +154,10 @@ export class StateManager {
    */
   setFile(serial, fileData) {
     this.files.items.set(serial, fileData);
-    this.notify('files');
+    // Never notify during active fetch - wait until order arrives
+    if (!this.files.activeFetch) {
+      this.notify('files');
+    }
   }
 
   /**

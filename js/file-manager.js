@@ -38,15 +38,15 @@ export class FileManager {
 
   /**
    * Start fetching file list from device
-   * @param {boolean} triggerChain - Whether to trigger subsequent queries
    * @returns {Promise<void>}
    */
-  async startFetchFiles(triggerChain = false) {
+  async startFetchFiles() {
     if (!this.ble.isConnected()) {
       this.log('Not connected — cannot refresh files.', LOG_CLASSES.WARNING);
       return;
     }
 
+    // Clear old list and start fresh
     this.state.resetFiles();
     this.state.updateFilesMetadata({ activeFetch: true });
 
@@ -61,10 +61,7 @@ export class FileManager {
       }
     }, TIMEOUTS.FILE_LIST);
 
-    this.state.updateFilesMetadata({
-      fetchTimer: timer,
-      afterCompleteSent: !triggerChain,
-    });
+    this.state.updateFilesMetadata({ fetchTimer: timer });
   }
 
   /**
@@ -76,7 +73,8 @@ export class FileManager {
     }
 
     if (this.state.isFileListComplete()) {
-      this.state.updateFilesMetadata({ activeFetch: false, lastRefresh: new Date() });
+      // Keep activeFetch true - will be cleared when order arrives
+      this.state.updateFilesMetadata({ lastRefresh: new Date() });
       if (this.state.files.fetchTimer) {
         clearTimeout(this.state.files.fetchTimer);
       }
@@ -86,15 +84,14 @@ export class FileManager {
       this.state.updateDevice({ filesReceived });
 
       this.log('File list complete ✔', LOG_CLASSES.WARNING);
-
-      if (!this.state.files.afterCompleteSent) {
-        this.state.updateFilesMetadata({ afterCompleteSent: true });
-        
-        // Send follow-up queries for capacity and order after file list is complete
-        if (this.ble.isConnected()) {
-          await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
-          await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
-        }
+      
+      // Send follow-up queries - order response will trigger UI update
+      if (this.ble.isConnected()) {
+        await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
+        await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+      } else {
+        this.log('Not connected - cannot send follow-up queries', LOG_CLASSES.WARNING);
+        this.state.updateFilesMetadata({ activeFetch: false });
       }
     }
   }
