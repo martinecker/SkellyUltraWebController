@@ -7,7 +7,7 @@
  */
 
 import { STORAGE_KEYS, LOG_CLASSES, COMMANDS, MOVEMENT_BITS } from './js/constants.js';
-import { buildCommand, clamp, escapeHtml, normalizeDeviceName } from './js/protocol.js';
+import { buildCommand, clamp, escapeHtml, normalizeDeviceName, bytesToHex } from './js/protocol.js';
 import { StateManager } from './js/state-manager.js';
 import { BLEManager } from './js/ble-manager.js';
 import { FileManager, AudioConverter } from './js/file-manager.js';
@@ -378,6 +378,77 @@ class SkellyApp {
       await this.ble.send(buildCommand(tag, payload, 8));
       this.logger.log(`Sent raw command: ${tag} with payload: ${payload || '(empty)'}`);
     });
+
+    // Set PIN button
+    $('#btnSetPin')?.addEventListener('click', async () => {
+      if (!this.ble.isConnected()) {
+        this.logger.log('Not connected', LOG_CLASSES.WARNING);
+        return;
+      }
+
+      const pinInput = $('#pinInput');
+      const pin = pinInput?.value || '';
+
+      // Validate PIN: must be exactly 4 digits
+      if (!/^\d{4}$/.test(pin)) {
+        this.logger.log('PIN must be exactly 4 digits', LOG_CLASSES.WARNING);
+        return;
+      }
+
+      const btName = this.state.device.btName || '';
+      if (!btName) {
+        this.logger.log('BT name not available. Query device first.', LOG_CLASSES.WARNING);
+        return;
+      }
+
+      await this.setPinAndName(pin, btName);
+    });
+
+    // PIN input validation - only allow digits
+    const pinInput = $('#pinInput');
+    if (pinInput) {
+      pinInput.addEventListener('input', (e) => {
+        // Remove non-digit characters
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      });
+    }
+  }
+
+  /**
+   * Set device PIN and Bluetooth name
+   * @param {string} pin - 4-digit PIN
+   * @param {string} btName - Bluetooth name (should end with "(Live)" suffix)
+   */
+  async setPinAndName(pin, btName) {
+    // Ensure BT name ends with "(Live)"
+    if (!btName.endsWith('(Live)')) {
+      btName += '(Live)';
+    }
+
+    // Build the AAFB command payload
+    // Format: <4 bytes PIN in ASCII> <8 bytes wifi password in ASCII> <1 byte name length> <BT name in ASCII with "(Live)">
+    
+    // Convert PIN to ASCII bytes and then to hex
+    const pinBytes = new TextEncoder().encode(pin);
+    const pinHex = bytesToHex(pinBytes);
+    
+    // Hardcoded wifi password "01234567" as ASCII bytes
+    const wifiBytes = new TextEncoder().encode('01234567');
+    const wifiHex = bytesToHex(wifiBytes);
+    
+    const nameLengthHex = btName.length.toString(16).padStart(2, '0').toUpperCase();
+    
+    // BT name as ASCII bytes
+    const nameBytes = new TextEncoder().encode(btName);
+    const nameHex = bytesToHex(nameBytes);
+    
+    const payload = pinHex + wifiHex + nameLengthHex + nameHex;
+    
+    await this.ble.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
+    this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
+    
+    // Query device params to get the updated PIN back from the device
+    await this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
   }
 
   /**
@@ -1522,6 +1593,11 @@ class SkellyApp {
     
     if ($('#statPin')) {
       $('#statPin').textContent = device.pin || '—';
+    }
+    
+    // Update PIN input field
+    if ($('#pinInput') && device.pin) {
+      $('#pinInput').value = device.pin;
     }
   }
 

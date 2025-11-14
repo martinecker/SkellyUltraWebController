@@ -85,8 +85,9 @@ export const COMMANDS = {
   QUERY_ORDER: 'AAD1',       // Query file order
   QUERY_CAPACITY: 'AAD2',    // Query storage capacity
   
-  // Media Controls
+  // Various Controls
   SET_VOLUME: 'AAFA',        // Set volume (0-255)
+  SET_PIN_AND_NAME: 'AAFB',  // Set device PIN and Bluetooth name
   MEDIA_PLAY: 'AAFC',        // Play media (payload: 01)
   MEDIA_PAUSE: 'AAFC',       // Pause media (payload: 00)
   ENABLE_CLASSIC_BT: 'AAFD', // Enable classic Bluetooth audio, aka live mode (payload: 01)
