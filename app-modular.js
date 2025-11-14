@@ -953,6 +953,21 @@ class SkellyApp {
         this.handleEditFile(item);
       }
     });
+
+    // Files table checkbox handler (Enable/Disable)
+    $('#filesTable')?.addEventListener('change', async (e) => {
+      const checkbox = e.target.closest('.file-enabled-checkbox');
+      if (!checkbox) return;
+      
+      if (!this.ble.isConnected()) {
+        this.logger.log('Not connected', LOG_CLASSES.WARNING);
+        // Revert checkbox state
+        checkbox.checked = !checkbox.checked;
+        return;
+      }
+
+      await this.handleFileEnableToggle();
+    });
   }
 
   /**
@@ -980,6 +995,30 @@ class SkellyApp {
    */
   handleEditFile(item) {
     this.editModal.open(item);
+  }
+
+  /**
+   * Handle file enable/disable toggle
+   * Collects all checked files in display order and updates device
+   */
+  async handleFileEnableToggle() {
+    // Collect all checked checkboxes in DOM order (which reflects sort order)
+    const checkboxes = Array.from(document.querySelectorAll('.file-enabled-checkbox'));
+    const enabledSerials = checkboxes
+      .filter(cb => cb.checked)
+      .map(cb => parseInt(cb.dataset.serial, 10));
+
+    if (enabledSerials.length === 0) {
+      this.logger.log('At least one file must be enabled', LOG_CLASSES.WARNING);
+      // Find first checkbox and re-check it
+      if (checkboxes.length > 0) {
+        checkboxes[0].checked = true;
+      }
+      return;
+    }
+
+    this.logger.log(`Updating file order: ${enabledSerials.length} files enabled`, LOG_CLASSES.INFO);
+    await this.fileManager.updateFileOrder(enabledSerials);
   }
 
   /**
@@ -1600,7 +1639,7 @@ class SkellyApp {
       
       tr.innerHTML = `
         <td>${rowIndex}</td>
-        <td style="text-align:center"><input type="checkbox" ${isEnabled ? 'checked' : ''} disabled /></td>
+        <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? 'checked' : ''} /></td>
         <td>${escapeHtml(file.name || '')}</td>
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>

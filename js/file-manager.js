@@ -317,6 +317,59 @@ export class FileManager {
   }
 
   /**
+   * Update file order on device by sending C9 commands for each enabled file
+   * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
+   */
+  async updateFileOrder(enabledSerials) {
+    if (!this.ble.isConnected()) {
+      this.log('Not connected', LOG_CLASSES.WARNING);
+      return;
+    }
+
+    const enabledCount = enabledSerials.length;
+    this.log(`Updating file order with ${enabledCount} enabled files...`, LOG_CLASSES.INFO);
+
+    // Validate all files first before sending any commands
+    for (const serial of enabledSerials) {
+      const file = this.state.getFile(serial);
+      
+      if (!file) {
+        this.log(`Error: File ${serial} not found in state`, LOG_CLASSES.WARNING);
+        return;
+      }
+
+      if (!file.name || !file.name.trim()) {
+        this.log(`Error: File ${serial} has no name, cannot update order`, LOG_CLASSES.WARNING);
+        return;
+      }
+    }
+
+    // All files validated, now send C9 commands
+    for (let i = 0; i < enabledSerials.length; i++) {
+      const serial = enabledSerials[i];
+      const file = this.state.getFile(serial);
+      const fileOrder = i + 1; // 1-indexed position
+      const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
+      
+      // AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
+      const payload = intToHex(enabledCount, 1) + 
+                      intToHex(fileOrder, 1) + 
+                      intToHex(serial, 2) + 
+                      filenamePart;
+      
+      await this.ble.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+      this.log(`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`, LOG_CLASSES.INFO);
+      
+      // Small delay between commands
+      await sleep(50);
+    }
+
+    // Query the new order from device
+    this.log('Querying updated file order...', LOG_CLASSES.INFO);
+    await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+  }
+
+  /**
    * Store file picker data
    * @param {File} file - Selected file
    * @param {Uint8Array} originalBytes - Original file bytes

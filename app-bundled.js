@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T17:53:38.415028
+ * Generated: 2025-11-13T20:33:18.224019
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1431,6 +1431,59 @@ class FileManager {
     const payload = intToHex(serial, 2) + intToHex(cluster, 4);
     await this.ble.send(buildCommand(COMMANDS.DELETE, payload));
     this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
+  }
+
+  /**
+   * Update file order on device by sending C9 commands for each enabled file
+   * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
+   */
+  async updateFileOrder(enabledSerials) {
+    if (!this.ble.isConnected()) {
+      this.log('Not connected', LOG_CLASSES.WARNING);
+      return;
+    }
+
+    const enabledCount = enabledSerials.length;
+    this.log(`Updating file order with ${enabledCount} enabled files...`, LOG_CLASSES.INFO);
+
+    // Validate all files first before sending any commands
+    for (const serial of enabledSerials) {
+      const file = this.state.getFile(serial);
+      
+      if (!file) {
+        this.log(`Error: File ${serial} not found in state`, LOG_CLASSES.WARNING);
+        return;
+      }
+
+      if (!file.name || !file.name.trim()) {
+        this.log(`Error: File ${serial} has no name, cannot update order`, LOG_CLASSES.WARNING);
+        return;
+      }
+    }
+
+    // All files validated, now send C9 commands
+    for (let i = 0; i < enabledSerials.length; i++) {
+      const serial = enabledSerials[i];
+      const file = this.state.getFile(serial);
+      const fileOrder = i + 1; // 1-indexed position
+      const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
+      
+      // AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
+      const payload = intToHex(enabledCount, 1) + 
+                      intToHex(fileOrder, 1) + 
+                      intToHex(serial, 2) + 
+                      filenamePart;
+      
+      await this.ble.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+      this.log(`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`, LOG_CLASSES.INFO);
+      
+      // Small delay between commands
+      await sleep(50);
+    }
+
+    // Query the new order from device
+    this.log('Querying updated file order...', LOG_CLASSES.INFO);
+    await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
   }
 
   /**
@@ -3842,6 +3895,21 @@ class SkellyApp {
         this.handleEditFile(item);
       }
     });
+
+    // Files table checkbox handler (Enable/Disable)
+    $('#filesTable')?.addEventListener('change', async (e) => {
+      const checkbox = e.target.closest('.file-enabled-checkbox');
+      if (!checkbox) return;
+      
+      if (!this.ble.isConnected()) {
+        this.logger.log('Not connected', LOG_CLASSES.WARNING);
+        // Revert checkbox state
+        checkbox.checked = !checkbox.checked;
+        return;
+      }
+
+      await this.handleFileEnableToggle();
+    });
   }
 
   /**
@@ -3869,6 +3937,30 @@ class SkellyApp {
    */
   handleEditFile(item) {
     this.editModal.open(item);
+  }
+
+  /**
+   * Handle file enable/disable toggle
+   * Collects all checked files in display order and updates device
+   */
+  async handleFileEnableToggle() {
+    // Collect all checked checkboxes in DOM order (which reflects sort order)
+    const checkboxes = Array.from(document.querySelectorAll('.file-enabled-checkbox'));
+    const enabledSerials = checkboxes
+      .filter(cb => cb.checked)
+      .map(cb => parseInt(cb.dataset.serial, 10));
+
+    if (enabledSerials.length === 0) {
+      this.logger.log('At least one file must be enabled', LOG_CLASSES.WARNING);
+      // Find first checkbox and re-check it
+      if (checkboxes.length > 0) {
+        checkboxes[0].checked = true;
+      }
+      return;
+    }
+
+    this.logger.log(`Updating file order: ${enabledSerials.length} files enabled`, LOG_CLASSES.INFO);
+    await this.fileManager.updateFileOrder(enabledSerials);
   }
 
   /**
@@ -4489,7 +4581,7 @@ class SkellyApp {
       
       tr.innerHTML = `
         <td>${rowIndex}</td>
-        <td style="text-align:center"><input type="checkbox" ${isEnabled ? 'checked' : ''} disabled /></td>
+        <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? 'checked' : ''} /></td>
         <td>${escapeHtml(file.name || '')}</td>
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
