@@ -22,11 +22,6 @@
     .btn.danger { border-color:#5d1b1b; background:#2a0f10; color:#fecaca; }
     .btn.xs, .btn.sm { padding:6px 8px; font-size:12px; border-radius:10px; }
 
-    /* Show command code only on hover for query buttons */
-    .btn.cmd::after { content: ''; }
-    .btn.cmd:hover::after { content: ' (' attr(data-code) ')'; color: var(--muted); }
-
-
     /* ======= 3-COLUMN LAYOUT ======= */
     .grid{
       display:grid;
@@ -622,13 +617,13 @@
       <div>
         <label>Queries</label>
         <div class="actions">
-          <button class="btn cmd" data-q="AAE0" data-code="AAE0">Get Device Params</button>
-          <button class="btn cmd" data-q="AAE1" data-code="AAE1">Get Live Mode</button>
-          <button class="btn cmd" data-q="AAE5" data-code="AAE5">Get Volume</button>
-          <button class="btn cmd" data-q="AAE6" data-code="AAE6">Get BT Name</button>
-          <button class="btn cmd" data-q="AAEE" data-code="AAEE">Get Version</button>
-          <button class="btn cmd" data-q="AAD2" data-code="AAD2">Get Capacity</button>
-          <button class="btn cmd" data-q="AAD1" data-code="AAD1">Get File Order</button>
+          <button class="btn cmd" data-q="AAE0">Get Device Params</button>
+          <button class="btn cmd" data-q="AAE1">Get Live Mode</button>
+          <button class="btn cmd" data-q="AAE5">Get Volume</button>
+          <button class="btn cmd" data-q="AAE6">Get BT Name</button>
+          <button class="btn cmd" data-q="AAEE">Get Version</button>
+          <button class="btn cmd" data-q="AAD2">Get Capacity</button>
+          <button class="btn cmd" data-q="AAD1">Get File Order</button>
           <button class="btn" id="btnGetAll" style="font-weight: bold; background: #4CAF50;">Get All</button>
         </div>
 
