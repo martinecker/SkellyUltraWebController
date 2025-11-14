@@ -3,8 +3,8 @@
  * Handles the per-file edit modal functionality
  */
 
-import { LOG_CLASSES } from './constants.js';
-import { buildCommand, clamp, intToHex, utf16leHex } from './protocol.js';
+import { LOG_CLASSES, PROTOCOL_MARKERS } from './constants.js';
+import { buildCommand, clamp, intToHex, utf16leHex, buildFilenamePayload } from './protocol.js';
 
 /**
  * Simple UI Helper
@@ -414,15 +414,8 @@ export class EditModalManager {
       
       // Helper to build payload with filename
       const buildPayload = (dataHex) => {
-        let payload = dataHex + clusterHex;
-        if (name) {
-          const nameHex = utf16leHex(name);
-          const nameLen = ((nameHex.length / 2) + 2).toString(16).padStart(2, '0').toUpperCase();
-          payload += nameLen + '5C55' + nameHex;
-        } else {
-          payload += '00';
-        }
-        return payload;
+        const { fullPayload: filenamePart } = buildFilenamePayload(name);
+        return dataHex + clusterHex + filenamePart;
       };
 
       this.log('Applying all settings to device...', LOG_CLASSES.INFO);

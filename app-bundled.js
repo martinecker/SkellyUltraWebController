@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-13T16:26:19.729419
+ * Generated: 2025-11-13T17:53:38.415028
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1264,9 +1264,9 @@ class FileManager {
       const size = fileBytes.length;
       const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
       const maxPackets = Math.ceil(size / chunkSize);
-      const nameHex = utf16leHex(fileName);
+      const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
-      const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + '5C55' + nameHex;
+      const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
       await this.ble.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
 
       // Wait for start acknowledgment
@@ -1356,7 +1356,7 @@ class FileManager {
       }
 
       // === Phase 4: Confirm Transfer (C3) ===
-      const c3Payload = '5C55' + nameHex;
+      const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
       await this.ble.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
 
       const c3Response = await this.ble.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
@@ -1966,9 +1966,9 @@ class ProtocolParser {
     const eyeIcon = parseInt(hex.slice(110, 112), 16);
     const dbPos = parseInt(hex.slice(112, 114), 16);
 
-    // Extract filename after 5C55 marker
+    // Extract filename after marker
     let name = '';
-    const markerPos = hex.indexOf('5C55', 114);
+    const markerPos = hex.indexOf(PROTOCOL_MARKERS.FILENAME, 114);
     if (markerPos >= 0) {
       const nameHex = hex.slice(markerPos + 4, hex.length - 2);
       try {
@@ -2521,15 +2521,8 @@ class EditModalManager {
       
       // Helper to build payload with filename
       const buildPayload = (dataHex) => {
-        let payload = dataHex + clusterHex;
-        if (name) {
-          const nameHex = utf16leHex(name);
-          const nameLen = ((nameHex.length / 2) + 2).toString(16).padStart(2, '0').toUpperCase();
-          payload += nameLen + '5C55' + nameHex;
-        } else {
-          payload += '00';
-        }
-        return payload;
+        const { fullPayload: filenamePart } = buildFilenamePayload(name);
+        return dataHex + clusterHex + filenamePart;
       };
 
       this.log('Applying all settings to device...', LOG_CLASSES.INFO);

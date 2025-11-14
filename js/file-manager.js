@@ -10,6 +10,7 @@ import {
   COMMANDS,
   RESPONSES,
   LOG_CLASSES,
+  PROTOCOL_MARKERS,
 } from './constants.js';
 import {
   buildCommand,
@@ -17,6 +18,7 @@ import {
   utf16leHex,
   chunkToHex,
   sleep,
+  buildFilenamePayload,
 } from './protocol.js';
 
 /**
@@ -145,9 +147,9 @@ export class FileManager {
       const size = fileBytes.length;
       const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
       const maxPackets = Math.ceil(size / chunkSize);
-      const nameHex = utf16leHex(fileName);
+      const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
-      const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + '5C55' + nameHex;
+      const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
       await this.ble.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
 
       // Wait for start acknowledgment
@@ -237,7 +239,7 @@ export class FileManager {
       }
 
       // === Phase 4: Confirm Transfer (C3) ===
-      const c3Payload = '5C55' + nameHex;
+      const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
       await this.ble.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
 
       const c3Response = await this.ble.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);

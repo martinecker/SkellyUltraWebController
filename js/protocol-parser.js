@@ -7,6 +7,7 @@ import {
   RESPONSES,
   MOVEMENT_BITS,
   LOG_CLASSES,
+  PROTOCOL_MARKERS,
 } from './constants.js';
 import {
   getAsciiFromHex,
@@ -291,9 +292,9 @@ export class ProtocolParser {
     const eyeIcon = parseInt(hex.slice(110, 112), 16);
     const dbPos = parseInt(hex.slice(112, 114), 16);
 
-    // Extract filename after 5C55 marker
+    // Extract filename after marker
     let name = '';
-    const markerPos = hex.indexOf('5C55', 114);
+    const markerPos = hex.indexOf(PROTOCOL_MARKERS.FILENAME, 114);
     if (markerPos >= 0) {
       const nameHex = hex.slice(markerPos + 4, hex.length - 2);
       try {
