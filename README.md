@@ -11,6 +11,7 @@ There is a companion project that provides a Home Assistant integration here htt
 ## ✨ Features
 
 ### 🎵 Audio File Management
+
 - **Upload Audio Files**: Send MP3 and other audio files directly to your Skelly via Bluetooth
 - **Automatic Conversion**: Built-in audio conversion to optimize files for the device (8kHz, mono, 32kbps MP3)
 - **File List Management**: View, play, pause, and delete files stored on the device
@@ -18,6 +19,7 @@ There is a companion project that provides a Home Assistant integration here htt
 - **Edit File Metadata**: Modify file properties including lights, animations, and eye icons
 
 ### 💡 Lighting Control
+
 - **Dual Zone Control**: Separate control for head and torso lights
 - **RGB Color Picker**: Choose any color for head and torso lights independently
 - **Brightness Control**: Adjust brightness from 0-255 for each zone
@@ -29,6 +31,7 @@ There is a companion project that provides a Home Assistant integration here htt
 - **Effect Speed**: Fine-tune strobe and pulsing speeds (0-255)
 
 ### 🎭 Appearance & Animation
+
 - **Eye Icons**: Choose from multiple eye designs to display on the device
 - **Movement Control**: Enable/disable movement animations for:
   - Head movements
@@ -37,6 +40,7 @@ There is a companion project that provides a Home Assistant integration here htt
   - All movements (combined control)
 
 ### 🎮 Live Mode Controls
+
 - **Classic Bluetooth Audio**: Enable live mode to stream audio from your phone via Bluetooth
 - **Real-time Adjustments**: Change lights, colors, effects, and animations on-the-fly
 - **Volume Control**: Adjust playback volume (0-255)
@@ -44,23 +48,27 @@ There is a companion project that provides a Home Assistant integration here htt
 - **Device Status**: Monitor connection state and device parameters
 
 ### 📡 Device Management
+
 - **Web Bluetooth Connection**: No drivers or apps required—connect directly from Chrome, Edge, or compatible browsers
 - **Device Information**: View firmware version, Bluetooth name, and device parameters
 - **Query Commands**: Access advanced device queries for troubleshooting
 - **Connection Status**: Visual indicators for connection state and signal strength
 
 ### 🔧 Advanced Features
+
 - **Raw Command Mode**: Send custom protocol commands for advanced users
 - **Detailed Logging**: View all Bluetooth communication (TX/RX) in real-time
 - **Progress Tracking**: Monitor file transfer progress with visual indicators
-- **File Edit Dialog**: Comprehensive file editing interface with preview
+- **File Edit Dialog**: Comprehensive file editing interface
 
 ## 🌐 Browser Compatibility
 
 This controller requires a browser with Web Bluetooth API support:
-- ✅ Chrome/Chromium
+
+- ✅ Chrome/Chromium (desktop and Android mobile)
 - ✅ Microsoft Edge
 - ✅ Opera
+- ✅ Bluefy (iPhone mobile, see https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)
 - ❌ Firefox (Web Bluetooth not supported)
 - ❌ Safari (Web Bluetooth not supported)
 
@@ -80,12 +88,14 @@ This controller requires a browser with Web Bluetooth API support:
 ## 🛠️ Technical Details
 
 ### Architecture
+
 - **Modular JavaScript**: ES6 modules for clean code organization
 - **State Management**: Centralized state management for device status and UI updates
 - **Protocol Parser**: Custom protocol implementation for Skelly communication
 - **Audio Processing**: Client-side MP3 encoding using LameJS library
 
 ### Key Modules
+
 - `ble-manager.js`: Handles all Bluetooth Low Energy communication
 - `file-manager.js`: Manages file transfers and audio conversion
 - `state-manager.js`: Centralized application state
@@ -95,6 +105,7 @@ This controller requires a browser with Web Bluetooth API support:
 ## 🔐 Safety
 
 This tool communicates directly with your device's Bluetooth interface. While tested, there is **no guarantee** against potential device issues. Always:
+
 - Avoid power interruptions during transfers
 - Keep backups of important files
 - Proceed at your own risk
