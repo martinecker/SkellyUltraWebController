@@ -213,3 +213,35 @@ export function escapeHtml(s) {
 export function normalizeDeviceName(s) {
   return (s || '').trim().toLowerCase();
 }
+
+/**
+ * Convert device speed value to UI speed value
+ * Device: 255 or 0 = fastest, 254 = slowest
+ * UI: 0 = slowest, 254 = fastest
+ * @param {number} deviceSpeed - Speed value from device (0-255)
+ * @returns {number} - Speed value for UI (0-254)
+ */
+export function deviceSpeedToUI(deviceSpeed) {
+  const speed = parseInt(deviceSpeed, 10);
+  // Device speed 255 is fastest (same as 0), map to UI 254
+  if (speed === 255) {
+    return 254;
+  }
+  // Invert: device 0 (fast) -> UI 254 (fast)
+  //         device 254 (slow) -> UI 0 (slow)
+  return 254 - speed;
+}
+
+/**
+ * Convert UI speed value to device speed value
+ * UI: 0 = slowest, 254 = fastest
+ * Device: 255 or 0 = fastest, 254 = slowest
+ * @param {number} uiSpeed - Speed value from UI (0-254)
+ * @returns {number} - Speed value for device (0-255)
+ */
+export function uiSpeedToDevice(uiSpeed) {
+  const speed = clamp(uiSpeed, 0, 254);
+  // Invert: UI 254 (fast) -> device 0 (fast)
+  //         UI 0 (slow) -> device 254 (slow)
+  return 254 - speed;
+}

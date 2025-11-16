@@ -4,7 +4,7 @@
  */
 
 import { LOG_CLASSES, PROTOCOL_MARKERS, COMMANDS } from './constants.js';
-import { buildCommand, clamp, intToHex, utf16leHex, buildFilenamePayload } from './protocol.js';
+import { buildCommand, clamp, intToHex, utf16leHex, buildFilenamePayload, deviceSpeedToUI, uiSpeedToDevice } from './protocol.js';
 
 /**
  * Simple UI Helper
@@ -122,7 +122,7 @@ export class EditModalManager {
     // Sync head speed inputs
     if (edHeadEffectSpeedRange && edHeadEffectSpeedNum) {
       edHeadEffectSpeedRange.addEventListener('input', (e) => (edHeadEffectSpeedNum.value = e.target.value));
-      edHeadEffectSpeedNum.addEventListener('input', (e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 255)));
+      edHeadEffectSpeedNum.addEventListener('input', (e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 254)));
     }
 
     // Torso light brightness controls
@@ -150,7 +150,7 @@ export class EditModalManager {
     // Sync torso speed inputs
     if (edTorsoEffectSpeedRange && edTorsoEffectSpeedNum) {
       edTorsoEffectSpeedRange.addEventListener('input', (e) => (edTorsoEffectSpeedNum.value = e.target.value));
-      edTorsoEffectSpeedNum.addEventListener('input', (e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 255)));
+      edTorsoEffectSpeedNum.addEventListener('input', (e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 254)));
     }
   }
 
@@ -470,11 +470,12 @@ export class EditModalManager {
 
       // 5. Set Head Light Effect Speed (F6) - if not Static mode
       if (headMode !== 1) {
-        const headSpeed = clamp($('#edHeadEffectSpeed')?.value || 0, 0, 255);
-        const headSpeedHex = headSpeed.toString(16).padStart(2, '0').toUpperCase();
+        const uiSpeed = clamp($('#edHeadEffectSpeed')?.value || 0, 0, 254);
+        const deviceSpeed = uiSpeedToDevice(uiSpeed);
+        const headSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const headSpeedPayload = buildPayload('01' + headSpeedHex);
         await this.ble.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
-        this.log(`✓ Set Head Effect Speed (F6) speed=${headSpeed}`);
+        this.log(`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
       // 6. Set Torso Light Brightness (F3)
@@ -493,11 +494,12 @@ export class EditModalManager {
 
       // 8. Set Torso Light Effect Speed (F6) - if not Static mode
       if (torsoMode !== 1) {
-        const torsoSpeed = clamp($('#edTorsoEffectSpeed')?.value || 0, 0, 255);
-        const torsoSpeedHex = torsoSpeed.toString(16).padStart(2, '0').toUpperCase();
+        const uiSpeed = clamp($('#edTorsoEffectSpeed')?.value || 0, 0, 254);
+        const deviceSpeed = uiSpeedToDevice(uiSpeed);
+        const torsoSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const torsoSpeedPayload = buildPayload('00' + torsoSpeedHex);
         await this.ble.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
-        this.log(`✓ Set Torso Effect Speed (F6) speed=${torsoSpeed}`);
+        this.log(`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
       // 9. Set Head Light Color (F4)
@@ -654,8 +656,9 @@ export class EditModalManager {
       if ($('#edHeadEffectMode')) $('#edHeadEffectMode').value = headLight.effectMode || 1;
       
       // Head effect speed
-      if ($('#edHeadEffectSpeed')) $('#edHeadEffectSpeed').value = headLight.effectSpeed || 0;
-      if ($('#edHeadEffectSpeedRange')) $('#edHeadEffectSpeedRange').value = headLight.effectSpeed || 0;
+      const headUISpeed = deviceSpeedToUI(headLight.effectSpeed || 0);
+      if ($('#edHeadEffectSpeed')) $('#edHeadEffectSpeed').value = headUISpeed;
+      if ($('#edHeadEffectSpeedRange')) $('#edHeadEffectSpeedRange').value = headUISpeed;
       $('#edHeadEffectSpeedBlock')?.classList.toggle('hidden', headLight.effectMode === 1);
 
       // Head color
@@ -699,8 +702,9 @@ export class EditModalManager {
       if ($('#edTorsoEffectMode')) $('#edTorsoEffectMode').value = torsoLight.effectMode || 1;
       
       // Torso effect speed
-      if ($('#edTorsoEffectSpeed')) $('#edTorsoEffectSpeed').value = torsoLight.effectSpeed || 0;
-      if ($('#edTorsoEffectSpeedRange')) $('#edTorsoEffectSpeedRange').value = torsoLight.effectSpeed || 0;
+      const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed || 0);
+      if ($('#edTorsoEffectSpeed')) $('#edTorsoEffectSpeed').value = torsoUISpeed;
+      if ($('#edTorsoEffectSpeedRange')) $('#edTorsoEffectSpeedRange').value = torsoUISpeed;
       $('#edTorsoEffectSpeedBlock')?.classList.toggle('hidden', torsoLight.effectMode === 1);
 
       // Torso color

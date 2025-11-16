@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-14T07:20:54.842470
+ * Generated: 2025-11-15T16:32:59.357976
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -409,6 +409,38 @@ function escapeHtml(s) {
  */
 function normalizeDeviceName(s) {
   return (s || '').trim().toLowerCase();
+}
+
+/**
+ * Convert device speed value to UI speed value
+ * Device: 255 or 0 = fastest, 254 = slowest
+ * UI: 0 = slowest, 254 = fastest
+ * @param {number} deviceSpeed - Speed value from device (0-255)
+ * @returns {number} - Speed value for UI (0-254)
+ */
+function deviceSpeedToUI(deviceSpeed) {
+  const speed = parseInt(deviceSpeed, 10);
+  // Device speed 255 is fastest (same as 0), map to UI 254
+  if (speed === 255) {
+    return 254;
+  }
+  // Invert: device 0 (fast) -> UI 254 (fast)
+  //         device 254 (slow) -> UI 0 (slow)
+  return 254 - speed;
+}
+
+/**
+ * Convert UI speed value to device speed value
+ * UI: 0 = slowest, 254 = fastest
+ * Device: 255 or 0 = fastest, 254 = slowest
+ * @param {number} uiSpeed - Speed value from UI (0-254)
+ * @returns {number} - Speed value for device (0-255)
+ */
+function uiSpeedToDevice(uiSpeed) {
+  const speed = clamp(uiSpeed, 0, 254);
+  // Invert: UI 254 (fast) -> device 0 (fast)
+  //         UI 0 (slow) -> device 254 (slow)
+  return 254 - speed;
 }
 
   // ============================================================
@@ -2284,7 +2316,7 @@ class EditModalManager {
     // Sync head speed inputs
     if (edHeadEffectSpeedRange && edHeadEffectSpeedNum) {
       edHeadEffectSpeedRange.addEventListener('input', (e) => (edHeadEffectSpeedNum.value = e.target.value));
-      edHeadEffectSpeedNum.addEventListener('input', (e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 255)));
+      edHeadEffectSpeedNum.addEventListener('input', (e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 254)));
     }
 
     // Torso light brightness controls
@@ -2312,7 +2344,7 @@ class EditModalManager {
     // Sync torso speed inputs
     if (edTorsoEffectSpeedRange && edTorsoEffectSpeedNum) {
       edTorsoEffectSpeedRange.addEventListener('input', (e) => (edTorsoEffectSpeedNum.value = e.target.value));
-      edTorsoEffectSpeedNum.addEventListener('input', (e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 255)));
+      edTorsoEffectSpeedNum.addEventListener('input', (e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 254)));
     }
   }
 
@@ -2632,11 +2664,12 @@ class EditModalManager {
 
       // 5. Set Head Light Effect Speed (F6) - if not Static mode
       if (headMode !== 1) {
-        const headSpeed = clamp($('#edHeadEffectSpeed')?.value || 0, 0, 255);
-        const headSpeedHex = headSpeed.toString(16).padStart(2, '0').toUpperCase();
+        const uiSpeed = clamp($('#edHeadEffectSpeed')?.value || 0, 0, 254);
+        const deviceSpeed = uiSpeedToDevice(uiSpeed);
+        const headSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const headSpeedPayload = buildPayload('01' + headSpeedHex);
         await this.ble.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
-        this.log(`✓ Set Head Effect Speed (F6) speed=${headSpeed}`);
+        this.log(`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
       // 6. Set Torso Light Brightness (F3)
@@ -2655,11 +2688,12 @@ class EditModalManager {
 
       // 8. Set Torso Light Effect Speed (F6) - if not Static mode
       if (torsoMode !== 1) {
-        const torsoSpeed = clamp($('#edTorsoEffectSpeed')?.value || 0, 0, 255);
-        const torsoSpeedHex = torsoSpeed.toString(16).padStart(2, '0').toUpperCase();
+        const uiSpeed = clamp($('#edTorsoEffectSpeed')?.value || 0, 0, 254);
+        const deviceSpeed = uiSpeedToDevice(uiSpeed);
+        const torsoSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const torsoSpeedPayload = buildPayload('00' + torsoSpeedHex);
         await this.ble.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
-        this.log(`✓ Set Torso Effect Speed (F6) speed=${torsoSpeed}`);
+        this.log(`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
       // 9. Set Head Light Color (F4)
@@ -2816,8 +2850,9 @@ class EditModalManager {
       if ($('#edHeadEffectMode')) $('#edHeadEffectMode').value = headLight.effectMode || 1;
       
       // Head effect speed
-      if ($('#edHeadEffectSpeed')) $('#edHeadEffectSpeed').value = headLight.effectSpeed || 0;
-      if ($('#edHeadEffectSpeedRange')) $('#edHeadEffectSpeedRange').value = headLight.effectSpeed || 0;
+      const headUISpeed = deviceSpeedToUI(headLight.effectSpeed || 0);
+      if ($('#edHeadEffectSpeed')) $('#edHeadEffectSpeed').value = headUISpeed;
+      if ($('#edHeadEffectSpeedRange')) $('#edHeadEffectSpeedRange').value = headUISpeed;
       $('#edHeadEffectSpeedBlock')?.classList.toggle('hidden', headLight.effectMode === 1);
 
       // Head color
@@ -2861,8 +2896,9 @@ class EditModalManager {
       if ($('#edTorsoEffectMode')) $('#edTorsoEffectMode').value = torsoLight.effectMode || 1;
       
       // Torso effect speed
-      if ($('#edTorsoEffectSpeed')) $('#edTorsoEffectSpeed').value = torsoLight.effectSpeed || 0;
-      if ($('#edTorsoEffectSpeedRange')) $('#edTorsoEffectSpeedRange').value = torsoLight.effectSpeed || 0;
+      const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed || 0);
+      if ($('#edTorsoEffectSpeed')) $('#edTorsoEffectSpeed').value = torsoUISpeed;
+      if ($('#edTorsoEffectSpeedRange')) $('#edTorsoEffectSpeedRange').value = torsoUISpeed;
       $('#edTorsoEffectSpeedBlock')?.classList.toggle('hidden', torsoLight.effectMode === 1);
 
       // Torso color
@@ -3750,11 +3786,12 @@ class SkellyApp {
     const sendHeadSpeed = async (value) => {
       if (!this.ble.isConnected()) return;
       const ch = '01'; // Head light is channel 1
-      const speed = parseInt(value, 10);
-      const speedHex = speed.toString(16).padStart(2, '0').toUpperCase();
+      const uiSpeed = parseInt(value, 10);
+      const deviceSpeed = uiSpeedToDevice(uiSpeed);
+      const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
       await this.ble.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
-      this.logger.log(`Set head light speed to ${speed}`);
+      this.logger.log(`Set head light speed to ${uiSpeed} (device: ${deviceSpeed})`);
     };
 
     if (headEffectSpeedRange && headEffectSpeedNum) {
@@ -3763,7 +3800,7 @@ class SkellyApp {
         sendHeadSpeed(e.target.value);
       });
       headEffectSpeedNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 255);
+        const clamped = clamp(e.target.value, 0, 254);
         headEffectSpeedRange.value = clamped;
         sendHeadSpeed(clamped);
       });
@@ -3776,11 +3813,12 @@ class SkellyApp {
     const sendTorsoSpeed = async (value) => {
       if (!this.ble.isConnected()) return;
       const ch = '00'; // Torso light is channel 0
-      const speed = parseInt(value, 10);
-      const speedHex = speed.toString(16).padStart(2, '0').toUpperCase();
+      const uiSpeed = parseInt(value, 10);
+      const deviceSpeed = uiSpeedToDevice(uiSpeed);
+      const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
       await this.ble.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
-      this.logger.log(`Set torso light speed to ${speed}`);
+      this.logger.log(`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`);
     };
 
     if (torsoEffectSpeedRange && torsoEffectSpeedNum) {
@@ -3789,7 +3827,7 @@ class SkellyApp {
         sendTorsoSpeed(e.target.value);
       });
       torsoEffectSpeedNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 255);
+        const clamped = clamp(e.target.value, 0, 254);
         torsoEffectSpeedRange.value = clamped;
         sendTorsoSpeed(clamped);
       });
@@ -4745,8 +4783,9 @@ class SkellyApp {
         if (headEffectSpeedBlock) {
           headEffectSpeedBlock.classList.toggle('hidden', headLight.effectMode === 1);
         }
-        if ($('#headEffectSpeed')) $('#headEffectSpeed').value = headLight.effectSpeed;
-        if ($('#headEffectSpeedRange')) $('#headEffectSpeedRange').value = headLight.effectSpeed;
+        const headUISpeed = deviceSpeedToUI(headLight.effectSpeed);
+        if ($('#headEffectSpeed')) $('#headEffectSpeed').value = headUISpeed;
+        if ($('#headEffectSpeedRange')) $('#headEffectSpeedRange').value = headUISpeed;
       }
       
       // Torso light (index 0)
@@ -4783,8 +4822,9 @@ class SkellyApp {
         if (torsoEffectSpeedBlock) {
           torsoEffectSpeedBlock.classList.toggle('hidden', torsoLight.effectMode === 1);
         }
-        if ($('#torsoEffectSpeed')) $('#torsoEffectSpeed').value = torsoLight.effectSpeed;
-        if ($('#torsoEffectSpeedRange')) $('#torsoEffectSpeedRange').value = torsoLight.effectSpeed;
+        const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed);
+        if ($('#torsoEffectSpeed')) $('#torsoEffectSpeed').value = torsoUISpeed;
+        if ($('#torsoEffectSpeedRange')) $('#torsoEffectSpeedRange').value = torsoUISpeed;
       }
     }
   }
