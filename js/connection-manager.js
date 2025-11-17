@@ -150,7 +150,7 @@ export class ConnectionManager {
   }
 
   /**
-   * Wait for a response with specific prefix (only supported for direct BLE)
+   * Wait for a response with specific prefix
    * @param {string} prefix - Response prefix to wait for
    * @param {number} timeoutMs - Timeout in milliseconds
    * @returns {Promise<string>} - Response hex string
@@ -160,13 +160,11 @@ export class ConnectionManager {
       return Promise.reject(new Error('No active connection'));
     }
     
-    // Only BLE manager supports this (REST proxy relies on notification handlers)
-    if (this.connectionType === ConnectionType.DIRECT_BLE && this.bleManager.waitForResponse) {
-      return this.bleManager.waitForResponse(prefix, timeoutMs);
+    if (this.activeConnection.waitForResponse) {
+      return this.activeConnection.waitForResponse(prefix, timeoutMs);
     }
     
-    // For REST proxy, we don't have waitForResponse - caller should use notification handlers
-    return Promise.reject(new Error('waitForResponse not supported for REST proxy'));
+    return Promise.reject(new Error('waitForResponse not supported by active connection'));
   }
 
   /**

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-17T10:59:39.014336
+ * Generated: 2025-11-17T12:21:50.749666
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1200,6 +1200,9 @@ class RestProxy {
     this.pollingErrorCount = 0;
     this.maxPollingErrors = 3; // Give up after 3 consecutive errors
     
+    // Response waiters (for waitForResponse)
+    this.waiters = [];
+    
     // Keepalive
     this.keepaliveInterval = null;
     
@@ -1572,6 +1575,9 @@ class RestProxy {
       console.log(`REST proxy: Received notification - hex: ${hex}, handlers: ${this.notificationHandlers.length}`);
       this.log(`RX ${hex}`, LOG_CLASSES.RX);
 
+      // Handle any pending waiters first
+      this.handleWaiters(hex);
+
       // Notify all registered handlers
       for (const handler of this.notificationHandlers) {
         try {
@@ -1583,6 +1589,49 @@ class RestProxy {
       }
     } catch (error) {
       console.error('Error processing notification:', error);
+    }
+  }
+
+  /**
+   * Wait for a response with specific prefix
+   * @param {string} prefix - Response prefix to wait for
+   * @param {number} timeoutMs - Timeout in milliseconds
+   * @returns {Promise<string>} - Response hex string
+   */
+  waitForResponse(prefix, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        // Remove waiter from list
+        const index = this.waiters.indexOf(waiter);
+        if (index >= 0) {
+          this.waiters.splice(index, 1);
+        }
+        reject(new Error(`Timeout waiting for ${prefix}`));
+      }, timeoutMs);
+
+      const waiter = {
+        prefix,
+        resolve,
+        reject,
+        timer,
+      };
+
+      this.waiters.push(waiter);
+    });
+  }
+
+  /**
+   * Handle waiters by checking if any match the received response
+   * @param {string} hex - Received hex string
+   */
+  handleWaiters(hex) {
+    for (let i = this.waiters.length - 1; i >= 0; i--) {
+      const waiter = this.waiters[i];
+      if (hex.startsWith(waiter.prefix)) {
+        clearTimeout(waiter.timer);
+        waiter.resolve(hex);
+        this.waiters.splice(i, 1);
+      }
     }
   }
 
@@ -1826,7 +1875,7 @@ class ConnectionManager {
   }
 
   /**
-   * Wait for a response with specific prefix (only supported for direct BLE)
+   * Wait for a response with specific prefix
    * @param {string} prefix - Response prefix to wait for
    * @param {number} timeoutMs - Timeout in milliseconds
    * @returns {Promise<string>} - Response hex string
@@ -1836,13 +1885,11 @@ class ConnectionManager {
       return Promise.reject(new Error('No active connection'));
     }
     
-    // Only BLE manager supports this (REST proxy relies on notification handlers)
-    if (this.connectionType === ConnectionType.DIRECT_BLE && this.bleManager.waitForResponse) {
-      return this.bleManager.waitForResponse(prefix, timeoutMs);
+    if (this.activeConnection.waitForResponse) {
+      return this.activeConnection.waitForResponse(prefix, timeoutMs);
     }
     
-    // For REST proxy, we don't have waitForResponse - caller should use notification handlers
-    return Promise.reject(new Error('waitForResponse not supported for REST proxy'));
+    return Promise.reject(new Error('waitForResponse not supported by active connection'));
   }
 
   /**
