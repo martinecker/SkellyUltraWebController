@@ -1655,7 +1655,16 @@ class SkellyApp {
       return;
     }
 
-    this.checkFileNameConflict(finalName);
+    // Check for filename conflict
+    const conflict = this.checkFileNameConflict(finalName);
+    if (conflict) {
+      // Show overwrite confirmation modal
+      const confirmed = await this.showOverwriteConfirmation(conflict.name);
+      if (!confirmed) {
+        this.logger.log('Upload cancelled by user', LOG_CLASSES.INFO);
+        return;
+      }
+    }
 
     // Check if chunk size override is enabled
     let chunkSizeOverride = null;
@@ -1673,7 +1682,66 @@ class SkellyApp {
   }
 
   /**
+   * Show overwrite confirmation modal
+   * @param {string} fileName - Name of the existing file
+   * @returns {Promise<boolean>} - True if user confirms, false if cancelled
+   */
+  async showOverwriteConfirmation(fileName) {
+    return new Promise((resolve) => {
+      const modal = $('#overwriteModal');
+      const message = $('#overwriteMessage');
+      const confirmBtn = $('#overwriteConfirm');
+      const cancelBtn = $('#overwriteCancel');
+
+      if (!modal || !message || !confirmBtn || !cancelBtn) {
+        resolve(false);
+        return;
+      }
+
+      // Update message with filename
+      message.textContent = `A file named "${fileName}" already exists on the device.`;
+
+      // Show modal
+      modal.classList.remove('hidden');
+
+      // Handle confirm
+      const handleConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      // Handle cancel
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      // Handle escape key
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          handleCancel();
+        }
+      };
+
+      // Cleanup function
+      const cleanup = () => {
+        modal.classList.add('hidden');
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+        document.removeEventListener('keydown', handleEscape);
+      };
+
+      // Add event listeners
+      confirmBtn.addEventListener('click', handleConfirm);
+      cancelBtn.addEventListener('click', handleCancel);
+      document.addEventListener('keydown', handleEscape);
+    });
+  }
+
+  /**
    * Check for filename conflicts
+   * @param {string} name - Filename to check
+   * @returns {Object|null} - Conflict object if found, null otherwise
    */
   checkFileNameConflict(name) {
     const conflict = this.state.hasFileName(name);
@@ -1681,12 +1749,7 @@ class SkellyApp {
     if (inputEl) {
       inputEl.classList.toggle('warn-border', !!conflict);
     }
-    if (conflict) {
-      this.logger.log(
-        `Warning: A file named "${conflict.name}" already exists on the device.`,
-        LOG_CLASSES.WARNING
-      );
-    }
+    return conflict;
   }
 
   /**

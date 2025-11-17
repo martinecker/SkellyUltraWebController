@@ -363,13 +363,15 @@
     </div>
   </div>
 
-<!-- Experimental Edit warning -->
-<div id="editWarnModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="editWarnTitle">
-  <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;">
-    <h3 id="editWarnTitle">Experimental feature</h3>
-    <p>Per-file Edit actions are experimental and not all features have been tested. Proceed with caution.</p>
+<!-- File overwrite confirmation modal -->
+<div id="overwriteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="overwriteTitle">
+  <div class="modal-panel">
+    <h3 id="overwriteTitle">⚠️ File Already Exists</h3>
+    <p id="overwriteMessage">A file with this name already exists on the device.</p>
+    <p class="muted">Overwriting will replace the existing file. This action cannot be undone.</p>
     <div class="modal-actions">
-      <button id="editWarnOk" class="btn primary">OK</button>
+      <button id="overwriteCancel" class="btn">Cancel</button>
+      <button id="overwriteConfirm" class="btn danger">Overwrite File</button>
     </div>
   </div>
 </div>
