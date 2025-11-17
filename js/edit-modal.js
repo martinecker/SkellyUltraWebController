@@ -16,7 +16,7 @@ const $ = (selector) => document.querySelector(selector);
  */
 export class EditModalManager {
   constructor(bleManager, stateManager, fileManager, audioConverter, logger) {
-    this.ble = bleManager;
+    this.connection = bleManager;
     this.state = stateManager;
     this.fileManager = fileManager;
     this.audioConverter = audioConverter;
@@ -351,7 +351,7 @@ export class EditModalManager {
 
     // Delete button (C7)
     $('#edDelete')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -378,7 +378,7 @@ export class EditModalManager {
       });
 
       // Send delete command
-      await this.ble.send(buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8));
+      await this.connection.send(buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8));
       this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
       
       // Wait for BBC7 response (with timeout)
@@ -410,7 +410,7 @@ export class EditModalManager {
 
     // Apply All button - sends all settings to device
     $('#edApplyAll')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -444,28 +444,28 @@ export class EditModalManager {
         
         const actionHex = actionBits.toString(16).padStart(2, '0').toUpperCase();
         const payload = buildPayload(actionHex + '00');
-        await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, payload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, payload, 8));
         this.log(`✓ Set Movement (CA) action=${actionBits}`);
       }
 
       // 2. Set Eye (F9)
       const eyeHex = this.currentFile.eye.toString(16).padStart(2, '0').toUpperCase();
       const eyePayload = buildPayload(eyeHex + '00');
-      await this.ble.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
       this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
 
       // 3. Set Head Light Brightness (F3)
       const headBrightness = clamp($('#edHeadBrightness')?.value || 200, 0, 255);
       const headBrightnessHex = headBrightness.toString(16).padStart(2, '0').toUpperCase();
       const headBrightnessPayload = buildPayload('01' + headBrightnessHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8));
       this.log(`✓ Set Head Brightness (F3) brightness=${headBrightness}`);
 
       // 4. Set Head Light Effect Mode (F2)
       const headMode = parseInt($('#edHeadEffectMode')?.value || '1', 10);
       const headModeHex = headMode.toString(16).padStart(2, '0').toUpperCase();
       const headModePayload = buildPayload('01' + headModeHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_MODE, headModePayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_MODE, headModePayload, 8));
       this.log(`✓ Set Head Effect Mode (F2) mode=${headMode}`);
 
       // 5. Set Head Light Effect Speed (F6) - if not Static mode
@@ -474,7 +474,7 @@ export class EditModalManager {
         const deviceSpeed = uiSpeedToDevice(uiSpeed);
         const headSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const headSpeedPayload = buildPayload('01' + headSpeedHex);
-        await this.ble.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
         this.log(`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
@@ -482,14 +482,14 @@ export class EditModalManager {
       const torsoBrightness = clamp($('#edTorsoBrightness')?.value || 200, 0, 255);
       const torsoBrightnessHex = torsoBrightness.toString(16).padStart(2, '0').toUpperCase();
       const torsoBrightnessPayload = buildPayload('00' + torsoBrightnessHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8));
       this.log(`✓ Set Torso Brightness (F3) brightness=${torsoBrightness}`);
 
       // 7. Set Torso Light Effect Mode (F2)
       const torsoMode = parseInt($('#edTorsoEffectMode')?.value || '1', 10);
       const torsoModeHex = torsoMode.toString(16).padStart(2, '0').toUpperCase();
       const torsoModePayload = buildPayload('00' + torsoModeHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8));
       this.log(`✓ Set Torso Effect Mode (F2) mode=${torsoMode}`);
 
       // 8. Set Torso Light Effect Speed (F6) - if not Static mode
@@ -498,7 +498,7 @@ export class EditModalManager {
         const deviceSpeed = uiSpeedToDevice(uiSpeed);
         const torsoSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const torsoSpeedPayload = buildPayload('00' + torsoSpeedHex);
-        await this.ble.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
         this.log(`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
@@ -511,7 +511,7 @@ export class EditModalManager {
       const headGHex = headG.toString(16).padStart(2, '0').toUpperCase();
       const headBHex = headB.toString(16).padStart(2, '0').toUpperCase();
       const headPayload = buildPayload('01' + headRHex + headGHex + headBHex + headColorCycle);
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, headPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, headPayload, 8));
       this.log(`✓ Set Head Color (F4) rgb=${headR},${headG},${headB} cycle=${headColorCycle}`);
 
       // 10. Set Torso Light Color (F4)
@@ -523,7 +523,7 @@ export class EditModalManager {
       const torsoGHex = torsoG.toString(16).padStart(2, '0').toUpperCase();
       const torsoBHex = torsoB.toString(16).padStart(2, '0').toUpperCase();
       const torsoPayload = buildPayload('00' + torsoRHex + torsoGHex + torsoBHex + torsoColorCycle);
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, torsoPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, torsoPayload, 8));
       this.log(`✓ Set Torso Color (F4) rgb=${torsoR},${torsoG},${torsoB} cycle=${torsoColorCycle}`);
 
       this.log(`All settings applied successfully for file "${name || '(no name)'}"`, LOG_CLASSES.SUCCESS);
@@ -552,7 +552,7 @@ export class EditModalManager {
    * Handle file upload/replacement
    */
   async handleFileUpload() {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -798,3 +798,4 @@ export class EditModalManager {
     this.modal?.classList.add('hidden');
   }
 }
+

@@ -20,6 +20,8 @@ export const STORAGE_KEYS = {
   BITRATE_OVERRIDE: 'skelly_bitrate_override',
   BITRATE: 'skelly_bitrate',
   SHOW_FILE_DETAILS: 'skelly_show_file_details',
+  CONNECTION_TYPE: 'skelly_connection_type',
+  REST_URL: 'skelly_rest_url',
 };
 
 // Protocol Padding Defaults (bytes)

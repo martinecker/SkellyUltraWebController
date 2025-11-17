@@ -376,11 +376,39 @@
 
 <!-- Connection options modal -->
 <div id="connectModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
-  <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;max-width:480px;">
+  <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;max-width:520px;">
     <h3 id="connectTitle">Connect to Device</h3>
-    <p>Choose how you want to discover devices:</p>
     
-    <div style="margin: 20px 0;">
+    <!-- Connection Type -->
+    <div style="margin: 16px 0;">
+      <p style="margin-bottom: 12px; font-weight: 500;">Connection Type:</p>
+      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
+        <input type="radio" name="connectionType" id="connectionTypeDirect" value="direct" checked style="margin: 0; width: 18px;">
+        <label for="connectionTypeDirect" style="cursor: pointer; white-space: nowrap; margin: 0;">Direct BLE Connection</label>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
+        <input type="radio" name="connectionType" id="connectionTypeRest" value="rest" style="margin: 0; width: 18px;">
+        <label for="connectionTypeRest" style="cursor: pointer; white-space: nowrap; margin: 0;">REST Server Proxy</label>
+      </div>
+      
+      <div id="restUrlContainer" style="margin-left: 26px; margin-top: 8px; display: none;">
+        <label for="restServerUrl" style="font-size: 11px; color: #9ca3af;">REST Server URL:</label>
+        <input id="restServerUrl" type="text" placeholder="http://localhost:8765" value="http://localhost:8765" style="width: 100%; margin-top: 4px;" />
+        <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+          For browsers without Web Bluetooth. <a href="https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv" target="_blank" style="color: #3b82f6;">Setup guide</a>
+        </p>
+        <p style="font-size: 11px; color: #f59e0b; margin-top: 4px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px;">
+          ⚠️ <strong>Important:</strong> If this page is served over HTTPS, you must use an HTTPS REST server URL or open this page via <code style="background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 2px;">file://</code> protocol. Mixed HTTP/HTTPS content is blocked by browsers.
+        </p>
+      </div>
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #273449; margin: 16px 0;">
+    
+    <!-- Device Filter -->
+    <div style="margin: 16px 0;">
+      <p style="margin-bottom: 12px; font-weight: 500;">Device Discovery:</p>
       <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
         <input type="radio" name="connectFilter" id="connectFilterByName" value="filter" checked style="margin: 0; width: 18px;">
         <label for="connectFilterByName" style="cursor: pointer; white-space: nowrap; margin: 0;">Filter by name</label>
@@ -398,6 +426,23 @@
     <div class="modal-actions">
       <button id="connectCancel" class="btn">Cancel</button>
       <button id="connectOk" class="btn primary">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Device Selection Modal (for REST proxy) -->
+<div id="deviceSelectModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="deviceSelectTitle">
+  <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;max-width:520px;">
+    <h3 id="deviceSelectTitle">Select Device</h3>
+    <p id="deviceSelectStatus">Scanning for devices...</p>
+    
+    <div id="deviceList" style="margin: 20px 0; max-height: 300px; overflow-y: auto;">
+      <!-- Device list will be populated here -->
+    </div>
+    
+    <div class="modal-actions">
+      <button id="deviceSelectCancel" class="btn">Cancel</button>
+      <button id="deviceSelectRescan" class="btn">Rescan</button>
     </div>
   </div>
 </div>
@@ -986,7 +1031,7 @@
   </div>
 
   <footer>
-    <span class="muted">Tip: Requires Chrome/Edge (desktop or Android) over HTTPS. Web Bluetooth isn’t supported in Firefox on desktop.</span>
+    <span class="muted">Tip: Direct BLE requires Chrome/Edge (desktop or Android) over HTTPS. For other browsers (Firefox, Safari, iOS), use the <a href="https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv" target="_blank" rel="noopener" style="color: #3b82f6;">REST Server Proxy</a>.</span>
     <span class="muted">Source code: 
       <a href="https://github.com/martinecker/SkellyUltraWebController" target="_blank" rel="noopener">
         github.com/martinecker/SkellyUltraWebController

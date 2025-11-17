@@ -9,7 +9,7 @@
 import { STORAGE_KEYS, LOG_CLASSES, COMMANDS, MOVEMENT_BITS } from './js/constants.js';
 import { buildCommand, clamp, escapeHtml, normalizeDeviceName, bytesToHex, deviceSpeedToUI, uiSpeedToDevice } from './js/protocol.js';
 import { StateManager } from './js/state-manager.js';
-import { BLEManager } from './js/ble-manager.js';
+import { ConnectionManager, ConnectionType } from './js/connection-manager.js';
 import { FileManager, AudioConverter } from './js/file-manager.js';
 import { ProtocolParser } from './js/protocol-parser.js';
 import { EditModalManager } from './js/edit-modal.js';
@@ -81,13 +81,13 @@ class SkellyApp {
         timerInterval: null
       };
 
-      // Initialize BLE manager
-      this.ble = new BLEManager(this.state, this.logger.log.bind(this.logger));
-      console.log('BLE manager created');
+      // Initialize connection manager (wraps both BLE and REST proxy)
+      this.connection = new ConnectionManager(this.state, this.logger.log.bind(this.logger));
+      console.log('Connection manager created');
 
       // Initialize file manager with progress callback
       this.fileManager = new FileManager(
-        this.ble, 
+        this.connection, 
         this.state, 
         this.logger.log.bind(this.logger),
         (current, total) => setProgress(current, total)
@@ -100,7 +100,7 @@ class SkellyApp {
 
       // Initialize edit modal manager (before parser so we can pass callback)
       this.editModal = new EditModalManager(
-        this.ble,
+        this.connection,
         this.state,
         this.fileManager,
         this.audioConverter,
@@ -118,8 +118,8 @@ class SkellyApp {
       );
       console.log('Protocol parser created');
 
-      // Register protocol parser with BLE manager
-      this.ble.onNotification((hex, bytes) => {
+      // Register protocol parser with connection manager
+      this.connection.onNotification((hex, bytes) => {
         this.parser.parse(hex, bytes);
       });
       console.log('Notification handler registered');
@@ -220,27 +220,27 @@ class SkellyApp {
     this.initializeLiveControls();
 
     // Check for Web Bluetooth support
-    if (!('bluetooth' in navigator)) {
+    if (!ConnectionManager.isWebBluetoothAvailable()) {
       console.error('Web Bluetooth not supported');
       this.logger.log(
-        'This browser does not support Web Bluetooth. Use Chrome/Edge on desktop or Android over HTTPS.',
+        'Web Bluetooth not supported. For direct BLE, use Chrome/Edge. For other browsers, use the REST Server Proxy: https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv',
         LOG_CLASSES.WARNING
       );
-      alert('Web Bluetooth not supported in this browser. Use Chrome or Edge.');
+      // Don't show blocking alert - REST proxy is available as alternative
+      console.log('REST Server Proxy can be used as an alternative');
     } else {
       console.log('Web Bluetooth API is available');
-    }
-    
-    // Check for secure context (HTTPS or localhost)
-    if (!window.isSecureContext) {
-      console.error('Not in secure context - Web Bluetooth requires HTTPS or localhost');
-      this.logger.log(
-        'Web Bluetooth requires HTTPS or localhost. Please use HTTPS.',
-        LOG_CLASSES.WARNING
-      );
-      alert('Web Bluetooth requires HTTPS or localhost!');
-    } else {
-      console.log('Running in secure context');
+      
+      // Check for secure context (HTTPS or localhost)
+      if (!window.isSecureContext) {
+        console.error('Not in secure context - Web Bluetooth requires HTTPS or localhost');
+        this.logger.log(
+          'Web Bluetooth requires HTTPS or localhost for direct BLE. Use HTTPS or the REST Server Proxy.',
+          LOG_CLASSES.WARNING
+        );
+      } else {
+        console.log('Running in secure context');
+      }
     }
     
     console.log('UI initialization complete');
@@ -278,6 +278,34 @@ class SkellyApp {
     const connectNameFilter = $('#connectNameFilter');
     const connectFilterByName = $('#connectFilterByName');
     const connectAllDevices = $('#connectAllDevices');
+    const connectionTypeDirect = $('#connectionTypeDirect');
+    const connectionTypeRest = $('#connectionTypeRest');
+    const restUrlContainer = $('#restUrlContainer');
+    const restServerUrl = $('#restServerUrl');
+    
+    // Load saved preferences
+    const savedConnectionType = localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || 'direct';
+    const savedRestUrl = localStorage.getItem(STORAGE_KEYS.REST_URL) || 'http://localhost:8765';
+    
+    if (savedConnectionType === 'rest' && connectionTypeRest) {
+      connectionTypeRest.checked = true;
+    } else if (connectionTypeDirect) {
+      connectionTypeDirect.checked = true;
+    }
+    
+    if (restServerUrl) {
+      restServerUrl.value = savedRestUrl;
+    }
+    
+    // Show/hide REST URL input based on connection type
+    const updateConnectionTypeUI = () => {
+      if (restUrlContainer) {
+        restUrlContainer.style.display = connectionTypeRest?.checked ? 'block' : 'none';
+      }
+    };
+    
+    connectionTypeDirect?.addEventListener('change', updateConnectionTypeUI);
+    connectionTypeRest?.addEventListener('change', updateConnectionTypeUI);
     
     // Enable/disable name filter input based on radio selection
     const updateFilterState = () => {
@@ -290,6 +318,7 @@ class SkellyApp {
     connectAllDevices?.addEventListener('change', updateFilterState);
     
     // Initialize state
+    updateConnectionTypeUI();
     updateFilterState();
     
     // Close modal function
@@ -311,15 +340,132 @@ class SkellyApp {
     $('#connectOk')?.addEventListener('click', async () => {
       connectModal?.classList.add('hidden');
       
+      // Determine connection type
+      const connectionType = connectionTypeRest?.checked ? ConnectionType.REST_PROXY : ConnectionType.DIRECT_BLE;
+      
+      // Get REST URL if needed
+      const restUrl = restServerUrl?.value || 'http://localhost:8765';
+      
       // Determine filter value
       let nameFilter = '';
       if (connectFilterByName?.checked) {
         nameFilter = connectNameFilter?.value || '';
       }
       
-      // Perform connection
-      await this.performConnection(nameFilter);
+      // Save preferences
+      localStorage.setItem(STORAGE_KEYS.CONNECTION_TYPE, connectionType);
+      if (connectionType === ConnectionType.REST_PROXY) {
+        localStorage.setItem(STORAGE_KEYS.REST_URL, restUrl);
+      }
+      
+      // For REST proxy, show device selection modal
+      if (connectionType === ConnectionType.REST_PROXY) {
+        await this.showDeviceSelectionModal(restUrl, nameFilter);
+      } else {
+        // For direct BLE, use existing flow
+        await this.performConnection({ connectionType, restUrl, nameFilter });
+      }
     });
+  }
+
+  /**
+   * Show device selection modal for REST proxy
+   */
+  async showDeviceSelectionModal(restUrl, nameFilter) {
+    const deviceSelectModal = $('#deviceSelectModal');
+    const deviceList = $('#deviceList');
+    const deviceSelectStatus = $('#deviceSelectStatus');
+    const deviceSelectCancel = $('#deviceSelectCancel');
+    const deviceSelectRescan = $('#deviceSelectRescan');
+    
+    if (!deviceSelectModal || !deviceList) return;
+    
+    // Show modal
+    deviceSelectModal.classList.remove('hidden');
+    
+    // Scan function
+    const scanForDevices = async () => {
+      try {
+        deviceList.innerHTML = '';
+        deviceSelectStatus.textContent = 'Scanning for devices...';
+        
+        // Use connection.restProxy to scan
+        const devices = await this.connection.restProxy.scanDevices(restUrl, nameFilter, 10);
+        
+        if (devices.length === 0) {
+          deviceSelectStatus.textContent = 'No devices found';
+          deviceList.innerHTML = '<p style="padding: 20px; text-align: center; color: #6b7280;">No devices discovered. Try rescanning or check if devices are powered on.</p>';
+          return;
+        }
+        
+        deviceSelectStatus.textContent = `Found ${devices.length} device${devices.length > 1 ? 's' : ''}:`;
+        
+        // Create device list
+        devices.forEach(device => {
+          const deviceItem = document.createElement('div');
+          deviceItem.style.cssText = 'padding: 12px; margin: 8px 0; background: #1f2937; border: 1px solid #374151; border-radius: 8px; cursor: pointer; transition: all 0.2s;';
+          deviceItem.innerHTML = `
+            <div style="font-weight: 500;">${escapeHtml(device.name || 'Unknown Device')}</div>
+            <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">${escapeHtml(device.address)}</div>
+            <div style="font-size: 11px; color: #6b7280;">Signal: ${device.rssi} dBm</div>
+          `;
+          
+          deviceItem.addEventListener('mouseenter', () => {
+            deviceItem.style.background = '#374151';
+            deviceItem.style.borderColor = '#3b82f6';
+          });
+          
+          deviceItem.addEventListener('mouseleave', () => {
+            deviceItem.style.background = '#1f2937';
+            deviceItem.style.borderColor = '#374151';
+          });
+          
+          deviceItem.addEventListener('click', async () => {
+            deviceSelectModal.classList.add('hidden');
+            await this.performConnection({ 
+              connectionType: ConnectionType.REST_PROXY, 
+              restUrl, 
+              deviceAddress: device.address 
+            });
+          });
+          
+          deviceList.appendChild(deviceItem);
+        });
+        
+      } catch (error) {
+        console.error('Device scan error:', error);
+        deviceSelectStatus.textContent = 'Scan failed';
+        deviceList.innerHTML = `<p style="padding: 20px; text-align: center; color: #ef4444;">${escapeHtml(error.message)}</p>`;
+      }
+    };
+    
+    // Cancel button
+    const cancelHandler = () => {
+      deviceSelectModal.classList.add('hidden');
+    };
+    
+    // Rescan button
+    const rescanHandler = () => {
+      scanForDevices();
+    };
+    
+    // Add event listeners
+    deviceSelectCancel.removeEventListener('click', cancelHandler);
+    deviceSelectCancel.addEventListener('click', cancelHandler);
+    deviceSelectRescan.removeEventListener('click', rescanHandler);
+    deviceSelectRescan.addEventListener('click', rescanHandler);
+    
+    // Escape key to close
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape' && !deviceSelectModal.classList.contains('hidden')) {
+        deviceSelectModal.classList.add('hidden');
+      }
+    };
+    document.removeEventListener('keydown', escapeHandler);
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Start initial scan
+    await scanForDevices();
   }
 
   /**
@@ -384,18 +530,18 @@ class SkellyApp {
   initializeQueryButtons() {
     document.querySelectorAll('[data-q]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
         const tag = btn.getAttribute('data-q');
-        await this.ble.send(buildCommand(tag, '', 8));
+        await this.connection.send(buildCommand(tag, '', 8));
       });
     });
 
     // Get All button - executes all query commands in sequence
     $('#btnGetAll')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -412,7 +558,7 @@ class SkellyApp {
       ];
       
       for (const tag of queries) {
-        await this.ble.send(buildCommand(tag, '', 8));
+        await this.connection.send(buildCommand(tag, '', 8));
         // Small delay between queries to avoid overwhelming the device
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -422,19 +568,19 @@ class SkellyApp {
 
     // Raw command send button
     $('#btnSendRaw')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
       const tag = $('#tag')?.value || 'E0';
       const payload = $('#payload')?.value || '';
-      await this.ble.send(buildCommand(tag, payload, 8));
+      await this.connection.send(buildCommand(tag, payload, 8));
       this.logger.log(`Sent raw command: ${tag} with payload: ${payload || '(empty)'}`);
     });
 
     // Set Device Name button
     $('#btnSetDeviceName')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -459,7 +605,7 @@ class SkellyApp {
 
     // Set PIN button
     $('#btnSetPin')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -537,12 +683,12 @@ class SkellyApp {
     
     const payload = pinHex + wifiHex + nameLengthHex + nameHex;
     
-    await this.ble.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
+    await this.connection.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
     this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
     
     // Query device params to get the updated name and PIN back from the device
-    await this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8));
-    await this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
   }
 
   /**
@@ -554,11 +700,11 @@ class SkellyApp {
     const volNum = $('#vol');
 
     const sendVolumeCommand = async (value) => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         return;
       }
       const v = Math.max(0, Math.min(255, parseInt(value, 10)));
-      await this.ble.send(buildCommand(COMMANDS.SET_VOLUME, v.toString(16).padStart(2, '0').toUpperCase(), 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_VOLUME, v.toString(16).padStart(2, '0').toUpperCase(), 8));
       this.logger.log(`Set volume to ${v}`);
     };
 
@@ -582,11 +728,11 @@ class SkellyApp {
    * Send media command
    */
   async sendMediaCommand(tag, payload) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.logger.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
-    await this.ble.send(buildCommand(tag, payload, 8));
+    await this.connection.send(buildCommand(tag, payload, 8));
   }
 
   /**
@@ -605,12 +751,12 @@ class SkellyApp {
     const headBriNum = $('#headBrightness');
     
     const sendHeadBrightness = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '01'; // Head light is channel 1
       const brightness = parseInt(value, 10);
       const brightnessHex = brightness.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
       this.logger.log(`Set head light brightness to ${brightness}`);
     };
     
@@ -631,12 +777,12 @@ class SkellyApp {
     const torsoBriNum = $('#torsoBrightness');
     
     const sendTorsoBrightness = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '00'; // Torso light is channel 0
       const brightness = parseInt(value, 10);
       const brightnessHex = brightness.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
       this.logger.log(`Set torso light brightness to ${brightness}`);
     };
     
@@ -659,7 +805,7 @@ class SkellyApp {
     const headBInput = $('#headB');
 
     const sendHeadColor = async (disableCycle = false) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       
       // If user is setting a new color (not from cycle button), disable cycle
       if (disableCycle && this.headColorCycleEnabled) {
@@ -679,7 +825,7 @@ class SkellyApp {
       const gHex = g.toString(16).padStart(2, '0').toUpperCase();
       const bHex = b.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
       this.logger.log(`Set head light color to RGB(${r}, ${g}, ${b}) with cycle ${this.headColorCycleEnabled ? 'ON' : 'OFF'}`);
     };
 
@@ -711,7 +857,7 @@ class SkellyApp {
     const torsoBInput = $('#torsoB');
 
     const sendTorsoColor = async (disableCycle = false) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       
       // If user is setting a new color (not from cycle button), disable cycle
       if (disableCycle && this.torsoColorCycleEnabled) {
@@ -731,7 +877,7 @@ class SkellyApp {
       const gHex = g.toString(16).padStart(2, '0').toUpperCase();
       const bHex = b.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
       this.logger.log(`Set torso light color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? 'ON' : 'OFF'}`);
     };
 
@@ -765,11 +911,11 @@ class SkellyApp {
         const v = parseInt(headEffectMode.value, 10);
         headEffectSpeedBlock.classList.toggle('hidden', v === 1); // hide for Static
         
-        if (!this.ble.isConnected()) return;
+        if (!this.connection.isConnected()) return;
         const ch = '01'; // Head light is channel 1
         const modeHex = v.toString(16).padStart(2, '0').toUpperCase();
         const cluster = '00000000';
-        await this.ble.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 9));
+        await this.connection.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 9));
         this.logger.log(`Set head light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`);
       });
     }
@@ -783,11 +929,11 @@ class SkellyApp {
         const v = parseInt(torsoEffectMode.value, 10);
         torsoEffectSpeedBlock.classList.toggle('hidden', v === 1); // hide for Static
         
-        if (!this.ble.isConnected()) return;
+        if (!this.connection.isConnected()) return;
         const ch = '00'; // Torso light is channel 0
         const modeHex = v.toString(16).padStart(2, '0').toUpperCase();
         const cluster = '00000000';
-        await this.ble.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 8));
         this.logger.log(`Set torso light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`);
       });
     }
@@ -797,13 +943,13 @@ class SkellyApp {
     const headEffectSpeedNum = $('#headEffectSpeed');
 
     const sendHeadSpeed = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '01'; // Head light is channel 1
       const uiSpeed = parseInt(value, 10);
       const deviceSpeed = uiSpeedToDevice(uiSpeed);
       const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
       this.logger.log(`Set head light speed to ${uiSpeed} (device: ${deviceSpeed})`);
     };
 
@@ -824,13 +970,13 @@ class SkellyApp {
     const torsoEffectSpeedNum = $('#torsoEffectSpeed');
 
     const sendTorsoSpeed = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '00'; // Torso light is channel 0
       const uiSpeed = parseInt(value, 10);
       const deviceSpeed = uiSpeedToDevice(uiSpeed);
       const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
       this.logger.log(`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`);
     };
 
@@ -853,14 +999,14 @@ class SkellyApp {
       const partBtns = liveMoveGrid.querySelectorAll('[data-part="head"], [data-part="arm"], [data-part="torso"]');
       
       const sendMovementCommand = async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           return;
         }
         
         // Check if "all" is selected
         if (allBtn?.classList.contains('selected')) {
           // Send CAFF for all movement
-          await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
+          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
           this.logger.log('Applied movement: all');
         } else {
           // Build bitfield from head/arm/torso selections
@@ -876,7 +1022,7 @@ class SkellyApp {
           
           if (bitfield > 0) {
             const bitfieldHex = bitfield.toString(16).padStart(2, '0').toUpperCase();
-            await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
+            await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
             const parts = [];
             if (bitfield & 0x01) parts.push('head');
             if (bitfield & 0x02) parts.push('arm');
@@ -884,7 +1030,7 @@ class SkellyApp {
             this.logger.log(`Applied movement: ${parts.join(', ')}`);
           } else {
             // No movement selected - send CA00 to disable movement
-            await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
+            await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
             this.logger.log('Disabled movement');
           }
         }
@@ -915,7 +1061,7 @@ class SkellyApp {
     const btnHeadColorCycle = $('#btnHeadColorCycle');
     if (btnHeadColorCycle) {
       btnHeadColorCycle.addEventListener('click', async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
@@ -929,7 +1075,7 @@ class SkellyApp {
     const btnTorsoColorCycle = $('#btnTorsoColorCycle');
     if (btnTorsoColorCycle) {
       btnTorsoColorCycle.addEventListener('click', async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
@@ -951,7 +1097,7 @@ class SkellyApp {
         cell.classList.add('selected');
         
         // Send command immediately if connected
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
@@ -962,7 +1108,7 @@ class SkellyApp {
         // Build payload: eye + 00 + cluster + 00 (no name)
         const payload = eyeHex + '00' + clusterHex + '00';
         
-        await this.ble.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
         this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
       });
     }
@@ -989,7 +1135,7 @@ class SkellyApp {
 
     // Send movement command for each part
     hexParts.forEach(async (partHex) => {
-      await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, partHex + '00000000', 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, partHex + '00000000', 8));
     });
 
     this.logger.log(`Applied movement: ${parts.join(', ')}`);
@@ -1136,7 +1282,7 @@ class SkellyApp {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -1158,7 +1304,7 @@ class SkellyApp {
       const checkbox = e.target.closest('.file-enabled-checkbox');
       if (!checkbox) return;
       
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         // Revert checkbox state
         checkbox.checked = !checkbox.checked;
@@ -1248,7 +1394,7 @@ class SkellyApp {
     
     // Send '01' to play, '00' to stop
     const playPauseByte = isPlaying ? '00' : '01';
-    await this.ble.send(buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8));
+    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8));
     
     if (isPlaying) {
       this.logger.log(`Stopping file #${serial}`);
@@ -1270,7 +1416,7 @@ class SkellyApp {
    * @param {HTMLElement} targetRow - The row being dropped onto
    */
   async handleFileDrop(draggedRow, targetRow) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.logger.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -1456,7 +1602,7 @@ class SkellyApp {
    * Handle file send
    */
   async handleFileSend() {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.logger.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -1555,18 +1701,24 @@ class SkellyApp {
   /**
    * Perform actual connection with filter
    */
-  async performConnection(nameFilter) {
+  async performConnection(options) {
     console.log('performConnection called');
     try {
-      console.log('Calling ble.connect with filter:', nameFilter);
-      await this.ble.connect(nameFilter);
+      const connectionOptions = {
+        type: options.connectionType || ConnectionType.DIRECT_BLE,
+        nameFilter: options.nameFilter || options.deviceAddress || '',
+        restUrl: options.restUrl || '',
+      };
+      
+      console.log('Connecting with options:', connectionOptions);
+      await this.connection.connect(connectionOptions);
       console.log('Connected successfully');
       
       // Query device state in sequence: live mode, params, volume, BT name
-      await this.ble.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
+      await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
+      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
+      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
+      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
       
       // Start file list fetch - this will query capacity and order after files are received
       setTimeout(() => {
@@ -1582,7 +1734,7 @@ class SkellyApp {
    * Handle disconnect button
    */
   async handleDisconnect() {
-    await this.ble.disconnect();
+    await this.connection.disconnect();
   }
 
   /**
@@ -1635,7 +1787,19 @@ class SkellyApp {
     // Update status
     const statusSpan = $('#status span');
     if (statusSpan) {
-      statusSpan.textContent = device.connected ? 'Connected' : 'Disconnected';
+      if (device.connected) {
+        // Get connection info directly from connection manager
+        const deviceInfo = this.connection.getDeviceInfo();
+        
+        // Show REST URL if connected via REST proxy
+        if (deviceInfo && deviceInfo.connectionType === ConnectionType.REST_PROXY && deviceInfo.restUrl) {
+          statusSpan.textContent = `Connected (via ${deviceInfo.restUrl})`;
+        } else {
+          statusSpan.textContent = 'Connected';
+        }
+      } else {
+        statusSpan.textContent = 'Disconnected';
+      }
     }
 
     document.body.classList.toggle('disconnected', !device.connected);
@@ -2068,3 +2232,4 @@ if (document.readyState === 'loading') {
   // DOM already loaded
   initializeApp();
 }
+

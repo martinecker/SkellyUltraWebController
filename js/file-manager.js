@@ -26,7 +26,7 @@ import {
  */
 export class FileManager {
   constructor(bleManager, stateManager, logger, progressCallback = null) {
-    this.ble = bleManager;
+    this.connection = bleManager;
     this.state = stateManager;
     this.log = logger;
     this.onProgress = progressCallback;
@@ -43,7 +43,7 @@ export class FileManager {
    * @returns {Promise<void>}
    */
   async startFetchFiles() {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected — cannot refresh files.', LOG_CLASSES.WARNING);
       return;
     }
@@ -53,7 +53,7 @@ export class FileManager {
     this.state.updateFilesMetadata({ activeFetch: true });
 
     // Send query command for files
-    await this.ble.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
 
     // Set timeout for no response
     const timer = setTimeout(() => {
@@ -88,9 +88,9 @@ export class FileManager {
       this.log('File list complete ✔', LOG_CLASSES.WARNING);
       
       // Send follow-up queries - order response will trigger UI update
-      if (this.ble.isConnected()) {
-        await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
-        await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+      if (this.connection.isConnected()) {
+        await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
+        await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
       } else {
         this.log('Not connected - cannot send follow-up queries', LOG_CLASSES.WARNING);
         this.state.updateFilesMetadata({ activeFetch: false });
@@ -111,7 +111,7 @@ export class FileManager {
     }
     
     // Try to get MTU from the BLE manager
-    const mtu = this.ble.getMtuSize();
+    const mtu = this.connection.getMtuSize();
     
     if (mtu !== null && typeof mtu === 'number' && mtu > 0) {
       // Calculate safe chunk size (MTU minus ATT overhead)
@@ -135,7 +135,7 @@ export class FileManager {
    * @returns {Promise<void>}
    */
   async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected — cannot send file.', LOG_CLASSES.WARNING);
       throw new Error('Device not connected');
     }
@@ -150,10 +150,10 @@ export class FileManager {
       const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
       const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-      await this.ble.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
+      await this.connection.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
 
       // Wait for start acknowledgment
-      const c0Response = await this.ble.waitForResponse(RESPONSES.TRANSFER_START, TIMEOUTS.ACK_LONG);
+      const c0Response = await this.connection.waitForResponse(RESPONSES.TRANSFER_START, TIMEOUTS.ACK_LONG);
       if (!c0Response) {
         throw new Error('Timeout waiting for transfer start acknowledgment');
       }
@@ -173,7 +173,7 @@ export class FileManager {
 
       // === Phase 2: Send Data Chunks (C1) ===
       for (let index = startIndex; index < maxPackets; index++) {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           throw new Error('Disconnected during transfer');
         }
 
@@ -194,7 +194,7 @@ export class FileManager {
         // Store chunk for potential resend
         this.state.storeChunk(index, payload);
 
-        await this.ble.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
+        await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
         
         // Update progress
         if (this.onProgress) {
@@ -205,9 +205,9 @@ export class FileManager {
       }
 
       // === Phase 3: End Transfer (C2) ===
-      await this.ble.send(buildCommand(COMMANDS.END_TRANSFER, '', 8));
+      await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, '', 8));
 
-      const c2Response = await this.ble.waitForResponse(
+      const c2Response = await this.connection.waitForResponse(
         RESPONSES.TRANSFER_END,
         TIMEOUTS.FILE_TRANSFER
       );
@@ -232,7 +232,7 @@ export class FileManager {
           const payload = this.state.getChunk(tailIndex);
           if (!payload) break;
 
-          await this.ble.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
+          await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
           tailIndex += 1;
           await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
         }
@@ -240,9 +240,9 @@ export class FileManager {
 
       // === Phase 4: Confirm Transfer (C3) ===
       const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
-      await this.ble.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
+      await this.connection.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
 
-      const c3Response = await this.ble.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
+      const c3Response = await this.connection.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
       if (!c3Response) {
         throw new Error('Timeout waiting for confirm transfer acknowledgment');
       }
@@ -275,9 +275,9 @@ export class FileManager {
 
     this.state.cancelTransfer();
 
-    if (this.ble.isConnected()) {
+    if (this.connection.isConnected()) {
       try {
-        await this.ble.send(buildCommand(COMMANDS.CANCEL, '', 8));
+        await this.connection.send(buildCommand(COMMANDS.CANCEL, '', 8));
       } catch (error) {
         this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
       }
@@ -290,13 +290,13 @@ export class FileManager {
    * @returns {Promise<void>}
    */
   async playFile(serial) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
 
     const payload = intToHex(serial, 2) + '01';
-    await this.ble.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
+    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
   }
 
   /**
@@ -306,13 +306,13 @@ export class FileManager {
    * @returns {Promise<void>}
    */
   async deleteFile(serial, cluster) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
 
     const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-    await this.ble.send(buildCommand(COMMANDS.DELETE, payload));
+    await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
     this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
   }
 
@@ -321,7 +321,7 @@ export class FileManager {
    * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
    */
   async updateFileOrder(enabledSerials) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -357,7 +357,7 @@ export class FileManager {
                       intToHex(serial, 2) + 
                       filenamePart;
       
-      await this.ble.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
       this.log(`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`, LOG_CLASSES.INFO);
       
       // Small delay between commands
@@ -366,7 +366,7 @@ export class FileManager {
 
     // Query the new order from device
     this.log('Querying updated file order...', LOG_CLASSES.INFO);
-    await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
   }
 
   /**
@@ -616,3 +616,4 @@ export class AudioConverter {
     return output;
   }
 }
+

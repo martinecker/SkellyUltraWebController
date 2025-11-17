@@ -49,6 +49,8 @@ def main():
         ('js/protocol.js', 'Protocol Utilities'),
         ('js/state-manager.js', 'State Manager'),
         ('js/ble-manager.js', 'BLE Manager'),
+        ('js/rest-proxy.js', 'REST Proxy Client'),
+        ('js/connection-manager.js', 'Connection Manager'),
         ('js/file-manager.js', 'File Manager'),
         ('js/protocol-parser.js', 'Protocol Parser'),
         ('js/edit-modal.js', 'Edit Modal Manager'),

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-15T16:32:59.357976
+ * Generated: 2025-11-17T10:56:24.851315
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -13,6 +13,8 @@
  *   - js/protocol.js
  *   - js/state-manager.js
  *   - js/ble-manager.js
+ *   - js/rest-proxy.js
+ *   - js/connection-manager.js
  *   - js/file-manager.js
  *   - js/protocol-parser.js
  *   - js/edit-modal.js
@@ -47,6 +49,8 @@ const STORAGE_KEYS = {
   BITRATE_OVERRIDE: 'skelly_bitrate_override',
   BITRATE: 'skelly_bitrate',
   SHOW_FILE_DETAILS: 'skelly_show_file_details',
+  CONNECTION_TYPE: 'skelly_connection_type',
+  REST_URL: 'skelly_rest_url',
 };
 
 // Protocol Padding Defaults (bytes)
@@ -1165,6 +1169,717 @@ class BLEManager {
 }
 
   // ============================================================
+  // REST Proxy Client (js/rest-proxy.js)
+  // ============================================================
+/**
+ * REST Proxy Client
+ * Implements BLE communication via the Skelly Ultra REST server
+ */
+
+/**
+ * REST Server Proxy for BLE Communication
+ */
+class RestProxy {
+  constructor(stateManager, logger) {
+    this.state = stateManager;
+    this.log = logger;
+    
+    // Connection state
+    this.baseUrl = '';
+    this.sessionId = null;
+    this.connected = false;
+    this.mtuSize = null;
+    this.deviceAddress = null;
+    this.deviceName = null;
+    
+    // Notification handling
+    this.notificationHandlers = [];
+    this.pollingActive = false;
+    this.nextSequence = 0;
+    this.pollingAbortController = null;
+    this.pollingErrorCount = 0;
+    this.maxPollingErrors = 3; // Give up after 3 consecutive errors
+    
+    // Keepalive
+    this.keepaliveInterval = null;
+    
+    // Bind methods
+    this.pollNotifications = this.pollNotifications.bind(this);
+  }
+
+  /**
+   * Check if device is connected
+   * @returns {boolean}
+   */
+  isConnected() {
+    return this.connected && this.sessionId !== null;
+  }
+
+  /**
+   * Get the MTU size
+   * @returns {number|null} MTU size in bytes, or null if not available
+   */
+  getMtuSize() {
+    return this.mtuSize;
+  }
+
+  /**
+   * Scan for BLE devices via REST proxy
+   * @param {string} baseUrl - REST server base URL
+   * @param {string} nameFilter - Optional device name filter
+   * @param {number} timeout - Scan timeout in seconds
+   * @returns {Promise<Array>} - Array of discovered devices
+   */
+  async scanDevices(baseUrl, nameFilter = '', timeout = 10) {
+    try {
+      this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+      
+      const params = new URLSearchParams();
+      if (nameFilter.trim()) {
+        params.append('name_filter', nameFilter.trim());
+      }
+      params.append('timeout', timeout.toString());
+      
+      const scanUrl = `${this.baseUrl}/ble/scan_devices?${params.toString()}`;
+      console.log('Scanning for devices:', scanUrl);
+      this.log(`Scanning for devices via REST proxy...`, LOG_CLASSES.WARNING);
+      
+      let response;
+      try {
+        response = await fetch(scanUrl);
+        console.log('Fetch completed, status:', response.status);
+      } catch (fetchError) {
+        console.error('Fetch failed:', fetchError);
+        // Check for common network issues
+        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
+          throw new Error(`Cannot connect to ${this.baseUrl}. Most likely CORS issue - the REST server needs CORS headers. See CORS_FIX.md for solution. Other checks: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
+        }
+        throw new Error(`Network error: ${fetchError.message}`);
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Scan error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Scan response:', data);
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Scan failed');
+      }
+      
+      return data.devices || [];
+    } catch (error) {
+      console.error('Scan error:', error);
+      this.log(`REST proxy scan error: ${error.message}`, LOG_CLASSES.WARNING);
+      throw error;
+    }
+  }
+
+  /**
+   * Connect to a BLE device via REST proxy
+   * @param {string} baseUrl - REST server base URL (e.g., "http://localhost:8765")
+   * @param {string} deviceAddress - Device MAC address or name filter
+   * @returns {Promise<void>}
+   */
+  async connect(baseUrl, deviceAddress = '') {
+    try {
+      this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+      
+      // Prepare connect request
+      const requestBody = {};
+      if (deviceAddress.trim()) {
+        // If it looks like a MAC address, use address field, otherwise use name_filter
+        if (deviceAddress.match(/^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/i)) {
+          requestBody.address = deviceAddress.trim();
+        } else {
+          requestBody.name_filter = deviceAddress.trim();
+        }
+      }
+      
+      this.log(`Connecting via REST proxy: ${this.baseUrl}`, LOG_CLASSES.WARNING);
+      console.log('REST proxy connect request body:', requestBody);
+      
+      // Send connect request
+      const connectUrl = `${this.baseUrl}/ble/connect`;
+      console.log('Fetching:', connectUrl);
+      
+      let response;
+      try {
+        response = await fetch(connectUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+        console.log('Response status:', response.status, response.statusText);
+      } catch (fetchError) {
+        console.error('Fetch failed:', fetchError);
+        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
+          throw new Error(`Cannot connect to ${this.baseUrl}. Most likely CORS issue - the REST server needs CORS headers. See CORS_FIX.md for solution. Other checks: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
+        }
+        throw new Error(`Network error: ${fetchError.message}`);
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Connect response data:', data);
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Connection failed');
+      }
+
+      // Store session info
+      this.sessionId = data.session_id;
+      this.deviceAddress = data.address;
+      this.deviceName = data.name || 'Unknown';
+      this.mtuSize = data.mtu || null;
+      this.connected = true;
+      this.nextSequence = 0;
+
+      // Update state
+      this.state.updateDevice({
+        name: this.deviceName,
+        connected: true,
+      });
+
+      this.log(`Connected via REST proxy: session=${this.sessionId}, address=${this.deviceAddress}, mtu=${this.mtuSize}`, LOG_CLASSES.WARNING);
+
+      // Start notification polling
+      this.startPolling();
+      
+      // Start keepalive
+      this.startKeepalive();
+
+      return true;
+    } catch (error) {
+      this.log(`REST proxy connect error: ${error.message}`, LOG_CLASSES.WARNING);
+      this.cleanup();
+      throw error;
+    }
+  }
+
+  /**
+   * Disconnect from device
+   * @returns {Promise<void>}
+   */
+  async disconnect() {
+    try {
+      // Stop polling and keepalive first
+      this.stopPolling();
+      this.stopKeepalive();
+      
+      if (this.sessionId) {
+        // Send disconnect request
+        const response = await fetch(`${this.baseUrl}/ble/disconnect`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: this.sessionId,
+          }),
+        });
+
+        if (response.ok) {
+          this.log('Disconnected from REST proxy', LOG_CLASSES.WARNING);
+        }
+      }
+    } catch (error) {
+      this.log(`REST proxy disconnect error: ${error.message}`, LOG_CLASSES.WARNING);
+    } finally {
+      this.cleanup();
+    }
+  }
+
+  /**
+   * Send command bytes to device
+   * @param {Uint8Array} commandBytes - Command bytes to send
+   * @returns {Promise<void>}
+   */
+  async send(commandBytes) {
+    if (!this.isConnected()) {
+      this.log('Not connected to REST proxy', LOG_CLASSES.WARNING);
+      throw new Error('Device not connected');
+    }
+
+    const hex = bytesToHex(commandBytes);
+    this.log(`TX ${hex}`, LOG_CLASSES.TX);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/ble/send_command`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: this.sessionId,
+          command: hex,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Send command failed');
+      }
+    } catch (error) {
+      this.log(`REST proxy send error: ${error.message}`, LOG_CLASSES.WARNING);
+      throw error;
+    }
+  }
+
+  /**
+   * Register a notification handler
+   * @param {Function} handler - Handler function (hex, bytes) => void
+   * @returns {Function} - Unsubscribe function
+   */
+  onNotification(handler) {
+    this.notificationHandlers.push(handler);
+    
+    // Return unsubscribe function
+    return () => {
+      const index = this.notificationHandlers.indexOf(handler);
+      if (index >= 0) {
+        this.notificationHandlers.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * Start long-polling for notifications
+   */
+  startPolling() {
+    if (this.pollingActive) return;
+    
+    this.pollingActive = true;
+    this.pollingErrorCount = 0; // Reset error count
+    this.pollNotifications();
+  }
+
+  /**
+   * Stop notification polling
+   */
+  stopPolling() {
+    this.pollingActive = false;
+    
+    if (this.pollingAbortController) {
+      this.pollingAbortController.abort();
+      this.pollingAbortController = null;
+    }
+  }
+
+  /**
+   * Long-poll for notifications
+   */
+  async pollNotifications() {
+    console.log('REST proxy: Starting notification polling');
+    while (this.pollingActive && this.isConnected()) {
+      try {
+        // Create abort controller for this request
+        this.pollingAbortController = new AbortController();
+        
+        const url = `${this.baseUrl}/ble/notifications?session_id=${encodeURIComponent(this.sessionId)}&since=${this.nextSequence}&timeout=30`;
+        console.log(`REST proxy: Polling notifications, sequence=${this.nextSequence}`);
+        
+        const response = await fetch(url, {
+          signal: this.pollingAbortController.signal,
+        });
+
+        if (!response.ok) {
+          // Check if session expired
+          if (response.status === 400) {
+            const data = await response.json();
+            if (data.error && data.error.includes('session')) {
+              this.log('REST proxy session expired', LOG_CLASSES.WARNING);
+              this.handleDisconnect();
+              return;
+            }
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`REST proxy: Poll response - notifications: ${data.notifications?.length || 0}, next_sequence: ${data.next_sequence}, has_more: ${data.has_more}`);
+        
+        // Reset error count on successful poll
+        this.pollingErrorCount = 0;
+        
+        // Update next sequence
+        if (data.next_sequence !== undefined) {
+          this.nextSequence = data.next_sequence;
+        }
+
+        // Process notifications
+        if (data.notifications && data.notifications.length > 0) {
+          console.log(`REST proxy: Processing ${data.notifications.length} notification(s)`);
+          for (const notification of data.notifications) {
+            this.handleNotification(notification);
+          }
+        }
+
+        // If has_more is true, poll again immediately
+        if (data.has_more) {
+          continue;
+        }
+
+        // Small delay before next poll
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        // Ignore abort errors (normal when stopping polling)
+        if (error.name === 'AbortError') {
+          break;
+        }
+        
+        this.pollingErrorCount++;
+        this.log(`REST proxy polling error: ${error.message} (${this.pollingErrorCount}/${this.maxPollingErrors})`, LOG_CLASSES.WARNING);
+        
+        // Give up after too many consecutive errors
+        if (this.pollingErrorCount >= this.maxPollingErrors) {
+          this.log('REST proxy: Too many polling errors, treating as disconnected', LOG_CLASSES.WARNING);
+          this.handleDisconnect();
+          return;
+        }
+        
+        // Back off on errors
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+  }
+
+  /**
+   * Handle incoming notification
+   * @param {Object} notification - Notification object from REST server
+   */
+  handleNotification(notification) {
+    try {
+      const hex = notification.data.replace(/\s+/g, ''); // Remove spaces
+      const bytes = hexToBytes(hex);
+      
+      console.log(`REST proxy: Received notification - hex: ${hex}, handlers: ${this.notificationHandlers.length}`);
+      this.log(`RX ${hex}`, LOG_CLASSES.RX);
+
+      // Notify all registered handlers
+      for (const handler of this.notificationHandlers) {
+        try {
+          console.log('REST proxy: Calling notification handler');
+          handler(hex, bytes);
+        } catch (error) {
+          console.error('Error in notification handler:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing notification:', error);
+    }
+  }
+
+  /**
+   * Start keepalive pings
+   */
+  startKeepalive() {
+    this.stopKeepalive(); // Clear any existing interval
+    
+    // Query status endpoint every 30 seconds
+    this.keepaliveInterval = setInterval(async () => {
+      if (!this.isConnected()) {
+        this.stopKeepalive();
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${this.baseUrl}/ble/sessions`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Verify our session still exists
+          const sessionExists = data.sessions?.some(s => s.session_id === this.sessionId);
+          
+          if (!sessionExists) {
+            this.log('REST proxy session lost', LOG_CLASSES.WARNING);
+            this.handleDisconnect();
+          }
+        }
+      } catch (error) {
+        this.log(`Keepalive error: ${error.message}`, LOG_CLASSES.WARNING);
+      }
+    }, 30000); // 30 seconds
+  }
+
+  /**
+   * Stop keepalive pings
+   */
+  stopKeepalive() {
+    if (this.keepaliveInterval) {
+      clearInterval(this.keepaliveInterval);
+      this.keepaliveInterval = null;
+    }
+  }
+
+  /**
+   * Handle disconnect event
+   */
+  handleDisconnect() {
+    this.log('REST proxy disconnected', LOG_CLASSES.WARNING);
+    this.cleanup();
+  }
+
+  /**
+   * Cleanup connection state
+   */
+  cleanup() {
+    this.stopPolling();
+    this.stopKeepalive();
+    
+    this.sessionId = null;
+    this.connected = false;
+    this.deviceAddress = null;
+    this.deviceName = null;
+    this.mtuSize = null;
+    this.nextSequence = 0;
+    
+    // Update state
+    this.state.setConnected(false);
+    this.state.updateFilesMetadata({ activeFetch: false });
+    if (this.state.files.fetchTimer) {
+      clearTimeout(this.state.files.fetchTimer);
+    }
+  }
+
+  /**
+   * Get device info
+   * @returns {Object|null} - Device info or null if not connected
+   */
+  getDeviceInfo() {
+    if (!this.isConnected()) return null;
+    
+    return {
+      name: this.deviceName || 'Unknown',
+      id: this.deviceAddress || 'unknown',
+      connected: this.connected,
+      restUrl: this.baseUrl,
+    };
+  }
+}
+
+  // ============================================================
+  // Connection Manager (js/connection-manager.js)
+  // ============================================================
+/**
+ * Connection Manager
+ * Abstraction layer that wraps both direct BLE and REST proxy connections
+ */
+
+/**
+ * Connection types
+ */
+const ConnectionType = {
+  DIRECT_BLE: 'direct',
+  REST_PROXY: 'rest',
+};
+
+/**
+ * Connection Manager - Unified interface for BLE and REST connections
+ */
+class ConnectionManager {
+  constructor(stateManager, logger) {
+    this.state = stateManager;
+    this.log = logger;
+    
+    // Create both connection implementations
+    this.bleManager = new BLEManager(stateManager, logger);
+    this.restProxy = new RestProxy(stateManager, logger);
+    
+    // Active connection
+    this.activeConnection = null;
+    this.connectionType = null;
+    
+    // Store notification handlers to register with active connection
+    this.notificationHandlers = [];
+  }
+
+  /**
+   * Check if device is connected
+   * @returns {boolean}
+   */
+  isConnected() {
+    if (!this.activeConnection) return false;
+    return this.activeConnection.isConnected();
+  }
+
+  /**
+   * Get the MTU size
+   * @returns {number|null} MTU size in bytes, or null if not available
+   */
+  getMtuSize() {
+    if (!this.activeConnection) return null;
+    return this.activeConnection.getMtuSize();
+  }
+
+  /**
+   * Connect to a device
+   * @param {Object} options - Connection options
+   * @param {string} options.type - Connection type ('direct' or 'rest')
+   * @param {string} options.nameFilter - Optional device name filter
+   * @param {string} options.restUrl - REST server URL (required if type is 'rest')
+   * @returns {Promise<void>}
+   */
+  async connect(options) {
+    const { type, nameFilter = '', restUrl = '' } = options;
+    
+    // Disconnect any existing connection
+    if (this.activeConnection) {
+      await this.disconnect();
+    }
+
+    if (type === ConnectionType.REST_PROXY) {
+      // Connect via REST proxy
+      if (!restUrl) {
+        throw new Error('REST server URL is required');
+      }
+      
+      this.activeConnection = this.restProxy;
+      this.connectionType = ConnectionType.REST_PROXY;
+      
+      await this.restProxy.connect(restUrl, nameFilter);
+      
+    } else if (type === ConnectionType.DIRECT_BLE) {
+      // Connect via direct BLE
+      this.activeConnection = this.bleManager;
+      this.connectionType = ConnectionType.DIRECT_BLE;
+      
+      await this.bleManager.connect(nameFilter);
+      
+    } else {
+      throw new Error(`Unknown connection type: ${type}`);
+    }
+
+    // Register all stored notification handlers with the active connection
+    console.log(`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`);
+    for (const handler of this.notificationHandlers) {
+      this.activeConnection.onNotification(handler);
+    }
+
+    return true;
+  }
+
+  /**
+   * Disconnect from device
+   * @returns {Promise<void>}
+   */
+  async disconnect() {
+    if (this.activeConnection) {
+      await this.activeConnection.disconnect();
+      this.activeConnection = null;
+      this.connectionType = null;
+    }
+  }
+
+  /**
+   * Send command bytes to device
+   * @param {Uint8Array} commandBytes - Command bytes to send
+   * @returns {Promise<void>}
+   */
+  async send(commandBytes) {
+    if (!this.activeConnection) {
+      throw new Error('No active connection');
+    }
+    
+    return this.activeConnection.send(commandBytes);
+  }
+
+  /**
+   * Register a notification handler
+   * @param {Function} handler - Handler function (hex, bytes) => void
+   * @returns {Function} - Unsubscribe function
+   */
+  onNotification(handler) {
+    // Store handler for registration with active connection
+    this.notificationHandlers.push(handler);
+    console.log(`ConnectionManager: Registered handler, total handlers: ${this.notificationHandlers.length}`);
+    
+    // If already connected, register with active connection immediately
+    if (this.activeConnection) {
+      console.log('ConnectionManager: Registering handler with active connection');
+      this.activeConnection.onNotification(handler);
+    }
+    
+    // Return unsubscribe function
+    return () => {
+      const index = this.notificationHandlers.indexOf(handler);
+      if (index >= 0) {
+        this.notificationHandlers.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * Wait for a response with specific prefix (only supported for direct BLE)
+   * @param {string} prefix - Response prefix to wait for
+   * @param {number} timeoutMs - Timeout in milliseconds
+   * @returns {Promise<string>} - Response hex string
+   */
+  waitForResponse(prefix, timeoutMs) {
+    if (!this.activeConnection) {
+      return Promise.reject(new Error('No active connection'));
+    }
+    
+    // Only BLE manager supports this (REST proxy relies on notification handlers)
+    if (this.connectionType === ConnectionType.DIRECT_BLE && this.bleManager.waitForResponse) {
+      return this.bleManager.waitForResponse(prefix, timeoutMs);
+    }
+    
+    // For REST proxy, we don't have waitForResponse - caller should use notification handlers
+    return Promise.reject(new Error('waitForResponse not supported for REST proxy'));
+  }
+
+  /**
+   * Get device info
+   * @returns {Object|null} - Device info or null if not connected
+   */
+  getDeviceInfo() {
+    if (!this.activeConnection) return null;
+    
+    const info = this.activeConnection.getDeviceInfo();
+    
+    // Add connection type to info
+    if (info) {
+      info.connectionType = this.connectionType;
+    }
+    
+    return info;
+  }
+
+  /**
+   * Get current connection type
+   * @returns {string|null} - Connection type or null if not connected
+   */
+  getConnectionType() {
+    return this.connectionType;
+  }
+
+  /**
+   * Check if Web Bluetooth is available
+   * @returns {boolean}
+   */
+  static isWebBluetoothAvailable() {
+    return 'bluetooth' in navigator;
+  }
+}
+
+  // ============================================================
   // File Manager (js/file-manager.js)
   // ============================================================
 /**
@@ -1177,7 +1892,7 @@ class BLEManager {
  */
 class FileManager {
   constructor(bleManager, stateManager, logger, progressCallback = null) {
-    this.ble = bleManager;
+    this.connection = bleManager;
     this.state = stateManager;
     this.log = logger;
     this.onProgress = progressCallback;
@@ -1194,7 +1909,7 @@ class FileManager {
    * @returns {Promise<void>}
    */
   async startFetchFiles() {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected — cannot refresh files.', LOG_CLASSES.WARNING);
       return;
     }
@@ -1204,7 +1919,7 @@ class FileManager {
     this.state.updateFilesMetadata({ activeFetch: true });
 
     // Send query command for files
-    await this.ble.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
 
     // Set timeout for no response
     const timer = setTimeout(() => {
@@ -1239,9 +1954,9 @@ class FileManager {
       this.log('File list complete ✔', LOG_CLASSES.WARNING);
       
       // Send follow-up queries - order response will trigger UI update
-      if (this.ble.isConnected()) {
-        await this.ble.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
-        await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+      if (this.connection.isConnected()) {
+        await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
+        await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
       } else {
         this.log('Not connected - cannot send follow-up queries', LOG_CLASSES.WARNING);
         this.state.updateFilesMetadata({ activeFetch: false });
@@ -1262,7 +1977,7 @@ class FileManager {
     }
     
     // Try to get MTU from the BLE manager
-    const mtu = this.ble.getMtuSize();
+    const mtu = this.connection.getMtuSize();
     
     if (mtu !== null && typeof mtu === 'number' && mtu > 0) {
       // Calculate safe chunk size (MTU minus ATT overhead)
@@ -1286,7 +2001,7 @@ class FileManager {
    * @returns {Promise<void>}
    */
   async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected — cannot send file.', LOG_CLASSES.WARNING);
       throw new Error('Device not connected');
     }
@@ -1301,10 +2016,10 @@ class FileManager {
       const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
       const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-      await this.ble.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
+      await this.connection.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
 
       // Wait for start acknowledgment
-      const c0Response = await this.ble.waitForResponse(RESPONSES.TRANSFER_START, TIMEOUTS.ACK_LONG);
+      const c0Response = await this.connection.waitForResponse(RESPONSES.TRANSFER_START, TIMEOUTS.ACK_LONG);
       if (!c0Response) {
         throw new Error('Timeout waiting for transfer start acknowledgment');
       }
@@ -1324,7 +2039,7 @@ class FileManager {
 
       // === Phase 2: Send Data Chunks (C1) ===
       for (let index = startIndex; index < maxPackets; index++) {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           throw new Error('Disconnected during transfer');
         }
 
@@ -1345,7 +2060,7 @@ class FileManager {
         // Store chunk for potential resend
         this.state.storeChunk(index, payload);
 
-        await this.ble.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
+        await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
         
         // Update progress
         if (this.onProgress) {
@@ -1356,9 +2071,9 @@ class FileManager {
       }
 
       // === Phase 3: End Transfer (C2) ===
-      await this.ble.send(buildCommand(COMMANDS.END_TRANSFER, '', 8));
+      await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, '', 8));
 
-      const c2Response = await this.ble.waitForResponse(
+      const c2Response = await this.connection.waitForResponse(
         RESPONSES.TRANSFER_END,
         TIMEOUTS.FILE_TRANSFER
       );
@@ -1383,7 +2098,7 @@ class FileManager {
           const payload = this.state.getChunk(tailIndex);
           if (!payload) break;
 
-          await this.ble.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
+          await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
           tailIndex += 1;
           await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
         }
@@ -1391,9 +2106,9 @@ class FileManager {
 
       // === Phase 4: Confirm Transfer (C3) ===
       const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
-      await this.ble.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
+      await this.connection.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
 
-      const c3Response = await this.ble.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
+      const c3Response = await this.connection.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
       if (!c3Response) {
         throw new Error('Timeout waiting for confirm transfer acknowledgment');
       }
@@ -1426,9 +2141,9 @@ class FileManager {
 
     this.state.cancelTransfer();
 
-    if (this.ble.isConnected()) {
+    if (this.connection.isConnected()) {
       try {
-        await this.ble.send(buildCommand(COMMANDS.CANCEL, '', 8));
+        await this.connection.send(buildCommand(COMMANDS.CANCEL, '', 8));
       } catch (error) {
         this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
       }
@@ -1441,13 +2156,13 @@ class FileManager {
    * @returns {Promise<void>}
    */
   async playFile(serial) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
 
     const payload = intToHex(serial, 2) + '01';
-    await this.ble.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
+    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
   }
 
   /**
@@ -1457,13 +2172,13 @@ class FileManager {
    * @returns {Promise<void>}
    */
   async deleteFile(serial, cluster) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
 
     const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-    await this.ble.send(buildCommand(COMMANDS.DELETE, payload));
+    await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
     this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
   }
 
@@ -1472,7 +2187,7 @@ class FileManager {
    * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
    */
   async updateFileOrder(enabledSerials) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -1508,7 +2223,7 @@ class FileManager {
                       intToHex(serial, 2) + 
                       filenamePart;
       
-      await this.ble.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
       this.log(`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`, LOG_CLASSES.INFO);
       
       // Small delay between commands
@@ -1517,7 +2232,7 @@ class FileManager {
 
     // Query the new order from device
     this.log('Querying updated file order...', LOG_CLASSES.INFO);
-    await this.ble.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
   }
 
   /**
@@ -2210,7 +2925,7 @@ const $ = (selector) => document.querySelector(selector);
  */
 class EditModalManager {
   constructor(bleManager, stateManager, fileManager, audioConverter, logger) {
-    this.ble = bleManager;
+    this.connection = bleManager;
     this.state = stateManager;
     this.fileManager = fileManager;
     this.audioConverter = audioConverter;
@@ -2545,7 +3260,7 @@ class EditModalManager {
 
     // Delete button (C7)
     $('#edDelete')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -2572,7 +3287,7 @@ class EditModalManager {
       });
 
       // Send delete command
-      await this.ble.send(buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8));
+      await this.connection.send(buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8));
       this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
       
       // Wait for BBC7 response (with timeout)
@@ -2604,7 +3319,7 @@ class EditModalManager {
 
     // Apply All button - sends all settings to device
     $('#edApplyAll')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -2638,28 +3353,28 @@ class EditModalManager {
         
         const actionHex = actionBits.toString(16).padStart(2, '0').toUpperCase();
         const payload = buildPayload(actionHex + '00');
-        await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, payload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, payload, 8));
         this.log(`✓ Set Movement (CA) action=${actionBits}`);
       }
 
       // 2. Set Eye (F9)
       const eyeHex = this.currentFile.eye.toString(16).padStart(2, '0').toUpperCase();
       const eyePayload = buildPayload(eyeHex + '00');
-      await this.ble.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
       this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
 
       // 3. Set Head Light Brightness (F3)
       const headBrightness = clamp($('#edHeadBrightness')?.value || 200, 0, 255);
       const headBrightnessHex = headBrightness.toString(16).padStart(2, '0').toUpperCase();
       const headBrightnessPayload = buildPayload('01' + headBrightnessHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8));
       this.log(`✓ Set Head Brightness (F3) brightness=${headBrightness}`);
 
       // 4. Set Head Light Effect Mode (F2)
       const headMode = parseInt($('#edHeadEffectMode')?.value || '1', 10);
       const headModeHex = headMode.toString(16).padStart(2, '0').toUpperCase();
       const headModePayload = buildPayload('01' + headModeHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_MODE, headModePayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_MODE, headModePayload, 8));
       this.log(`✓ Set Head Effect Mode (F2) mode=${headMode}`);
 
       // 5. Set Head Light Effect Speed (F6) - if not Static mode
@@ -2668,7 +3383,7 @@ class EditModalManager {
         const deviceSpeed = uiSpeedToDevice(uiSpeed);
         const headSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const headSpeedPayload = buildPayload('01' + headSpeedHex);
-        await this.ble.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
         this.log(`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
@@ -2676,14 +3391,14 @@ class EditModalManager {
       const torsoBrightness = clamp($('#edTorsoBrightness')?.value || 200, 0, 255);
       const torsoBrightnessHex = torsoBrightness.toString(16).padStart(2, '0').toUpperCase();
       const torsoBrightnessPayload = buildPayload('00' + torsoBrightnessHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8));
       this.log(`✓ Set Torso Brightness (F3) brightness=${torsoBrightness}`);
 
       // 7. Set Torso Light Effect Mode (F2)
       const torsoMode = parseInt($('#edTorsoEffectMode')?.value || '1', 10);
       const torsoModeHex = torsoMode.toString(16).padStart(2, '0').toUpperCase();
       const torsoModePayload = buildPayload('00' + torsoModeHex);
-      await this.ble.send(buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8));
       this.log(`✓ Set Torso Effect Mode (F2) mode=${torsoMode}`);
 
       // 8. Set Torso Light Effect Speed (F6) - if not Static mode
@@ -2692,7 +3407,7 @@ class EditModalManager {
         const deviceSpeed = uiSpeedToDevice(uiSpeed);
         const torsoSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
         const torsoSpeedPayload = buildPayload('00' + torsoSpeedHex);
-        await this.ble.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
         this.log(`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
       }
 
@@ -2705,7 +3420,7 @@ class EditModalManager {
       const headGHex = headG.toString(16).padStart(2, '0').toUpperCase();
       const headBHex = headB.toString(16).padStart(2, '0').toUpperCase();
       const headPayload = buildPayload('01' + headRHex + headGHex + headBHex + headColorCycle);
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, headPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, headPayload, 8));
       this.log(`✓ Set Head Color (F4) rgb=${headR},${headG},${headB} cycle=${headColorCycle}`);
 
       // 10. Set Torso Light Color (F4)
@@ -2717,7 +3432,7 @@ class EditModalManager {
       const torsoGHex = torsoG.toString(16).padStart(2, '0').toUpperCase();
       const torsoBHex = torsoB.toString(16).padStart(2, '0').toUpperCase();
       const torsoPayload = buildPayload('00' + torsoRHex + torsoGHex + torsoBHex + torsoColorCycle);
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, torsoPayload, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, torsoPayload, 8));
       this.log(`✓ Set Torso Color (F4) rgb=${torsoR},${torsoG},${torsoB} cycle=${torsoColorCycle}`);
 
       this.log(`All settings applied successfully for file "${name || '(no name)'}"`, LOG_CLASSES.SUCCESS);
@@ -2746,7 +3461,7 @@ class EditModalManager {
    * Handle file upload/replacement
    */
   async handleFileUpload() {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -3068,13 +3783,13 @@ class SkellyApp {
         timerInterval: null
       };
 
-      // Initialize BLE manager
-      this.ble = new BLEManager(this.state, this.logger.log.bind(this.logger));
-      console.log('BLE manager created');
+      // Initialize connection manager (wraps both BLE and REST proxy)
+      this.connection = new ConnectionManager(this.state, this.logger.log.bind(this.logger));
+      console.log('Connection manager created');
 
       // Initialize file manager with progress callback
       this.fileManager = new FileManager(
-        this.ble, 
+        this.connection, 
         this.state, 
         this.logger.log.bind(this.logger),
         (current, total) => setProgress(current, total)
@@ -3087,7 +3802,7 @@ class SkellyApp {
 
       // Initialize edit modal manager (before parser so we can pass callback)
       this.editModal = new EditModalManager(
-        this.ble,
+        this.connection,
         this.state,
         this.fileManager,
         this.audioConverter,
@@ -3105,8 +3820,8 @@ class SkellyApp {
       );
       console.log('Protocol parser created');
 
-      // Register protocol parser with BLE manager
-      this.ble.onNotification((hex, bytes) => {
+      // Register protocol parser with connection manager
+      this.connection.onNotification((hex, bytes) => {
         this.parser.parse(hex, bytes);
       });
       console.log('Notification handler registered');
@@ -3207,27 +3922,27 @@ class SkellyApp {
     this.initializeLiveControls();
 
     // Check for Web Bluetooth support
-    if (!('bluetooth' in navigator)) {
+    if (!ConnectionManager.isWebBluetoothAvailable()) {
       console.error('Web Bluetooth not supported');
       this.logger.log(
-        'This browser does not support Web Bluetooth. Use Chrome/Edge on desktop or Android over HTTPS.',
+        'Web Bluetooth not supported. For direct BLE, use Chrome/Edge. For other browsers, use the REST Server Proxy: https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv',
         LOG_CLASSES.WARNING
       );
-      alert('Web Bluetooth not supported in this browser. Use Chrome or Edge.');
+      // Don't show blocking alert - REST proxy is available as alternative
+      console.log('REST Server Proxy can be used as an alternative');
     } else {
       console.log('Web Bluetooth API is available');
-    }
-    
-    // Check for secure context (HTTPS or localhost)
-    if (!window.isSecureContext) {
-      console.error('Not in secure context - Web Bluetooth requires HTTPS or localhost');
-      this.logger.log(
-        'Web Bluetooth requires HTTPS or localhost. Please use HTTPS.',
-        LOG_CLASSES.WARNING
-      );
-      alert('Web Bluetooth requires HTTPS or localhost!');
-    } else {
-      console.log('Running in secure context');
+      
+      // Check for secure context (HTTPS or localhost)
+      if (!window.isSecureContext) {
+        console.error('Not in secure context - Web Bluetooth requires HTTPS or localhost');
+        this.logger.log(
+          'Web Bluetooth requires HTTPS or localhost for direct BLE. Use HTTPS or the REST Server Proxy.',
+          LOG_CLASSES.WARNING
+        );
+      } else {
+        console.log('Running in secure context');
+      }
     }
     
     console.log('UI initialization complete');
@@ -3265,6 +3980,34 @@ class SkellyApp {
     const connectNameFilter = $('#connectNameFilter');
     const connectFilterByName = $('#connectFilterByName');
     const connectAllDevices = $('#connectAllDevices');
+    const connectionTypeDirect = $('#connectionTypeDirect');
+    const connectionTypeRest = $('#connectionTypeRest');
+    const restUrlContainer = $('#restUrlContainer');
+    const restServerUrl = $('#restServerUrl');
+    
+    // Load saved preferences
+    const savedConnectionType = localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || 'direct';
+    const savedRestUrl = localStorage.getItem(STORAGE_KEYS.REST_URL) || 'http://localhost:8765';
+    
+    if (savedConnectionType === 'rest' && connectionTypeRest) {
+      connectionTypeRest.checked = true;
+    } else if (connectionTypeDirect) {
+      connectionTypeDirect.checked = true;
+    }
+    
+    if (restServerUrl) {
+      restServerUrl.value = savedRestUrl;
+    }
+    
+    // Show/hide REST URL input based on connection type
+    const updateConnectionTypeUI = () => {
+      if (restUrlContainer) {
+        restUrlContainer.style.display = connectionTypeRest?.checked ? 'block' : 'none';
+      }
+    };
+    
+    connectionTypeDirect?.addEventListener('change', updateConnectionTypeUI);
+    connectionTypeRest?.addEventListener('change', updateConnectionTypeUI);
     
     // Enable/disable name filter input based on radio selection
     const updateFilterState = () => {
@@ -3277,6 +4020,7 @@ class SkellyApp {
     connectAllDevices?.addEventListener('change', updateFilterState);
     
     // Initialize state
+    updateConnectionTypeUI();
     updateFilterState();
     
     // Close modal function
@@ -3298,15 +4042,132 @@ class SkellyApp {
     $('#connectOk')?.addEventListener('click', async () => {
       connectModal?.classList.add('hidden');
       
+      // Determine connection type
+      const connectionType = connectionTypeRest?.checked ? ConnectionType.REST_PROXY : ConnectionType.DIRECT_BLE;
+      
+      // Get REST URL if needed
+      const restUrl = restServerUrl?.value || 'http://localhost:8765';
+      
       // Determine filter value
       let nameFilter = '';
       if (connectFilterByName?.checked) {
         nameFilter = connectNameFilter?.value || '';
       }
       
-      // Perform connection
-      await this.performConnection(nameFilter);
+      // Save preferences
+      localStorage.setItem(STORAGE_KEYS.CONNECTION_TYPE, connectionType);
+      if (connectionType === ConnectionType.REST_PROXY) {
+        localStorage.setItem(STORAGE_KEYS.REST_URL, restUrl);
+      }
+      
+      // For REST proxy, show device selection modal
+      if (connectionType === ConnectionType.REST_PROXY) {
+        await this.showDeviceSelectionModal(restUrl, nameFilter);
+      } else {
+        // For direct BLE, use existing flow
+        await this.performConnection({ connectionType, restUrl, nameFilter });
+      }
     });
+  }
+
+  /**
+   * Show device selection modal for REST proxy
+   */
+  async showDeviceSelectionModal(restUrl, nameFilter) {
+    const deviceSelectModal = $('#deviceSelectModal');
+    const deviceList = $('#deviceList');
+    const deviceSelectStatus = $('#deviceSelectStatus');
+    const deviceSelectCancel = $('#deviceSelectCancel');
+    const deviceSelectRescan = $('#deviceSelectRescan');
+    
+    if (!deviceSelectModal || !deviceList) return;
+    
+    // Show modal
+    deviceSelectModal.classList.remove('hidden');
+    
+    // Scan function
+    const scanForDevices = async () => {
+      try {
+        deviceList.innerHTML = '';
+        deviceSelectStatus.textContent = 'Scanning for devices...';
+        
+        // Use connection.restProxy to scan
+        const devices = await this.connection.restProxy.scanDevices(restUrl, nameFilter, 10);
+        
+        if (devices.length === 0) {
+          deviceSelectStatus.textContent = 'No devices found';
+          deviceList.innerHTML = '<p style="padding: 20px; text-align: center; color: #6b7280;">No devices discovered. Try rescanning or check if devices are powered on.</p>';
+          return;
+        }
+        
+        deviceSelectStatus.textContent = `Found ${devices.length} device${devices.length > 1 ? 's' : ''}:`;
+        
+        // Create device list
+        devices.forEach(device => {
+          const deviceItem = document.createElement('div');
+          deviceItem.style.cssText = 'padding: 12px; margin: 8px 0; background: #1f2937; border: 1px solid #374151; border-radius: 8px; cursor: pointer; transition: all 0.2s;';
+          deviceItem.innerHTML = `
+            <div style="font-weight: 500;">${escapeHtml(device.name || 'Unknown Device')}</div>
+            <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">${escapeHtml(device.address)}</div>
+            <div style="font-size: 11px; color: #6b7280;">Signal: ${device.rssi} dBm</div>
+          `;
+          
+          deviceItem.addEventListener('mouseenter', () => {
+            deviceItem.style.background = '#374151';
+            deviceItem.style.borderColor = '#3b82f6';
+          });
+          
+          deviceItem.addEventListener('mouseleave', () => {
+            deviceItem.style.background = '#1f2937';
+            deviceItem.style.borderColor = '#374151';
+          });
+          
+          deviceItem.addEventListener('click', async () => {
+            deviceSelectModal.classList.add('hidden');
+            await this.performConnection({ 
+              connectionType: ConnectionType.REST_PROXY, 
+              restUrl, 
+              deviceAddress: device.address 
+            });
+          });
+          
+          deviceList.appendChild(deviceItem);
+        });
+        
+      } catch (error) {
+        console.error('Device scan error:', error);
+        deviceSelectStatus.textContent = 'Scan failed';
+        deviceList.innerHTML = `<p style="padding: 20px; text-align: center; color: #ef4444;">${escapeHtml(error.message)}</p>`;
+      }
+    };
+    
+    // Cancel button
+    const cancelHandler = () => {
+      deviceSelectModal.classList.add('hidden');
+    };
+    
+    // Rescan button
+    const rescanHandler = () => {
+      scanForDevices();
+    };
+    
+    // Add event listeners
+    deviceSelectCancel.removeEventListener('click', cancelHandler);
+    deviceSelectCancel.addEventListener('click', cancelHandler);
+    deviceSelectRescan.removeEventListener('click', rescanHandler);
+    deviceSelectRescan.addEventListener('click', rescanHandler);
+    
+    // Escape key to close
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape' && !deviceSelectModal.classList.contains('hidden')) {
+        deviceSelectModal.classList.add('hidden');
+      }
+    };
+    document.removeEventListener('keydown', escapeHandler);
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Start initial scan
+    await scanForDevices();
   }
 
   /**
@@ -3371,18 +4232,18 @@ class SkellyApp {
   initializeQueryButtons() {
     document.querySelectorAll('[data-q]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
         const tag = btn.getAttribute('data-q');
-        await this.ble.send(buildCommand(tag, '', 8));
+        await this.connection.send(buildCommand(tag, '', 8));
       });
     });
 
     // Get All button - executes all query commands in sequence
     $('#btnGetAll')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -3399,7 +4260,7 @@ class SkellyApp {
       ];
       
       for (const tag of queries) {
-        await this.ble.send(buildCommand(tag, '', 8));
+        await this.connection.send(buildCommand(tag, '', 8));
         // Small delay between queries to avoid overwhelming the device
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -3409,19 +4270,19 @@ class SkellyApp {
 
     // Raw command send button
     $('#btnSendRaw')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
       const tag = $('#tag')?.value || 'E0';
       const payload = $('#payload')?.value || '';
-      await this.ble.send(buildCommand(tag, payload, 8));
+      await this.connection.send(buildCommand(tag, payload, 8));
       this.logger.log(`Sent raw command: ${tag} with payload: ${payload || '(empty)'}`);
     });
 
     // Set Device Name button
     $('#btnSetDeviceName')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -3446,7 +4307,7 @@ class SkellyApp {
 
     // Set PIN button
     $('#btnSetPin')?.addEventListener('click', async () => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -3524,12 +4385,12 @@ class SkellyApp {
     
     const payload = pinHex + wifiHex + nameLengthHex + nameHex;
     
-    await this.ble.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
+    await this.connection.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
     this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
     
     // Query device params to get the updated name and PIN back from the device
-    await this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8));
-    await this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8));
+    await this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
   }
 
   /**
@@ -3541,11 +4402,11 @@ class SkellyApp {
     const volNum = $('#vol');
 
     const sendVolumeCommand = async (value) => {
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         return;
       }
       const v = Math.max(0, Math.min(255, parseInt(value, 10)));
-      await this.ble.send(buildCommand(COMMANDS.SET_VOLUME, v.toString(16).padStart(2, '0').toUpperCase(), 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_VOLUME, v.toString(16).padStart(2, '0').toUpperCase(), 8));
       this.logger.log(`Set volume to ${v}`);
     };
 
@@ -3569,11 +4430,11 @@ class SkellyApp {
    * Send media command
    */
   async sendMediaCommand(tag, payload) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.logger.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
-    await this.ble.send(buildCommand(tag, payload, 8));
+    await this.connection.send(buildCommand(tag, payload, 8));
   }
 
   /**
@@ -3592,12 +4453,12 @@ class SkellyApp {
     const headBriNum = $('#headBrightness');
     
     const sendHeadBrightness = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '01'; // Head light is channel 1
       const brightness = parseInt(value, 10);
       const brightnessHex = brightness.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
       this.logger.log(`Set head light brightness to ${brightness}`);
     };
     
@@ -3618,12 +4479,12 @@ class SkellyApp {
     const torsoBriNum = $('#torsoBrightness');
     
     const sendTorsoBrightness = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '00'; // Torso light is channel 0
       const brightness = parseInt(value, 10);
       const brightnessHex = brightness.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
       this.logger.log(`Set torso light brightness to ${brightness}`);
     };
     
@@ -3646,7 +4507,7 @@ class SkellyApp {
     const headBInput = $('#headB');
 
     const sendHeadColor = async (disableCycle = false) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       
       // If user is setting a new color (not from cycle button), disable cycle
       if (disableCycle && this.headColorCycleEnabled) {
@@ -3666,7 +4527,7 @@ class SkellyApp {
       const gHex = g.toString(16).padStart(2, '0').toUpperCase();
       const bHex = b.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
       this.logger.log(`Set head light color to RGB(${r}, ${g}, ${b}) with cycle ${this.headColorCycleEnabled ? 'ON' : 'OFF'}`);
     };
 
@@ -3698,7 +4559,7 @@ class SkellyApp {
     const torsoBInput = $('#torsoB');
 
     const sendTorsoColor = async (disableCycle = false) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       
       // If user is setting a new color (not from cycle button), disable cycle
       if (disableCycle && this.torsoColorCycleEnabled) {
@@ -3718,7 +4579,7 @@ class SkellyApp {
       const gHex = g.toString(16).padStart(2, '0').toUpperCase();
       const bHex = b.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
+      await this.connection.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
       this.logger.log(`Set torso light color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? 'ON' : 'OFF'}`);
     };
 
@@ -3752,11 +4613,11 @@ class SkellyApp {
         const v = parseInt(headEffectMode.value, 10);
         headEffectSpeedBlock.classList.toggle('hidden', v === 1); // hide for Static
         
-        if (!this.ble.isConnected()) return;
+        if (!this.connection.isConnected()) return;
         const ch = '01'; // Head light is channel 1
         const modeHex = v.toString(16).padStart(2, '0').toUpperCase();
         const cluster = '00000000';
-        await this.ble.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 9));
+        await this.connection.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 9));
         this.logger.log(`Set head light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`);
       });
     }
@@ -3770,11 +4631,11 @@ class SkellyApp {
         const v = parseInt(torsoEffectMode.value, 10);
         torsoEffectSpeedBlock.classList.toggle('hidden', v === 1); // hide for Static
         
-        if (!this.ble.isConnected()) return;
+        if (!this.connection.isConnected()) return;
         const ch = '00'; // Torso light is channel 0
         const modeHex = v.toString(16).padStart(2, '0').toUpperCase();
         const cluster = '00000000';
-        await this.ble.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 8));
         this.logger.log(`Set torso light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`);
       });
     }
@@ -3784,13 +4645,13 @@ class SkellyApp {
     const headEffectSpeedNum = $('#headEffectSpeed');
 
     const sendHeadSpeed = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '01'; // Head light is channel 1
       const uiSpeed = parseInt(value, 10);
       const deviceSpeed = uiSpeedToDevice(uiSpeed);
       const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
       this.logger.log(`Set head light speed to ${uiSpeed} (device: ${deviceSpeed})`);
     };
 
@@ -3811,13 +4672,13 @@ class SkellyApp {
     const torsoEffectSpeedNum = $('#torsoEffectSpeed');
 
     const sendTorsoSpeed = async (value) => {
-      if (!this.ble.isConnected()) return;
+      if (!this.connection.isConnected()) return;
       const ch = '00'; // Torso light is channel 0
       const uiSpeed = parseInt(value, 10);
       const deviceSpeed = uiSpeedToDevice(uiSpeed);
       const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
       const cluster = '00000000';
-      await this.ble.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
       this.logger.log(`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`);
     };
 
@@ -3840,14 +4701,14 @@ class SkellyApp {
       const partBtns = liveMoveGrid.querySelectorAll('[data-part="head"], [data-part="arm"], [data-part="torso"]');
       
       const sendMovementCommand = async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           return;
         }
         
         // Check if "all" is selected
         if (allBtn?.classList.contains('selected')) {
           // Send CAFF for all movement
-          await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
+          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
           this.logger.log('Applied movement: all');
         } else {
           // Build bitfield from head/arm/torso selections
@@ -3863,7 +4724,7 @@ class SkellyApp {
           
           if (bitfield > 0) {
             const bitfieldHex = bitfield.toString(16).padStart(2, '0').toUpperCase();
-            await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
+            await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
             const parts = [];
             if (bitfield & 0x01) parts.push('head');
             if (bitfield & 0x02) parts.push('arm');
@@ -3871,7 +4732,7 @@ class SkellyApp {
             this.logger.log(`Applied movement: ${parts.join(', ')}`);
           } else {
             // No movement selected - send CA00 to disable movement
-            await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
+            await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
             this.logger.log('Disabled movement');
           }
         }
@@ -3902,7 +4763,7 @@ class SkellyApp {
     const btnHeadColorCycle = $('#btnHeadColorCycle');
     if (btnHeadColorCycle) {
       btnHeadColorCycle.addEventListener('click', async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
@@ -3916,7 +4777,7 @@ class SkellyApp {
     const btnTorsoColorCycle = $('#btnTorsoColorCycle');
     if (btnTorsoColorCycle) {
       btnTorsoColorCycle.addEventListener('click', async () => {
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
@@ -3938,7 +4799,7 @@ class SkellyApp {
         cell.classList.add('selected');
         
         // Send command immediately if connected
-        if (!this.ble.isConnected()) {
+        if (!this.connection.isConnected()) {
           this.logger.log('Not connected', LOG_CLASSES.WARNING);
           return;
         }
@@ -3949,7 +4810,7 @@ class SkellyApp {
         // Build payload: eye + 00 + cluster + 00 (no name)
         const payload = eyeHex + '00' + clusterHex + '00';
         
-        await this.ble.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
+        await this.connection.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
         this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
       });
     }
@@ -3976,7 +4837,7 @@ class SkellyApp {
 
     // Send movement command for each part
     hexParts.forEach(async (partHex) => {
-      await this.ble.send(buildCommand(COMMANDS.SET_MOVEMENT, partHex + '00000000', 8));
+      await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, partHex + '00000000', 8));
     });
 
     this.logger.log(`Applied movement: ${parts.join(', ')}`);
@@ -4123,7 +4984,7 @@ class SkellyApp {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         return;
       }
@@ -4145,7 +5006,7 @@ class SkellyApp {
       const checkbox = e.target.closest('.file-enabled-checkbox');
       if (!checkbox) return;
       
-      if (!this.ble.isConnected()) {
+      if (!this.connection.isConnected()) {
         this.logger.log('Not connected', LOG_CLASSES.WARNING);
         // Revert checkbox state
         checkbox.checked = !checkbox.checked;
@@ -4235,7 +5096,7 @@ class SkellyApp {
     
     // Send '01' to play, '00' to stop
     const playPauseByte = isPlaying ? '00' : '01';
-    await this.ble.send(buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8));
+    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8));
     
     if (isPlaying) {
       this.logger.log(`Stopping file #${serial}`);
@@ -4257,7 +5118,7 @@ class SkellyApp {
    * @param {HTMLElement} targetRow - The row being dropped onto
    */
   async handleFileDrop(draggedRow, targetRow) {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.logger.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -4443,7 +5304,7 @@ class SkellyApp {
    * Handle file send
    */
   async handleFileSend() {
-    if (!this.ble.isConnected()) {
+    if (!this.connection.isConnected()) {
       this.logger.log('Not connected', LOG_CLASSES.WARNING);
       return;
     }
@@ -4542,18 +5403,24 @@ class SkellyApp {
   /**
    * Perform actual connection with filter
    */
-  async performConnection(nameFilter) {
+  async performConnection(options) {
     console.log('performConnection called');
     try {
-      console.log('Calling ble.connect with filter:', nameFilter);
-      await this.ble.connect(nameFilter);
+      const connectionOptions = {
+        type: options.connectionType || ConnectionType.DIRECT_BLE,
+        nameFilter: options.nameFilter || options.deviceAddress || '',
+        restUrl: options.restUrl || '',
+      };
+      
+      console.log('Connecting with options:', connectionOptions);
+      await this.connection.connect(connectionOptions);
       console.log('Connected successfully');
       
       // Query device state in sequence: live mode, params, volume, BT name
-      await this.ble.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
-      setTimeout(() => this.ble.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
+      await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
+      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
+      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
+      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
       
       // Start file list fetch - this will query capacity and order after files are received
       setTimeout(() => {
@@ -4569,7 +5436,7 @@ class SkellyApp {
    * Handle disconnect button
    */
   async handleDisconnect() {
-    await this.ble.disconnect();
+    await this.connection.disconnect();
   }
 
   /**
@@ -4622,7 +5489,19 @@ class SkellyApp {
     // Update status
     const statusSpan = $('#status span');
     if (statusSpan) {
-      statusSpan.textContent = device.connected ? 'Connected' : 'Disconnected';
+      if (device.connected) {
+        // Get connection info directly from connection manager
+        const deviceInfo = this.connection.getDeviceInfo();
+        
+        // Show REST URL if connected via REST proxy
+        if (deviceInfo && deviceInfo.connectionType === ConnectionType.REST_PROXY && deviceInfo.restUrl) {
+          statusSpan.textContent = `Connected (via ${deviceInfo.restUrl})`;
+        } else {
+          statusSpan.textContent = 'Connected';
+        }
+      } else {
+        statusSpan.textContent = 'Disconnected';
+      }
     }
 
     document.body.classList.toggle('disconnected', !device.connected);
