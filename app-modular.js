@@ -6,13 +6,13 @@
  * The full UI controller implementation would be much larger.
  */
 
-import { STORAGE_KEYS, LOG_CLASSES, COMMANDS, MOVEMENT_BITS } from './js/constants.js';
-import { buildCommand, clamp, escapeHtml, normalizeDeviceName, bytesToHex, deviceSpeedToUI, uiSpeedToDevice } from './js/protocol.js';
-import { StateManager } from './js/state-manager.js';
 import { ConnectionManager, ConnectionType } from './js/connection-manager.js';
-import { FileManager, AudioConverter } from './js/file-manager.js';
-import { ProtocolParser } from './js/protocol-parser.js';
+import { COMMANDS, LOG_CLASSES, MOVEMENT_BITS, STORAGE_KEYS } from './js/constants.js';
 import { EditModalManager } from './js/edit-modal.js';
+import { AudioConverter, FileManager } from './js/file-manager.js';
+import { ProtocolParser } from './js/protocol-parser.js';
+import { buildCommand, bytesToHex, clamp, deviceSpeedToUI, escapeHtml, uiSpeedToDevice } from './js/protocol.js';
+import { StateManager } from './js/state-manager.js';
 
 /**
  * Simple Logger

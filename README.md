@@ -8,6 +8,8 @@ A live version of this project is hosted here https://martinecker.github.io/Skel
 
 There is a companion project that provides a Home Assistant integration here https://github.com/martinecker/SkellyUltra
 
+This project also has a [REST Server](https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv) that can act as a BLE proxy, see [REST Proxy Connection](#rest-proxy-connection).
+
 ## ✨ Features
 
 ### 🎵 Audio File Management
@@ -63,21 +65,43 @@ There is a companion project that provides a Home Assistant integration here htt
 
 ## 🌐 Browser Compatibility
 
-This controller requires a browser with Web Bluetooth API support:
+This controller supports two connection modes:
+
+### Direct BLE Connection (Web Bluetooth)
+
+Requires a browser with Web Bluetooth API support:
 
 - ✅ Chrome/Chromium (desktop and Android mobile)
 - ✅ Microsoft Edge
 - ✅ Opera
-- ✅ Bluefy (iPhone mobile, see https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)
+- ✅ Bluefy (iPhone mobile, see <https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055>)
 - ❌ Firefox (Web Bluetooth not supported)
 - ❌ Safari (Web Bluetooth not supported)
 
+### REST Proxy Connection
+
+Use the [Skelly Ultra REST Server](https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv) as a BLE proxy to:
+
+- **Use Any Browser**: Works with Firefox, Safari, or any browser without Web Bluetooth support
+- **Improve Range**: Run the server on a machine close to the Skelly for better Bluetooth connectivity, while controlling from any device on your network
+- **Remote Control**: Access your Skelly from anywhere on your local network or over the internet
+
 ## 🚀 Getting Started
+
+### Using Direct BLE Connection
 
 1. **Open the Controller**: Load `index.html` in a compatible browser
 2. **Accept the Warning**: Read and accept the risk acknowledgment
-3. **Connect Your Device**: Click "Connect" and select your Skelly from the Bluetooth device list
+3. **Connect Your Device**: Click "Connect", select "Direct BLE", and choose your Skelly from the Bluetooth device list
 4. **Start Controlling**: Upload files, adjust lights, and control your Skelly!
+
+### Using REST Proxy Connection
+
+1. **Start the REST Server**: Install and run the [Skelly Ultra REST Server](https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv) on a machine with Bluetooth
+2. **Open the Controller**: Load `index.html` in any browser
+3. **Accept the Warning**: Read and accept the risk acknowledgment
+4. **Connect via Proxy**: Click "Connect", select "REST Server Proxy", enter the server URL (e.g., `http://localhost:8765` or `http://192.168.1.100:8765`), and select your device
+5. **Start Controlling**: Upload files, adjust lights, and control your Skelly!
 
 ## ⚠️ Important Notes
 
