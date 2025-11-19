@@ -296,6 +296,13 @@ export class BLEManager {
   }
 
   /**
+   * Clear all notification handlers
+   */
+  clearNotificationHandlers() {
+    this.notificationHandlers = [];
+  }
+
+  /**
    * Wait for a response with specific prefix
    * @param {string} prefix - Response prefix to wait for
    * @param {number} timeoutMs - Timeout in milliseconds

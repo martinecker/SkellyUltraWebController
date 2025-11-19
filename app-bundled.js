@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-19T08:10:53.960746
+ * Generated: 2025-11-19T09:00:55.551302
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1109,6 +1109,13 @@ class BLEManager {
   }
 
   /**
+   * Clear all notification handlers
+   */
+  clearNotificationHandlers() {
+    this.notificationHandlers = [];
+  }
+
+  /**
    * Wait for a response with specific prefix
    * @param {string} prefix - Response prefix to wait for
    * @param {number} timeoutMs - Timeout in milliseconds
@@ -1466,6 +1473,13 @@ class RestProxy {
   }
 
   /**
+   * Clear all notification handlers
+   */
+  clearNotificationHandlers() {
+    this.notificationHandlers = [];
+  }
+
+  /**
    * Start long-polling for notifications
    */
   startPolling() {
@@ -1819,7 +1833,9 @@ class ConnectionManager {
       throw new Error(`Unknown connection type: ${type}`);
     }
 
-    // Register all stored notification handlers with the active connection
+    // Clear any existing handlers in the active connection to avoid duplicates
+    // then register all stored notification handlers
+    this.activeConnection.clearNotificationHandlers();
     console.log(`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`);
     for (const handler of this.notificationHandlers) {
       this.activeConnection.onNotification(handler);

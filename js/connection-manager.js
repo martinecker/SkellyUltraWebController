@@ -90,7 +90,9 @@ export class ConnectionManager {
       throw new Error(`Unknown connection type: ${type}`);
     }
 
-    // Register all stored notification handlers with the active connection
+    // Clear any existing handlers in the active connection to avoid duplicates
+    // then register all stored notification handlers
+    this.activeConnection.clearNotificationHandlers();
     console.log(`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`);
     for (const handler of this.notificationHandlers) {
       this.activeConnection.onNotification(handler);

@@ -292,6 +292,13 @@ export class RestProxy {
   }
 
   /**
+   * Clear all notification handlers
+   */
+  clearNotificationHandlers() {
+    this.notificationHandlers = [];
+  }
+
+  /**
    * Start long-polling for notifications
    */
   startPolling() {
