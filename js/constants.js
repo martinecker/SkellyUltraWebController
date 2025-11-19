@@ -22,6 +22,10 @@ export const STORAGE_KEYS = {
   SHOW_FILE_DETAILS: 'skelly_show_file_details',
   CONNECTION_TYPE: 'skelly_connection_type',
   REST_URL: 'skelly_rest_url',
+  LOG_FILTER_NORMAL: 'skelly_log_filter_normal',
+  LOG_FILTER_WARNING: 'skelly_log_filter_warning',
+  LOG_FILTER_TX: 'skelly_log_filter_tx',
+  LOG_FILTER_RX: 'skelly_log_filter_rx',
 };
 
 // Protocol Padding Defaults (bytes)

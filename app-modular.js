@@ -21,6 +21,11 @@ class Logger {
   constructor(logElement, autoscrollElement) {
     this.logElement = logElement;
     this.autoscrollElement = autoscrollElement;
+    this.filterCallback = null;
+  }
+
+  setFilterCallback(callback) {
+    this.filterCallback = callback;
   }
 
   log(message, className = LOG_CLASSES.NORMAL) {
@@ -30,6 +35,11 @@ class Logger {
     const time = new Date().toLocaleTimeString();
     div.textContent = `[${time}] ${message}`;
     this.logElement.appendChild(div);
+
+    // Apply filter to the new line
+    if (this.filterCallback) {
+      this.filterCallback();
+    }
 
     // Auto-scroll if enabled
     if (!this.autoscrollElement || this.autoscrollElement.checked) {
@@ -66,6 +76,7 @@ class SkellyApp {
       
       // Initialize logger
       this.logger = new Logger($('#log'), $('#chkAutoscroll'));
+      this.logger.setFilterCallback(() => this.applyLogFilter());
       console.log('Logger created');
 
       // Initialize state manager
@@ -221,6 +232,7 @@ class SkellyApp {
     this.initializeWarningModal();
     this.initializeConnectionModal();
     this.initializeAdvancedMenu();
+    this.initializeLogFilter();
     this.initializeQueryButtons();
     this.initializeMediaControls();
     this.initializeFileControls();
@@ -528,6 +540,80 @@ class SkellyApp {
     const showDetails = advFileDetails?.checked;
     document.querySelectorAll('.detail-column').forEach(col => {
       col.style.display = showDetails ? '' : 'none';
+    });
+  }
+
+  /**
+   * Initialize log filter menu
+   */
+  initializeLogFilter() {
+    const logFilterMenu = $('#logFilterMenu');
+    const logFilterNormal = $('#logFilterNormal');
+    const logFilterWarning = $('#logFilterWarning');
+    const logFilterTx = $('#logFilterTx');
+    const logFilterRx = $('#logFilterRx');
+
+    // Load saved state (default to all checked)
+    logFilterNormal.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_NORMAL) !== '0';
+    logFilterWarning.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_WARNING) !== '0';
+    logFilterTx.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_TX) !== '0';
+    logFilterRx.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_RX) !== '0';
+
+    // Toggle menu
+    $('#btnLogFilter')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      logFilterMenu?.classList.toggle('hidden');
+    });
+
+    // Close menu on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.menuwrap') || e.target.closest('#advMenu')) {
+        logFilterMenu?.classList.add('hidden');
+      }
+    });
+
+    // Save state and apply filter on change
+    [logFilterNormal, logFilterWarning, logFilterTx, logFilterRx].forEach((el) => {
+      el?.addEventListener('change', () => {
+        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_NORMAL, logFilterNormal.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_WARNING, logFilterWarning.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_TX, logFilterTx.checked ? '1' : '0');
+        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_RX, logFilterRx.checked ? '1' : '0');
+        this.applyLogFilter();
+      });
+    });
+
+    this.applyLogFilter();
+  }
+
+  /**
+   * Apply log filter visibility
+   */
+  applyLogFilter() {
+    const logFilterNormal = $('#logFilterNormal');
+    const logFilterWarning = $('#logFilterWarning');
+    const logFilterTx = $('#logFilterTx');
+    const logFilterRx = $('#logFilterRx');
+
+    const logEl = $('#log');
+    if (!logEl) return;
+
+    // Apply filter to all log lines
+    logEl.querySelectorAll('.line').forEach((line) => {
+      const classes = line.classList;
+      let visible = true;
+
+      if (classes.contains('warn') && !logFilterWarning?.checked) {
+        visible = false;
+      } else if (classes.contains('tx') && !logFilterTx?.checked) {
+        visible = false;
+      } else if (classes.contains('rx') && !logFilterRx?.checked) {
+        visible = false;
+      } else if (!classes.contains('warn') && !classes.contains('tx') && !classes.contains('rx') && !logFilterNormal?.checked) {
+        visible = false;
+      }
+
+      line.style.display = visible ? '' : 'none';
     });
   }
 
@@ -1766,9 +1852,12 @@ class SkellyApp {
     const logEl = $('#log');
     if (!logEl) return;
 
-    // Get all log lines
+    // Get all log lines and filter out hidden ones
     const lines = logEl.querySelectorAll('.line');
-    const logContent = Array.from(lines).map(line => line.textContent).join('\n');
+    const logContent = Array.from(lines)
+      .filter(line => line.style.display !== 'none')
+      .map(line => line.textContent)
+      .join('\n');
 
     if (!logContent.trim()) {
       this.logger.log('Log is empty - nothing to save', LOG_CLASSES.WARNING);
