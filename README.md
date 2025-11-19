@@ -121,10 +121,13 @@ Use the [Skelly Ultra REST Server](https://github.com/martinecker/SkellyUltra/tr
 ### Key Modules
 
 - `ble-manager.js`: Handles all Bluetooth Low Energy communication
-- `file-manager.js`: Manages file transfers and audio conversion
-- `state-manager.js`: Centralized application state
-- `protocol-parser.js`: Protocol parsing and command building
+- `connection-manager.js`: Abstracts away direct BLE or REST server BLE proxy connections
+- `constants.js`: Commonly used constants for BLE protocol commands and responses and others
 - `edit-modal.js`: File editing interface logic
+- `file-manager.js`: Manages file transfers and audio conversion
+- `protocol-parser.js`: Protocol parsing and command building
+- `rest-proxy.js`: Handles communication with the REST server used as BLE proxy
+- `state-manager.js`: Centralized application state
 
 ## 🔐 Safety
 
