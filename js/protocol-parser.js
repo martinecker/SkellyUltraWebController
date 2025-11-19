@@ -340,7 +340,7 @@ export class ProtocolParser {
   parseTransferStart(hex) {
     const failed = parseInt(hex.slice(4, 6), 16);
     const written = parseInt(hex.slice(6, 14), 16);
-    this.log(`Start Xfer: failed=${failed} written=${written}`);
+    this.log(`Start Transfer: failed=${failed} written=${written}`);
   }
 
   /**
@@ -367,7 +367,7 @@ export class ProtocolParser {
    */
   parseTransferEnd(hex) {
     const failed = parseInt(hex.slice(4, 6), 16);
-    this.log(`End Xfer: failed=${failed}`);
+    this.log(`End Transfer: failed=${failed}`);
   }
 
   /**

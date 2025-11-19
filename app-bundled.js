@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-17T12:25:29.874361
+ * Generated: 2025-11-19T07:50:24.847935
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -2863,7 +2863,7 @@ class ProtocolParser {
   parseTransferStart(hex) {
     const failed = parseInt(hex.slice(4, 6), 16);
     const written = parseInt(hex.slice(6, 14), 16);
-    this.log(`Start Xfer: failed=${failed} written=${written}`);
+    this.log(`Start Transfer: failed=${failed} written=${written}`);
   }
 
   /**
@@ -2890,7 +2890,7 @@ class ProtocolParser {
    */
   parseTransferEnd(hex) {
     const failed = parseInt(hex.slice(4, 6), 16);
-    this.log(`End Xfer: failed=${failed}`);
+    this.log(`End Transfer: failed=${failed}`);
   }
 
   /**
@@ -3957,6 +3957,13 @@ class SkellyApp {
       btnClearLog.addEventListener('click', () => {
         const logEl = $('#log');
         if (logEl) logEl.innerHTML = '';
+      });
+    }
+
+    const btnSaveLog = $('#btnSaveLog');
+    if (btnSaveLog) {
+      btnSaveLog.addEventListener('click', () => {
+        this.saveLog();
       });
     }
 
@@ -5499,6 +5506,40 @@ class SkellyApp {
       inputEl.classList.toggle('warn-border', !!conflict);
     }
     return conflict;
+  }
+
+  /**
+   * Save log contents to file
+   */
+  saveLog() {
+    const logEl = $('#log');
+    if (!logEl) return;
+
+    // Get all log lines
+    const lines = logEl.querySelectorAll('.line');
+    const logContent = Array.from(lines).map(line => line.textContent).join('\n');
+
+    if (!logContent.trim()) {
+      this.logger.log('Log is empty - nothing to save', LOG_CLASSES.WARNING);
+      return;
+    }
+
+    // Create filename with timestamp
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
+    const filename = `UltraSkelly-${dateStr}-${timeStr}.log`;
+
+    // Create blob and download
+    const blob = new Blob([logContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    this.logger.log(`Log saved to ${filename}`, LOG_CLASSES.INFO);
   }
 
   /**

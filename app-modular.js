@@ -211,6 +211,13 @@ class SkellyApp {
       });
     }
 
+    const btnSaveLog = $('#btnSaveLog');
+    if (btnSaveLog) {
+      btnSaveLog.addEventListener('click', () => {
+        this.saveLog();
+      });
+    }
+
     this.initializeWarningModal();
     this.initializeConnectionModal();
     this.initializeAdvancedMenu();
@@ -1750,6 +1757,40 @@ class SkellyApp {
       inputEl.classList.toggle('warn-border', !!conflict);
     }
     return conflict;
+  }
+
+  /**
+   * Save log contents to file
+   */
+  saveLog() {
+    const logEl = $('#log');
+    if (!logEl) return;
+
+    // Get all log lines
+    const lines = logEl.querySelectorAll('.line');
+    const logContent = Array.from(lines).map(line => line.textContent).join('\n');
+
+    if (!logContent.trim()) {
+      this.logger.log('Log is empty - nothing to save', LOG_CLASSES.WARNING);
+      return;
+    }
+
+    // Create filename with timestamp
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
+    const filename = `UltraSkelly-${dateStr}-${timeStr}.log`;
+
+    // Create blob and download
+    const blob = new Blob([logContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    this.logger.log(`Log saved to ${filename}`, LOG_CLASSES.INFO);
   }
 
   /**
