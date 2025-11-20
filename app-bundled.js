@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-20T07:37:21.124923
+ * Generated: 2025-11-20T09:20:33.485052
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -5212,10 +5212,14 @@ class SkellyApp {
    */
   initializeFileDragAndDrop() {
     let draggedRow = null;
+    let touchStartY = 0;
+    let touchCurrentY = 0;
+    let placeholder = null;
 
     const tbody = $('#filesTable tbody');
     if (!tbody) return;
 
+    // Desktop drag and drop
     tbody.addEventListener('dragstart', (e) => {
       const row = e.target.closest('tr.draggable-row');
       if (!row) return;
@@ -5272,6 +5276,106 @@ class SkellyApp {
       targetRow.style.borderBottom = '';
       
       await this.handleFileDrop(draggedRow, targetRow);
+    });
+
+    // Mobile touch events
+    tbody.addEventListener('touchstart', (e) => {
+      const dragHandle = e.target.closest('.drag-handle');
+      if (!dragHandle) return;
+      
+      const row = e.target.closest('tr.draggable-row');
+      if (!row) return;
+      
+      draggedRow = row;
+      touchStartY = e.touches[0].clientY;
+      
+      // Create visual feedback
+      row.style.opacity = '0.6';
+      row.style.backgroundColor = 'rgba(34, 211, 238, 0.1)';
+      
+      // Prevent scrolling while dragging
+      e.preventDefault();
+    }, { passive: false });
+
+    tbody.addEventListener('touchmove', (e) => {
+      if (!draggedRow) return;
+      
+      e.preventDefault();
+      touchCurrentY = e.touches[0].clientY;
+      const deltaY = touchCurrentY - touchStartY;
+      
+      // Get all draggable rows
+      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+      const draggedIndex = rows.indexOf(draggedRow);
+      
+      // Clear previous visual feedback
+      rows.forEach(r => {
+        r.style.borderTop = '';
+        r.style.borderBottom = '';
+      });
+      
+      // Find the row under the touch point
+      const elementAtPoint = document.elementFromPoint(
+        e.touches[0].clientX,
+        e.touches[0].clientY
+      );
+      const targetRow = elementAtPoint?.closest('tr.draggable-row');
+      
+      if (targetRow && targetRow !== draggedRow) {
+        const targetIndex = rows.indexOf(targetRow);
+        
+        // Show visual feedback
+        if (draggedIndex < targetIndex) {
+          targetRow.style.borderBottom = '2px solid #4CAF50';
+        } else {
+          targetRow.style.borderTop = '2px solid #4CAF50';
+        }
+      }
+    }, { passive: false });
+
+    tbody.addEventListener('touchend', async (e) => {
+      if (!draggedRow) return;
+      
+      // Clear visual feedback
+      draggedRow.style.opacity = '1';
+      draggedRow.style.backgroundColor = '';
+      
+      // Find the row at the drop position
+      const elementAtPoint = document.elementFromPoint(
+        e.changedTouches[0].clientX,
+        e.changedTouches[0].clientY
+      );
+      const targetRow = elementAtPoint?.closest('tr.draggable-row');
+      
+      // Clear all borders
+      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+      rows.forEach(r => {
+        r.style.borderTop = '';
+        r.style.borderBottom = '';
+      });
+      
+      if (targetRow && targetRow !== draggedRow) {
+        await this.handleFileDrop(draggedRow, targetRow);
+      }
+      
+      draggedRow = null;
+    });
+
+    tbody.addEventListener('touchcancel', (e) => {
+      if (!draggedRow) return;
+      
+      // Clear visual feedback
+      draggedRow.style.opacity = '1';
+      draggedRow.style.backgroundColor = '';
+      
+      // Clear all borders
+      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+      rows.forEach(r => {
+        r.style.borderTop = '';
+        r.style.borderBottom = '';
+      });
+      
+      draggedRow = null;
     });
   }
 
