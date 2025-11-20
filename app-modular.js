@@ -301,15 +301,45 @@ class SkellyApp {
     const connectionTypeRest = $('#connectionTypeRest');
     const restUrlContainer = $('#restUrlContainer');
     const restServerUrl = $('#restServerUrl');
+    const webBluetoothWarning = $('#webBluetoothWarning');
+    const connectionTypeDirectLabel = $('#connectionTypeDirectLabel');
+    
+    // Check Web Bluetooth availability
+    const isWebBluetoothAvailable = ConnectionManager.isWebBluetoothAvailable();
     
     // Load saved preferences
     const savedConnectionType = localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || 'direct';
     const savedRestUrl = localStorage.getItem(STORAGE_KEYS.REST_URL) || 'http://localhost:8765';
     
-    if (savedConnectionType === 'rest' && connectionTypeRest) {
-      connectionTypeRest.checked = true;
-    } else if (connectionTypeDirect) {
-      connectionTypeDirect.checked = true;
+    // Handle Web Bluetooth unavailability
+    if (!isWebBluetoothAvailable) {
+      // Show warning
+      if (webBluetoothWarning) {
+        webBluetoothWarning.style.display = 'block';
+      }
+      
+      // Disable direct connection option
+      if (connectionTypeDirect) {
+        connectionTypeDirect.disabled = true;
+      }
+      
+      // Gray out label
+      if (connectionTypeDirectLabel) {
+        connectionTypeDirectLabel.style.opacity = '0.5';
+        connectionTypeDirectLabel.style.cursor = 'not-allowed';
+      }
+      
+      // Force REST proxy selection
+      if (connectionTypeRest) {
+        connectionTypeRest.checked = true;
+      }
+    } else {
+      // Web Bluetooth is available - use saved preferences
+      if (savedConnectionType === 'rest' && connectionTypeRest) {
+        connectionTypeRest.checked = true;
+      } else if (connectionTypeDirect) {
+        connectionTypeDirect.checked = true;
+      }
     }
     
     if (restServerUrl) {

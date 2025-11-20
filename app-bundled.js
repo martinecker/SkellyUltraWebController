@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-19T09:00:55.551302
+ * Generated: 2025-11-20T07:37:21.124923
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1266,7 +1266,7 @@ class RestProxy {
         console.error('Fetch failed:', fetchError);
         // Check for common network issues
         if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error(`Cannot connect to ${this.baseUrl}. Most likely CORS issue - the REST server needs CORS headers. See CORS_FIX.md for solution. Other checks: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
+          throw new Error(`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
         }
         throw new Error(`Network error: ${fetchError.message}`);
       }
@@ -1333,7 +1333,7 @@ class RestProxy {
       } catch (fetchError) {
         console.error('Fetch failed:', fetchError);
         if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error(`Cannot connect to ${this.baseUrl}. Most likely CORS issue - the REST server needs CORS headers. See CORS_FIX.md for solution. Other checks: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
+          throw new Error(`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
         }
         throw new Error(`Network error: ${fetchError.message}`);
       }
@@ -4070,15 +4070,45 @@ class SkellyApp {
     const connectionTypeRest = $('#connectionTypeRest');
     const restUrlContainer = $('#restUrlContainer');
     const restServerUrl = $('#restServerUrl');
+    const webBluetoothWarning = $('#webBluetoothWarning');
+    const connectionTypeDirectLabel = $('#connectionTypeDirectLabel');
+    
+    // Check Web Bluetooth availability
+    const isWebBluetoothAvailable = ConnectionManager.isWebBluetoothAvailable();
     
     // Load saved preferences
     const savedConnectionType = localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || 'direct';
     const savedRestUrl = localStorage.getItem(STORAGE_KEYS.REST_URL) || 'http://localhost:8765';
     
-    if (savedConnectionType === 'rest' && connectionTypeRest) {
-      connectionTypeRest.checked = true;
-    } else if (connectionTypeDirect) {
-      connectionTypeDirect.checked = true;
+    // Handle Web Bluetooth unavailability
+    if (!isWebBluetoothAvailable) {
+      // Show warning
+      if (webBluetoothWarning) {
+        webBluetoothWarning.style.display = 'block';
+      }
+      
+      // Disable direct connection option
+      if (connectionTypeDirect) {
+        connectionTypeDirect.disabled = true;
+      }
+      
+      // Gray out label
+      if (connectionTypeDirectLabel) {
+        connectionTypeDirectLabel.style.opacity = '0.5';
+        connectionTypeDirectLabel.style.cursor = 'not-allowed';
+      }
+      
+      // Force REST proxy selection
+      if (connectionTypeRest) {
+        connectionTypeRest.checked = true;
+      }
+    } else {
+      // Web Bluetooth is available - use saved preferences
+      if (savedConnectionType === 'rest' && connectionTypeRest) {
+        connectionTypeRest.checked = true;
+      } else if (connectionTypeDirect) {
+        connectionTypeDirect.checked = true;
+      }
     }
     
     if (restServerUrl) {

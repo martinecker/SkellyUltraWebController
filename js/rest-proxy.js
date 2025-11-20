@@ -85,7 +85,7 @@ export class RestProxy {
         console.error('Fetch failed:', fetchError);
         // Check for common network issues
         if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error(`Cannot connect to ${this.baseUrl}. Most likely CORS issue - the REST server needs CORS headers. See CORS_FIX.md for solution. Other checks: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
+          throw new Error(`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
         }
         throw new Error(`Network error: ${fetchError.message}`);
       }
@@ -152,7 +152,7 @@ export class RestProxy {
       } catch (fetchError) {
         console.error('Fetch failed:', fetchError);
         if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error(`Cannot connect to ${this.baseUrl}. Most likely CORS issue - the REST server needs CORS headers. See CORS_FIX.md for solution. Other checks: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
+          throw new Error(`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
         }
         throw new Error(`Network error: ${fetchError.message}`);
       }

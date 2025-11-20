@@ -384,9 +384,15 @@
     <!-- Connection Type -->
     <div style="margin: 16px 0;">
       <p style="margin-bottom: 12px; font-weight: 500;">Connection Type:</p>
+      
+      <!-- Web Bluetooth Warning -->
+      <div id="webBluetoothWarning" style="display: none; margin-bottom: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; font-size: 12px; color: #fca5a5;">
+        ⚠️ <strong>Web Bluetooth not available.</strong> Direct BLE connection is not supported in this browser or context. Use the REST Server Proxy instead.
+      </div>
+      
       <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
         <input type="radio" name="connectionType" id="connectionTypeDirect" value="direct" checked style="margin: 0; width: 18px;">
-        <label for="connectionTypeDirect" style="cursor: pointer; white-space: nowrap; margin: 0;">Direct BLE Connection</label>
+        <label for="connectionTypeDirect" id="connectionTypeDirectLabel" style="cursor: pointer; white-space: nowrap; margin: 0;">Direct BLE Connection</label>
       </div>
       
       <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
