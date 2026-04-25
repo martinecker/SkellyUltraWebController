@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2025-11-20T09:20:33.485052
+ * Generated: 2026-04-25T16:04:35.833841
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3277,7 +3277,7 @@ class EditModalManager {
       // Create image element
       const img = document.createElement('img');
       img.className = 'eye-thumb';
-      img.src = `images/eye_icon_${imgIdx}.png`;
+      img.src = `images/skelly/eye_icon_${imgIdx}.png`;
       img.alt = `eye ${eyeNum}`;
 
       div.appendChild(img);
@@ -5853,7 +5853,7 @@ class SkellyApp {
       // Create image element
       const img = document.createElement('img');
       img.className = 'eye-thumb';
-      img.src = `images/eye_icon_${imgIdx}.png`;
+      img.src = `images/skelly/eye_icon_${imgIdx}.png`;
       img.alt = `eye ${eyeNum}`;
       
       div.appendChild(img);
@@ -6247,7 +6247,7 @@ class SkellyApp {
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
-        <td><img class="eye-thumb" src="images/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
+        <td><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>

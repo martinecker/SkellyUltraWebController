@@ -301,7 +301,7 @@ export class EditModalManager {
       // Create image element
       const img = document.createElement('img');
       img.className = 'eye-thumb';
-      img.src = `images/eye_icon_${imgIdx}.png`;
+      img.src = `images/skelly/eye_icon_${imgIdx}.png`;
       img.alt = `eye ${eyeNum}`;
 
       div.appendChild(img);

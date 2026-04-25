@@ -2084,7 +2084,7 @@ class SkellyApp {
       // Create image element
       const img = document.createElement('img');
       img.className = 'eye-thumb';
-      img.src = `images/eye_icon_${imgIdx}.png`;
+      img.src = `images/skelly/eye_icon_${imgIdx}.png`;
       img.alt = `eye ${eyeNum}`;
       
       div.appendChild(img);
@@ -2478,7 +2478,7 @@ class SkellyApp {
         <td>${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
-        <td><img class="eye-thumb" src="images/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
+        <td><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>
