@@ -2436,17 +2436,17 @@ class SkellyApp {
       const actionBits = file.action || 0;
       if (actionBits === MOVEMENT_BITS.ALL_ON || actionBits === (MOVEMENT_BITS.HEAD | MOVEMENT_BITS.ARM | MOVEMENT_BITS.TORSO)) {
         // All movements
-        movementIcons = '<img class="eye-thumb" src="images/icon_action1_se.png" alt="All" title="All movements" />';
+        movementIcons = '<img class="eye-thumb" src="images/skelly/icon_action1.png" alt="All" title="All movements" />';
       } else {
         // Individual movements
         if (actionBits & MOVEMENT_BITS.HEAD) {
-          movementIcons += '<img class="eye-thumb" src="images/icon_action2_se.png" alt="Head" title="Head movement" />';
+          movementIcons += '<img class="eye-thumb" src="images/skelly/icon_action2.png" alt="Head" title="Head movement" />';
         }
         if (actionBits & MOVEMENT_BITS.ARM) {
-          movementIcons += '<img class="eye-thumb" src="images/icon_action3_se.png" alt="Arm" title="Arm movement" />';
+          movementIcons += '<img class="eye-thumb" src="images/skelly/icon_action3.png" alt="Arm" title="Arm movement" />';
         }
         if (actionBits & MOVEMENT_BITS.TORSO) {
-          movementIcons += '<img class="eye-thumb" src="images/icon_action4_se.png" alt="Torso" title="Torso movement" />';
+          movementIcons += '<img class="eye-thumb" src="images/skelly/icon_action4.png" alt="Torso" title="Torso movement" />';
         }
       }
       
