@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T16:04:35.833841
+ * Generated: 2026-04-25T16:46:08.763858
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -39,6 +39,56 @@ const BLE_CONFIG = {
   NOTIFY_UUID: '0000ae02-0000-1000-8000-00805f9b34fb',
 };
 
+// Device Types
+const DEVICE_TYPES = {
+  SKELLY: 'skelly',
+  LILY: 'lily',
+};
+
+// Device Profiles — per-device UI configuration
+const DEVICE_PROFILES = {
+  [DEVICE_TYPES.SKELLY]: {
+    defaultBleName: 'Animated Skelly',
+    uiName: 'Ultra Skelly',
+    hasEyes: true,
+    movements: [
+      { part: 'all',   label: 'All',   icon: 'images/skelly/icon_action1.png', bit: 255 },
+      { part: 'head',  label: 'Head',  icon: 'images/skelly/icon_action2.png', bit: 0x01 },
+      { part: 'arm',   label: 'Arm',   icon: 'images/skelly/icon_action3.png', bit: 0x02 },
+      { part: 'torso', label: 'Torso', icon: 'images/skelly/icon_action4.png', bit: 0x04 },
+    ],
+    lights: [
+      { id: 'head',  label: 'Head Light',   channel: '00' },
+      { id: 'torso', label: 'Torso Light',  channel: '01' },
+    ],
+    lightModes: [
+      { value: 1, label: 'Static' },
+      { value: 2, label: 'Strobe' },
+      { value: 3, label: 'Pulsing' },
+    ],
+  },
+  [DEVICE_TYPES.LILY]: {
+    defaultBleName: 'Lethal Lily',
+    uiName: 'Lethal Lily',
+    hasEyes: false,
+    movements: [
+      { part: 'all',   label: 'All',   icon: 'images/lily/icon_action1.png', bit: 255 },
+      { part: 'wrist', label: 'Wrist', icon: 'images/lily/icon_action2.png', bit: 0x01 },
+      { part: 'elbow', label: 'Elbow', icon: 'images/lily/icon_action3.png', bit: 0x02 },
+      { part: 'head',  label: 'Head',  icon: 'images/lily/icon_action4.png', bit: 0x10 },
+      { part: 'eyes',  label: 'Eyes',  icon: 'images/lily/icon_action5.png', bit: 0x20 },
+    ],
+    lights: [
+      { id: 'torso', label: 'Lantern', channel: '01' },
+    ],
+    lightModes: [
+      { value: 1, label: 'Flickering' },
+      { value: 2, label: 'Pulsing' },
+      { value: 3, label: 'Chasing' },
+    ],
+  },
+};
+
 // LocalStorage Keys
 const STORAGE_KEYS = {
   RISK_ACK: 'skelly_ack_v2',
@@ -51,6 +101,7 @@ const STORAGE_KEYS = {
   SHOW_FILE_DETAILS: 'skelly_show_file_details',
   CONNECTION_TYPE: 'skelly_connection_type',
   REST_URL: 'skelly_rest_url',
+  DEVICE_TYPE: 'skelly_device_type',
   LOG_FILTER_NORMAL: 'skelly_log_filter_normal',
   LOG_FILTER_WARNING: 'skelly_log_filter_warning',
   LOG_FILTER_TX: 'skelly_log_filter_tx',
@@ -480,6 +531,9 @@ class StateManager {
       pin: null, // Device PIN
     };
 
+    // Active device type (drives UI profile)
+    this.deviceType = DEVICE_TYPES.SKELLY;
+
     // Live status (action, eye icon, lights)
     this.live = {
       action: null,
@@ -556,6 +610,15 @@ class StateManager {
         }
       });
     }
+  }
+
+  /**
+   * Set the active device type and notify observers
+   * @param {string} type - DEVICE_TYPES value
+   */
+  setDeviceType(type) {
+    this.deviceType = type;
+    this.notify('deviceType');
   }
 
   // === Device State Methods ===
@@ -3138,26 +3201,24 @@ class EditModalManager {
     if (!edMoveGrid) return;
 
     const allBtn = edMoveGrid.querySelector('[data-part="all"]');
-    const partBtns = edMoveGrid.querySelectorAll('[data-part="head"], [data-part="arm"], [data-part="torso"]');
+    const partBtns = edMoveGrid.querySelectorAll('[data-part]:not([data-part="all"])');
     
     // "All" button handler
     allBtn?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       allBtn.classList.toggle('selected');
-      // If "all" is now selected, uncheck the other three
       if (allBtn.classList.contains('selected')) {
         partBtns.forEach((btn) => btn.classList.remove('selected'));
       }
     });
     
-    // Head/Arm/Torso button handlers
+    // Part button handlers
     partBtns.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         btn.classList.toggle('selected');
-        // If any part button is clicked, uncheck "all"
         allBtn?.classList.remove('selected');
       });
     });
@@ -3407,16 +3468,15 @@ class EditModalManager {
       const grid = $('#edMove');
       if (grid) {
         const toggles = grid.querySelectorAll('.iconToggle.selected');
-        const parts = Array.from(toggles).map((btn) => btn.getAttribute('data-part'));
         
         let actionBits = 0;
-        if (parts.includes('all')) {
-          actionBits = 255;
-        } else {
-          if (parts.includes('head')) actionBits |= 0x01;
-          if (parts.includes('arm')) actionBits |= 0x02;
-          if (parts.includes('torso')) actionBits |= 0x04;
-        }
+        toggles.forEach((btn) => {
+          if (btn.getAttribute('data-part') === 'all') {
+            actionBits = 255;
+          } else if (actionBits !== 255) {
+            actionBits |= parseInt(btn.dataset.bit || '0', 10);
+          }
+        });
         
         const actionHex = actionBits.toString(16).padStart(2, '0').toUpperCase();
         const payload = buildPayload(actionHex + '00');
@@ -3717,23 +3777,17 @@ class EditModalManager {
 
     // Populate movement from action field (bitfield: 0x01=head, 0x02=arm, 0x04=torso, 0xFF=all)
     const actionBits = file.action || 0;
-    $('#edMove')?.querySelectorAll('.iconToggle').forEach((btn) => btn.classList.remove('selected'));
+    const edMoveGrid = $('#edMove');
+    edMoveGrid?.querySelectorAll('.iconToggle').forEach((btn) => btn.classList.remove('selected'));
     
-    if (actionBits === 255 || actionBits === 0x07) {
-      const allBtn = $('#edMove')?.querySelector('[data-part="all"]');
-      if (allBtn) allBtn.classList.add('selected');
-    } else {
-      if (actionBits & 0x01) {
-        const headBtn = $('#edMove')?.querySelector('[data-part="head"]');
-        if (headBtn) headBtn.classList.add('selected');
-      }
-      if (actionBits & 0x02) {
-        const armBtn = $('#edMove')?.querySelector('[data-part="arm"]');
-        if (armBtn) armBtn.classList.add('selected');
-      }
-      if (actionBits & 0x04) {
-        const torsoBtn = $('#edMove')?.querySelector('[data-part="torso"]');
-        if (torsoBtn) torsoBtn.classList.add('selected');
+    if (edMoveGrid) {
+      if (actionBits === 255) {
+        edMoveGrid.querySelector('[data-part="all"]')?.classList.add('selected');
+      } else {
+        edMoveGrid.querySelectorAll('[data-part]:not([data-part="all"])').forEach((btn) => {
+          const bit = parseInt(btn.dataset.bit || '0', 10);
+          if (bit && (actionBits & bit)) btn.classList.add('selected');
+        });
       }
     }
 
@@ -4000,6 +4054,7 @@ class SkellyApp {
 
     this.initializeWarningModal();
     this.initializeConnectionModal();
+    this.initializeDeviceTypeControl();
     this.initializeAdvancedMenu();
     this.initializeLogFilter();
     this.initializeQueryButtons();
@@ -4032,6 +4087,184 @@ class SkellyApp {
     }
     
     console.log('UI initialization complete');
+
+    // Apply persisted device profile on startup
+    const startupDeviceType = localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+    this.state.setDeviceType(startupDeviceType);
+    this.applyDeviceProfile(startupDeviceType);
+  }
+
+  /**
+   * Initialize device type dropdown (post-connect override)
+   */
+  initializeDeviceTypeControl() {
+    const deviceTypeSelect = $('#deviceTypeSelect');
+    if (!deviceTypeSelect) return;
+
+    // Sync with persisted value
+    const saved = localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+    deviceTypeSelect.value = saved;
+
+    deviceTypeSelect.addEventListener('change', () => {
+      const deviceType = deviceTypeSelect.value;
+      localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
+      this.state.setDeviceType(deviceType);
+      this.applyDeviceProfile(deviceType);
+    });
+  }
+
+  /**
+   * Apply a device profile — rebuilds the movement grids and reconfigures all
+   * profile-driven UI elements (lights, eye section, file table columns, etc.)
+   * @param {string} deviceType - one of DEVICE_TYPES
+   */
+  applyDeviceProfile(deviceType) {
+    const profile = DEVICE_PROFILES[deviceType];
+    if (!profile) return;
+
+    // Sync the post-connect dropdown
+    const deviceTypeSelect = $('#deviceTypeSelect');
+    if (deviceTypeSelect) deviceTypeSelect.value = deviceType;
+
+    // Rebuild movement grids
+    for (const gridId of ['liveMove', 'edMove']) {
+      const grid = $(`#${gridId}`);
+      if (!grid) continue;
+      grid.innerHTML = '';
+      profile.movements.forEach(({ part, label, icon, bit }) => {
+        const btn = document.createElement('button');
+        btn.className = 'iconToggle';
+        btn.dataset.part = part;
+        btn.dataset.bit = String(bit);
+        btn.title = label;
+        const img = document.createElement('img');
+        img.src = icon;
+        img.alt = label;
+        img.style.width = '36px';
+        img.style.height = '36px';
+        btn.appendChild(img);
+        grid.appendChild(btn);
+      });
+    }
+    // Re-bind live movement grid handlers
+    this.bindMovementGrid('liveMove');
+    // Re-bind edit modal movement handlers
+    this.editModal?.initializeMovementControls();
+
+    // Show/hide eye sections
+    const hasEyes = profile.hasEyes;
+    for (const id of ['liveEyeSection', 'editEyeSection']) {
+      const el = $(`#${id}`);
+      if (el) el.style.display = hasEyes ? '' : 'none';
+    }
+
+    // Show/hide head light groups
+    const hasHead = profile.lights.some(l => l.id === 'head');
+    for (const id of ['liveHeadLightGroup', 'editHeadLightGroup']) {
+      const el = $(`#${id}`);
+      if (el) el.style.display = hasHead ? '' : 'none';
+    }
+
+    // Update torso light zone label
+    const torsoLight = profile.lights.find(l => l.id === 'torso');
+    const torsoLabel = torsoLight ? torsoLight.label : 'Torso Light';
+    for (const id of ['liveTorsoLightLabel', 'editTorsoLightLabel']) {
+      const el = $(`#${id}`);
+      if (el) el.textContent = torsoLabel;
+    }
+
+    // Repopulate effect mode selects
+    const modeSelects = ['headEffectMode', 'torsoEffectMode', 'edHeadEffectMode', 'edTorsoEffectMode'];
+    for (const selectId of modeSelects) {
+      const sel = $(`#${selectId}`);
+      if (!sel) continue;
+      const current = sel.value;
+      sel.innerHTML = '';
+      profile.lightModes.forEach(({ value, label }) => {
+        const opt = document.createElement('option');
+        opt.value = String(value);
+        opt.textContent = label;
+        sel.appendChild(opt);
+      });
+      // Try to restore previously selected value; fall back to first option
+      sel.value = current;
+      if (!sel.value) sel.value = String(profile.lightModes[0].value);
+    }
+
+    // Update files table column visibility and labels
+    const filesHeadCol = $('#filesHeadLightCol');
+    if (filesHeadCol) filesHeadCol.style.display = hasHead ? '' : 'none';
+
+    const filesEyeCol = $('#filesEyeCol');
+    if (filesEyeCol) filesEyeCol.style.display = hasEyes ? '' : 'none';
+
+    const filesTorsoCol = $('#filesTorsoLightCol');
+    if (filesTorsoCol) filesTorsoCol.textContent = torsoLabel;
+
+    // Keep body cell classes in sync — add/remove display style via dynamic <style>
+    let dynStyle = document.getElementById('_profileColStyle');
+    if (!dynStyle) {
+      dynStyle = document.createElement('style');
+      dynStyle.id = '_profileColStyle';
+      document.head.appendChild(dynStyle);
+    }
+    const rules = [];
+    if (!hasHead) rules.push('td.col-head-light { display: none; }');
+    if (!hasEyes) rules.push('td.col-eye { display: none; }');
+    dynStyle.textContent = rules.join('\n');
+  }
+
+  /**
+   * Bind click handlers for a live movement grid.
+   * Buttons must already be in the DOM with data-part and data-bit attributes.
+   * @param {string} gridId
+   */
+  bindMovementGrid(gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+
+    const allBtn = grid.querySelector('[data-part="all"]');
+    const partBtns = Array.from(grid.querySelectorAll('[data-part]:not([data-part="all"])'));
+
+    const sendMovementCommand = async () => {
+      if (!this.connection.isConnected()) return;
+      if (allBtn?.classList.contains('selected')) {
+        await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
+        this.logger.log('Applied movement: all');
+      } else {
+        let bitfield = 0;
+        partBtns.forEach((btn) => {
+          if (btn.classList.contains('selected')) {
+            bitfield |= parseInt(btn.dataset.bit || '0', 10);
+          }
+        });
+        if (bitfield > 0) {
+          const bitfieldHex = bitfield.toString(16).padStart(2, '0').toUpperCase();
+          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
+          const parts = partBtns.filter(b => b.classList.contains('selected')).map(b => b.dataset.part);
+          this.logger.log(`Applied movement: ${parts.join(', ')}`);
+        } else {
+          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
+          this.logger.log('Disabled movement');
+        }
+      }
+    };
+
+    allBtn?.addEventListener('click', () => {
+      allBtn.classList.toggle('selected');
+      if (allBtn.classList.contains('selected')) {
+        partBtns.forEach(btn => btn.classList.remove('selected'));
+      }
+      sendMovementCommand();
+    });
+
+    partBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+        allBtn?.classList.remove('selected');
+        sendMovementCommand();
+      });
+    });
   }
 
   /**
@@ -4064,6 +4297,8 @@ class SkellyApp {
   initializeConnectionModal() {
     const connectModal = $('#connectModal');
     const connectNameFilter = $('#connectNameFilter');
+    const connectFilterDefault = $('#connectFilterDefault');
+    const connectDefaultDevice = $('#connectDefaultDevice');
     const connectFilterByName = $('#connectFilterByName');
     const connectAllDevices = $('#connectAllDevices');
     const connectionTypeDirect = $('#connectionTypeDirect');
@@ -4079,31 +4314,23 @@ class SkellyApp {
     // Load saved preferences
     const savedConnectionType = localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || 'direct';
     const savedRestUrl = localStorage.getItem(STORAGE_KEYS.REST_URL) || 'http://localhost:8765';
+    const savedDeviceType = localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+
+    // Restore saved device type in dropdown
+    if (connectDefaultDevice) {
+      connectDefaultDevice.value = savedDeviceType;
+    }
     
     // Handle Web Bluetooth unavailability
     if (!isWebBluetoothAvailable) {
-      // Show warning
-      if (webBluetoothWarning) {
-        webBluetoothWarning.style.display = 'block';
-      }
-      
-      // Disable direct connection option
-      if (connectionTypeDirect) {
-        connectionTypeDirect.disabled = true;
-      }
-      
-      // Gray out label
+      if (webBluetoothWarning) webBluetoothWarning.style.display = 'block';
+      if (connectionTypeDirect) connectionTypeDirect.disabled = true;
       if (connectionTypeDirectLabel) {
         connectionTypeDirectLabel.style.opacity = '0.5';
         connectionTypeDirectLabel.style.cursor = 'not-allowed';
       }
-      
-      // Force REST proxy selection
-      if (connectionTypeRest) {
-        connectionTypeRest.checked = true;
-      }
+      if (connectionTypeRest) connectionTypeRest.checked = true;
     } else {
-      // Web Bluetooth is available - use saved preferences
       if (savedConnectionType === 'rest' && connectionTypeRest) {
         connectionTypeRest.checked = true;
       } else if (connectionTypeDirect) {
@@ -4125,13 +4352,15 @@ class SkellyApp {
     connectionTypeDirect?.addEventListener('change', updateConnectionTypeUI);
     connectionTypeRest?.addEventListener('change', updateConnectionTypeUI);
     
-    // Enable/disable name filter input based on radio selection
+    // Enable/disable filter inputs based on radio selection
     const updateFilterState = () => {
-      if (connectNameFilter) {
-        connectNameFilter.disabled = !connectFilterByName?.checked;
-      }
+      const isDefault = connectFilterDefault?.checked;
+      const isCustom = connectFilterByName?.checked;
+      if (connectDefaultDevice) connectDefaultDevice.disabled = !isDefault;
+      if (connectNameFilter) connectNameFilter.disabled = !isCustom;
     };
     
+    connectFilterDefault?.addEventListener('change', updateFilterState);
     connectFilterByName?.addEventListener('change', updateFilterState);
     connectAllDevices?.addEventListener('change', updateFilterState);
     
@@ -4164,23 +4393,43 @@ class SkellyApp {
       // Get REST URL if needed
       const restUrl = restServerUrl?.value || 'http://localhost:8765';
       
-      // Determine filter value
+      // Determine filter value and device type
       let nameFilter = '';
-      if (connectFilterByName?.checked) {
+      let deviceType = savedDeviceType;
+
+      if (connectFilterDefault?.checked) {
+        // Default name filter — device type comes directly from the dropdown
+        const selectedOption = connectDefaultDevice?.value || DEVICE_TYPES.SKELLY;
+        deviceType = selectedOption;
+        nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || '';
+      } else if (connectFilterByName?.checked) {
+        // Custom name — try to auto-detect device type from the name
         nameFilter = connectNameFilter?.value || '';
+        const nameLower = nameFilter.toLowerCase();
+        if (nameLower.includes('lily')) {
+          deviceType = DEVICE_TYPES.LILY;
+        } else if (nameLower.includes('skelly')) {
+          deviceType = DEVICE_TYPES.SKELLY;
+        }
+        // else keep last persisted deviceType
       }
+      // All devices: nameFilter stays '', deviceType stays last persisted
       
-      // Save preferences
+      // Persist preferences
       localStorage.setItem(STORAGE_KEYS.CONNECTION_TYPE, connectionType);
+      localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
       if (connectionType === ConnectionType.REST_PROXY) {
         localStorage.setItem(STORAGE_KEYS.REST_URL, restUrl);
       }
+
+      // Apply device profile immediately so the UI is correct before connection completes
+      this.state.setDeviceType(deviceType);
+      this.applyDeviceProfile(deviceType);
       
       // For REST proxy, show device selection modal
       if (connectionType === ConnectionType.REST_PROXY) {
         await this.showDeviceSelectionModal(restUrl, nameFilter);
       } else {
-        // For direct BLE, use existing flow
         await this.performConnection({ connectionType, restUrl, nameFilter });
       }
     });
@@ -4884,70 +5133,7 @@ class SkellyApp {
       });
     }
 
-    // Movement controls - toggle buttons with special "all" logic
-    const liveMoveGrid = $('#liveMove');
-    if (liveMoveGrid) {
-      const allBtn = liveMoveGrid.querySelector('[data-part="all"]');
-      const partBtns = liveMoveGrid.querySelectorAll('[data-part="head"], [data-part="arm"], [data-part="torso"]');
-      
-      const sendMovementCommand = async () => {
-        if (!this.connection.isConnected()) {
-          return;
-        }
-        
-        // Check if "all" is selected
-        if (allBtn?.classList.contains('selected')) {
-          // Send CAFF for all movement
-          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
-          this.logger.log('Applied movement: all');
-        } else {
-          // Build bitfield from head/arm/torso selections
-          let bitfield = 0;
-          partBtns.forEach((btn) => {
-            if (btn.classList.contains('selected')) {
-              const part = btn.getAttribute('data-part');
-              if (part === 'head') bitfield |= 0x01;
-              else if (part === 'arm') bitfield |= 0x02;
-              else if (part === 'torso') bitfield |= 0x04;
-            }
-          });
-          
-          if (bitfield > 0) {
-            const bitfieldHex = bitfield.toString(16).padStart(2, '0').toUpperCase();
-            await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
-            const parts = [];
-            if (bitfield & 0x01) parts.push('head');
-            if (bitfield & 0x02) parts.push('arm');
-            if (bitfield & 0x04) parts.push('torso');
-            this.logger.log(`Applied movement: ${parts.join(', ')}`);
-          } else {
-            // No movement selected - send CA00 to disable movement
-            await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
-            this.logger.log('Disabled movement');
-          }
-        }
-      };
-      
-      // "All" button handler
-      allBtn?.addEventListener('click', () => {
-        allBtn.classList.toggle('selected');
-        // If "all" is now selected, uncheck the other three
-        if (allBtn.classList.contains('selected')) {
-          partBtns.forEach((btn) => btn.classList.remove('selected'));
-        }
-        sendMovementCommand();
-      });
-      
-      // Head/Arm/Torso button handlers
-      partBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          btn.classList.toggle('selected');
-          // If any part button is clicked, uncheck "all"
-          allBtn?.classList.remove('selected');
-          sendMovementCommand();
-        });
-      });
-    }
+    // Movement controls — handled by bindMovementGrid (called from applyDeviceProfile)
 
     // Head Light - Color cycle button (toggles cycle state)
     const btnHeadColorCycle = $('#btnHeadColorCycle');
@@ -5007,29 +5193,28 @@ class SkellyApp {
   }
 
   /**
-   * Apply movement from UI
+   * Apply movement from UI (unused by default; movement binding is in bindMovementGrid)
    */
   applyMovement(gridId) {
     const grid = document.getElementById(gridId);
     if (!grid) return;
 
     const toggles = grid.querySelectorAll('.iconToggle.selected');
-    const parts = Array.from(toggles).map((btn) => btn.getAttribute('data-part'));
-
-    if (parts.length === 0) {
+    if (toggles.length === 0) {
       this.logger.log('No movement selected', LOG_CLASSES.WARNING);
       return;
     }
 
-    // Map parts to hex
-    const partMap = { all: '00', head: '01', arm: '02', torso: '03' };
-    const hexParts = parts.map((p) => partMap[p] || '00');
-
-    // Send movement command for each part
-    hexParts.forEach(async (partHex) => {
-      await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, partHex + '00000000', 8));
-    });
-
+    const allSelected = Array.from(toggles).some(b => b.dataset.part === 'all');
+    if (allSelected) {
+      this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
+    } else {
+      let bitfield = 0;
+      toggles.forEach(btn => { bitfield |= parseInt(btn.dataset.bit || '0', 10); });
+      const hex = bitfield.toString(16).padStart(2, '0').toUpperCase();
+      this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, hex + '00000000', 8));
+    }
+    const parts = Array.from(toggles).map(b => b.dataset.part);
     this.logger.log(`Applied movement: ${parts.join(', ')}`);
   }
 
@@ -5981,28 +6166,15 @@ class SkellyApp {
       const liveMove = $('#liveMove');
       
       if (liveMove && !isNaN(actionBits)) {
-        // Clear all selections first
         liveMove.querySelectorAll('.iconToggle').forEach(btn => btn.classList.remove('selected'));
         
-        // Map bitfield to icon selections
-        // Bit 0 (0x01) = head, Bit 1 (0x02) = arm, Bit 2 (0x04) = torso
-        // If all bits set or value is 255, select "all"
-        if (actionBits === 255 || actionBits === 0x07) {
-          const allBtn = liveMove.querySelector('[data-part="all"]');
-          if (allBtn) allBtn.classList.add('selected');
+        if (actionBits === 255) {
+          liveMove.querySelector('[data-part="all"]')?.classList.add('selected');
         } else {
-          if (actionBits & 0x01) {
-            const headBtn = liveMove.querySelector('[data-part="head"]');
-            if (headBtn) headBtn.classList.add('selected');
-          }
-          if (actionBits & 0x02) {
-            const armBtn = liveMove.querySelector('[data-part="arm"]');
-            if (armBtn) armBtn.classList.add('selected');
-          }
-          if (actionBits & 0x04) {
-            const torsoBtn = liveMove.querySelector('[data-part="torso"]');
-            if (torsoBtn) torsoBtn.classList.add('selected');
-          }
+          liveMove.querySelectorAll('[data-part]:not([data-part="all"])').forEach(btn => {
+            const bit = parseInt(btn.dataset.bit || '0', 10);
+            if (bit && (actionBits & bit)) btn.classList.add('selected');
+          });
         }
       }
     }
@@ -6200,23 +6372,21 @@ class SkellyApp {
         }
       }
       
-      // Generate movement icons based on action bitfield
+      // Generate movement icons based on action bitfield using current profile
       let movementIcons = '';
       const actionBits = file.action || 0;
-      if (actionBits === MOVEMENT_BITS.ALL_ON || actionBits === (MOVEMENT_BITS.HEAD | MOVEMENT_BITS.ARM | MOVEMENT_BITS.TORSO)) {
-        // All movements
-        movementIcons = '<img class="eye-thumb" src="images/skelly/icon_action1.png" alt="All" title="All movements" />';
+      const profile = DEVICE_PROFILES[this.state.deviceType] || DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+      if (actionBits === 255) {
+        const allMove = profile.movements.find(m => m.part === 'all');
+        if (allMove) {
+          movementIcons = `<img class="eye-thumb" src="${allMove.icon}" alt="All" title="All movements" />`;
+        }
       } else {
-        // Individual movements
-        if (actionBits & MOVEMENT_BITS.HEAD) {
-          movementIcons += '<img class="eye-thumb" src="images/skelly/icon_action2.png" alt="Head" title="Head movement" />';
-        }
-        if (actionBits & MOVEMENT_BITS.ARM) {
-          movementIcons += '<img class="eye-thumb" src="images/skelly/icon_action3.png" alt="Arm" title="Arm movement" />';
-        }
-        if (actionBits & MOVEMENT_BITS.TORSO) {
-          movementIcons += '<img class="eye-thumb" src="images/skelly/icon_action4.png" alt="Torso" title="Torso movement" />';
-        }
+        profile.movements.filter(m => m.part !== 'all').forEach(m => {
+          if (actionBits & m.bit) {
+            movementIcons += `<img class="eye-thumb" src="${m.icon}" alt="${m.label}" title="${m.label}" />`;
+          }
+        });
       }
       
       // Determine if this file is currently playing
@@ -6244,10 +6414,10 @@ class SkellyApp {
         <td>${rowIndex}</td>
         <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? 'checked' : ''} /></td>
         <td>${escapeHtml(file.name || '')}</td>
-        <td>${headColorHtml}</td>
+        <td class="col-head-light">${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
-        <td><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
+        <td class="col-eye"><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>

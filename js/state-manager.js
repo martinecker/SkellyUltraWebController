@@ -3,6 +3,8 @@
  * Centralized application state with observer pattern for reactive updates
  */
 
+import { DEVICE_TYPES } from './constants.js';
+
 /**
  * Application State Manager
  * Manages device status, file list, and transfer state with change notifications
@@ -23,6 +25,9 @@ export class StateManager {
       order: null, // Music play order
       pin: null, // Device PIN
     };
+
+    // Active device type (drives UI profile)
+    this.deviceType = DEVICE_TYPES.SKELLY;
 
     // Live status (action, eye icon, lights)
     this.live = {
@@ -100,6 +105,15 @@ export class StateManager {
         }
       });
     }
+  }
+
+  /**
+   * Set the active device type and notify observers
+   * @param {string} type - DEVICE_TYPES value
+   */
+  setDeviceType(type) {
+    this.deviceType = type;
+    this.notify('deviceType');
   }
 
   // === Device State Methods ===

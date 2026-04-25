@@ -10,6 +10,56 @@ export const BLE_CONFIG = {
   NOTIFY_UUID: '0000ae02-0000-1000-8000-00805f9b34fb',
 };
 
+// Device Types
+export const DEVICE_TYPES = {
+  SKELLY: 'skelly',
+  LILY: 'lily',
+};
+
+// Device Profiles — per-device UI configuration
+export const DEVICE_PROFILES = {
+  [DEVICE_TYPES.SKELLY]: {
+    defaultBleName: 'Animated Skelly',
+    uiName: 'Ultra Skelly',
+    hasEyes: true,
+    movements: [
+      { part: 'all',   label: 'All',   icon: 'images/skelly/icon_action1.png', bit: 255 },
+      { part: 'head',  label: 'Head',  icon: 'images/skelly/icon_action2.png', bit: 0x01 },
+      { part: 'arm',   label: 'Arm',   icon: 'images/skelly/icon_action3.png', bit: 0x02 },
+      { part: 'torso', label: 'Torso', icon: 'images/skelly/icon_action4.png', bit: 0x04 },
+    ],
+    lights: [
+      { id: 'head',  label: 'Head Light',   channel: '00' },
+      { id: 'torso', label: 'Torso Light',  channel: '01' },
+    ],
+    lightModes: [
+      { value: 1, label: 'Static' },
+      { value: 2, label: 'Strobe' },
+      { value: 3, label: 'Pulsing' },
+    ],
+  },
+  [DEVICE_TYPES.LILY]: {
+    defaultBleName: 'Lethal Lily',
+    uiName: 'Lethal Lily',
+    hasEyes: false,
+    movements: [
+      { part: 'all',   label: 'All',   icon: 'images/lily/icon_action1.png', bit: 255 },
+      { part: 'wrist', label: 'Wrist', icon: 'images/lily/icon_action2.png', bit: 0x01 },
+      { part: 'elbow', label: 'Elbow', icon: 'images/lily/icon_action3.png', bit: 0x02 },
+      { part: 'head',  label: 'Head',  icon: 'images/lily/icon_action4.png', bit: 0x10 },
+      { part: 'eyes',  label: 'Eyes',  icon: 'images/lily/icon_action5.png', bit: 0x20 },
+    ],
+    lights: [
+      { id: 'torso', label: 'Lantern', channel: '01' },
+    ],
+    lightModes: [
+      { value: 1, label: 'Flickering' },
+      { value: 2, label: 'Pulsing' },
+      { value: 3, label: 'Chasing' },
+    ],
+  },
+};
+
 // LocalStorage Keys
 export const STORAGE_KEYS = {
   RISK_ACK: 'skelly_ack_v2',
@@ -22,6 +72,7 @@ export const STORAGE_KEYS = {
   SHOW_FILE_DETAILS: 'skelly_show_file_details',
   CONNECTION_TYPE: 'skelly_connection_type',
   REST_URL: 'skelly_rest_url',
+  DEVICE_TYPE: 'skelly_device_type',
   LOG_FILTER_NORMAL: 'skelly_log_filter_normal',
   LOG_FILTER_WARNING: 'skelly_log_filter_warning',
   LOG_FILTER_TX: 'skelly_log_filter_tx',

@@ -41,7 +41,31 @@ Call `connectionManager.send(bytes)`, `onNotification(handler)`, and `waitForRes
 - Each mutation calls `this.notify(key)`, which fires all subscribed callbacks for that key
 - Subscribe with `state.subscribe('device', callback)` — returns an unsubscribe function
 
-State keys: `device`, `live`, `files`, `transfer`, `editModal`.
+State keys: `device`, `live`, `files`, `transfer`, `editModal`, `deviceType`.
+
+## Device Profiles
+
+All per-device differences are captured in `DEVICE_PROFILES` in `js/constants.js`, keyed by `DEVICE_TYPES` (`'skelly'` / `'lily'`). Each profile has:
+
+- `defaultBleName` — BLE advertisement name used as scan filter
+- `movements` — ordered array of `{ part, label, icon, bit }` (bit is the BLE bitfield value; `part='all'` always first with `bit=255`)
+- `lightModes` — array of `{ value, label }` for effect mode selects
+- `lights` — array of `{ id, label, channel }` defining UI light zones (Lily has only `torso`)
+- `hasEyes` — `true` for Skelly, `false` for Lily
+
+### Applying a profile
+
+Call `applyDeviceProfile(deviceType)` in `app-modular.js` whenever the device type changes. It:
+1. Rebuilds `#liveMove` and `#edMove` grids dynamically from `profile.movements` (sets `data-part` and `data-bit` on each button)
+2. Re-binds live movement click handlers via `bindMovementGrid('liveMove')`
+3. Calls `editModal.initializeMovementControls()` to re-bind edit modal click handlers
+4. Shows/hides `#liveEyeSection` / `#editEyeSection` based on `profile.hasEyes`
+5. Shows/hides `#liveHeadLightGroup` / `#editHeadLightGroup` based on whether profile has a head light zone
+6. Updates torso `<h3>` labels (`#liveTorsoLightLabel`, `#editTorsoLightLabel`) to `profile.lights.find(l=>l.id==='torso')?.label`
+7. Repopulates all 4 effect mode selects from `profile.lightModes`
+8. Shows/hides files table head and eye columns, updates torso column header text
+
+Device type is persisted via `STORAGE_KEYS.DEVICE_TYPE`. Applied on startup and on `#deviceTypeSelect` change (post-connect override).
 
 ## Key Conventions
 

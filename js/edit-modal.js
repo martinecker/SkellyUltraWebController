@@ -162,26 +162,24 @@ export class EditModalManager {
     if (!edMoveGrid) return;
 
     const allBtn = edMoveGrid.querySelector('[data-part="all"]');
-    const partBtns = edMoveGrid.querySelectorAll('[data-part="head"], [data-part="arm"], [data-part="torso"]');
+    const partBtns = edMoveGrid.querySelectorAll('[data-part]:not([data-part="all"])');
     
     // "All" button handler
     allBtn?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       allBtn.classList.toggle('selected');
-      // If "all" is now selected, uncheck the other three
       if (allBtn.classList.contains('selected')) {
         partBtns.forEach((btn) => btn.classList.remove('selected'));
       }
     });
     
-    // Head/Arm/Torso button handlers
+    // Part button handlers
     partBtns.forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         btn.classList.toggle('selected');
-        // If any part button is clicked, uncheck "all"
         allBtn?.classList.remove('selected');
       });
     });
@@ -431,16 +429,15 @@ export class EditModalManager {
       const grid = $('#edMove');
       if (grid) {
         const toggles = grid.querySelectorAll('.iconToggle.selected');
-        const parts = Array.from(toggles).map((btn) => btn.getAttribute('data-part'));
         
         let actionBits = 0;
-        if (parts.includes('all')) {
-          actionBits = 255;
-        } else {
-          if (parts.includes('head')) actionBits |= 0x01;
-          if (parts.includes('arm')) actionBits |= 0x02;
-          if (parts.includes('torso')) actionBits |= 0x04;
-        }
+        toggles.forEach((btn) => {
+          if (btn.getAttribute('data-part') === 'all') {
+            actionBits = 255;
+          } else if (actionBits !== 255) {
+            actionBits |= parseInt(btn.dataset.bit || '0', 10);
+          }
+        });
         
         const actionHex = actionBits.toString(16).padStart(2, '0').toUpperCase();
         const payload = buildPayload(actionHex + '00');
@@ -741,23 +738,17 @@ export class EditModalManager {
 
     // Populate movement from action field (bitfield: 0x01=head, 0x02=arm, 0x04=torso, 0xFF=all)
     const actionBits = file.action || 0;
-    $('#edMove')?.querySelectorAll('.iconToggle').forEach((btn) => btn.classList.remove('selected'));
+    const edMoveGrid = $('#edMove');
+    edMoveGrid?.querySelectorAll('.iconToggle').forEach((btn) => btn.classList.remove('selected'));
     
-    if (actionBits === 255 || actionBits === 0x07) {
-      const allBtn = $('#edMove')?.querySelector('[data-part="all"]');
-      if (allBtn) allBtn.classList.add('selected');
-    } else {
-      if (actionBits & 0x01) {
-        const headBtn = $('#edMove')?.querySelector('[data-part="head"]');
-        if (headBtn) headBtn.classList.add('selected');
-      }
-      if (actionBits & 0x02) {
-        const armBtn = $('#edMove')?.querySelector('[data-part="arm"]');
-        if (armBtn) armBtn.classList.add('selected');
-      }
-      if (actionBits & 0x04) {
-        const torsoBtn = $('#edMove')?.querySelector('[data-part="torso"]');
-        if (torsoBtn) torsoBtn.classList.add('selected');
+    if (edMoveGrid) {
+      if (actionBits === 255) {
+        edMoveGrid.querySelector('[data-part="all"]')?.classList.add('selected');
+      } else {
+        edMoveGrid.querySelectorAll('[data-part]:not([data-part="all"])').forEach((btn) => {
+          const bit = parseInt(btn.dataset.bit || '0', 10);
+          if (bit && (actionBits & bit)) btn.classList.add('selected');
+        });
       }
     }
 

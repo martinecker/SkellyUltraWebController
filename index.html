@@ -417,14 +417,29 @@
     <!-- Device Filter -->
     <div style="margin: 16px 0;">
       <p style="margin-bottom: 12px; font-weight: 500;">Device Discovery:</p>
-      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 8px;">
-        <input type="radio" name="connectFilter" id="connectFilterByName" value="filter" checked style="margin: 0; width: 18px;">
-        <label for="connectFilterByName" style="cursor: pointer; white-space: nowrap; margin: 0;">Filter by name</label>
+
+      <!-- Filter by default name -->
+      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 6px;">
+        <input type="radio" name="connectFilter" id="connectFilterDefault" value="default" checked style="margin: 0; width: 18px;">
+        <label for="connectFilterDefault" style="cursor: pointer; white-space: nowrap; margin: 0;">Filter by default name</label>
       </div>
       <div style="margin-left: 26px; margin-bottom: 12px;">
-        <input id="connectNameFilter" type="text" placeholder="Animated Skelly" value="Animated Skelly" style="width: 100%;" />
+        <select id="connectDefaultDevice" style="width: 100%;">
+          <option value="skelly">Animated Skelly</option>
+          <option value="lily">Lethal Lily</option>
+        </select>
       </div>
-      
+
+      <!-- Filter by custom name -->
+      <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center; margin-bottom: 6px;">
+        <input type="radio" name="connectFilter" id="connectFilterByName" value="filter" style="margin: 0; width: 18px;">
+        <label for="connectFilterByName" style="cursor: pointer; white-space: nowrap; margin: 0;">Filter by custom name</label>
+      </div>
+      <div style="margin-left: 26px; margin-bottom: 12px;">
+        <input id="connectNameFilter" type="text" placeholder="Device name" style="width: 100%;" />
+      </div>
+
+      <!-- All devices -->
       <div style="display: grid; grid-template-columns: 18px auto; gap: 8px; align-items: center;">
         <input type="radio" name="connectFilter" id="connectAllDevices" value="all" style="margin: 0; width: 18px;">
         <label for="connectAllDevices" style="cursor: pointer; white-space: nowrap; margin: 0;">All devices</label>
@@ -516,7 +531,7 @@
       
       <div class="spacer"></div>
       <div class="row" style="align-items:start">
-        <div style="flex:2">
+        <div id="editEyeSection" style="flex:2">
           <label>Eye Icon</label>
           <div id="eyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
         </div>
@@ -543,7 +558,7 @@
     <label>Lights</label>
     <div class="row">
       <!-- Head Light Group -->
-      <div class="light-group" style="flex:1; margin-top:0">
+      <div id="editHeadLightGroup" class="light-group" style="flex:1; margin-top:0">
         <h3>Head Light</h3>
         
         <label>Brightness (0–255)</label>
@@ -584,7 +599,7 @@
 
       <!-- Torso Light Group -->
       <div class="light-group" style="flex:1; margin-top:0">
-        <h3>Torso Light</h3>
+        <h3 id="editTorsoLightLabel">Torso Light</h3>
         
         <label>Brightness (0–255)</label>
         <div class="row">
@@ -689,6 +704,15 @@
       <section class="card area-dev">
         <h2>Device / Commands</h2>
 
+        <div class="compact-row">
+          <label>Device Type</label>
+          <select id="deviceTypeSelect" style="flex:1">
+            <option value="skelly">Ultra Skelly</option>
+            <option value="lily">Lethal Lily</option>
+          </select>
+        </div>
+
+        <div class="spacer"></div>
       <div>
         <label>Queries</label>
           <div class="actions">
@@ -810,11 +834,13 @@
         </div>
 
         <div class="spacer"></div>
-        <label>Eyes</label>
-        <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
+        <div id="liveEyeSection">
+          <label>Eyes</label>
+          <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
+        </div>
 
         <!-- Head Light Controls -->
-        <div class="light-group">
+        <div id="liveHeadLightGroup" class="light-group">
           <h3>Head Light</h3>
           
           <div class="compact-row">
@@ -856,7 +882,7 @@
 
         <!-- Torso Light Controls -->
         <div class="light-group">
-          <h3>Torso Light</h3>
+          <h3 id="liveTorsoLightLabel">Torso Light</h3>
           
           <div class="compact-row">
             <label>Brightness</label>
@@ -1009,10 +1035,10 @@
               <th>#</th>
               <th>Enabled</th>
               <th>Name</th>
-              <th>Head</th>
-              <th>Torso</th>
+              <th id="filesHeadLightCol">Head</th>
+              <th id="filesTorsoLightCol">Torso</th>
               <th>Movement</th>
-              <th>Eye</th>
+              <th id="filesEyeCol">Eye</th>
               <th class="detail-column">Serial</th>
               <th class="detail-column">DB Slot</th>
               <th class="detail-column">Cluster</th>
