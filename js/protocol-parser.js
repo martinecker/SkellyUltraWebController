@@ -214,15 +214,11 @@ export class ProtocolParser {
 
 	/**
 	 * Parse version (BBEE)
-	 * Response format: BBEE<v1hi><v1lo><v2hi><v2lo>...
-	 * e.g. BBEE18001800... → first version word 0x1800 → nibbles 1.8.0.0
+	 * Response format: BBEE<byte>...
+	 * e.g. BBEE44... → byte 0x44 = 68 → "v68"
 	 */
 	parseVersion(hex) {
-		const nibbles = hex
-			.slice(4, 8)
-			.split("")
-			.map((n) => parseInt(n, 16));
-		const version = nibbles.join(".");
+		const version = `v${parseInt(hex.slice(4, 6), 16)}`;
 		this.state.updateDevice({ version });
 		this.log(`Parsed Version: ${version}`);
 	}

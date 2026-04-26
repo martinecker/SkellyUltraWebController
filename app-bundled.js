@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T21:32:10.775839
+ * Generated: 2026-04-25T21:37:01.859362
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3031,15 +3031,11 @@ class ProtocolParser {
 
 	/**
 	 * Parse version (BBEE)
-	 * Response format: BBEE<v1hi><v1lo><v2hi><v2lo>...
-	 * e.g. BBEE18001800... → first version word 0x1800 → nibbles 1.8.0.0
+	 * Response format: BBEE<byte>...
+	 * e.g. BBEE44... → byte 0x44 = 68 → "v68"
 	 */
 	parseVersion(hex) {
-		const nibbles = hex
-			.slice(4, 8)
-			.split("")
-			.map((n) => parseInt(n, 16));
-		const version = nibbles.join(".");
+		const version = `v${parseInt(hex.slice(4, 6), 16)}`;
 		this.state.updateDevice({ version });
 		this.log(`Parsed Version: ${version}`);
 	}
@@ -6713,7 +6709,9 @@ class SkellyApp {
 				file.name,
 			);
 
-			this.logger.log(`Picked file: ${file.name} (${originalBytes.length} bytes)`);
+			this.logger.log(
+				`Picked file: ${file.name} (${originalBytes.length} bytes)`,
+			);
 
 			// Pre-fill filename if empty
 			if (!$("#fileName")?.value) {
