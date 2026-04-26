@@ -2435,51 +2435,29 @@ class SkellyApp {
 		if (!file) return;
 
 		try {
-			// Get duration for warning
-			const _duration = await this.audioConverter.getAudioDuration(file);
-			// TODO: Show warning if > 30 seconds
-
-			// Read file
+			// Read file bytes immediately so pickerData is available right away
 			const buffer = await file.arrayBuffer();
 			const originalBytes = new Uint8Array(buffer);
 
-			let fileBytes = originalBytes;
-			let fileName = file.name;
-
-			// If convert box is already checked, convert right away
-			if ($("#chkConvert")?.checked) {
-				const kbps = $("#chkBitrateOverride")?.checked
-					? parseInt($("#mp3Kbps")?.value || "32", 10)
-					: 32; // Use default 32 kbps if not overriding
-				this.logger.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
-				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
-				fileBytes = result.u8;
-				fileName = result.name;
-				this.logger.log(
-					`Converted: ${fileName} (${fileBytes.length} bytes)`,
-					LOG_CLASSES.WARNING,
-				);
-			} else {
-				this.logger.log(
-					`Picked file: ${file.name} (${originalBytes.length} bytes)`,
-				);
-			}
-
-			// Store file data
+			// Store raw file data — conversion happens lazily in handleFileSend
 			this.fileManager.storeFilePickerData(
 				file,
 				originalBytes,
-				fileBytes,
-				fileName,
+				originalBytes,
+				file.name,
+			);
+
+			this.logger.log(
+				`Picked file: ${file.name} (${originalBytes.length} bytes)`,
 			);
 
 			// Pre-fill filename if empty
 			if (!$("#fileName")?.value) {
-				$("#fileName").value = fileName;
+				$("#fileName").value = file.name;
 			}
 
 			// Check for name conflicts
-			this.checkFileNameConflict($("#fileName")?.value || fileName);
+			this.checkFileNameConflict($("#fileName")?.value || file.name);
 		} catch (error) {
 			this.logger.log(`File error: ${error.message}`, LOG_CLASSES.WARNING);
 		}
