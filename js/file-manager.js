@@ -4,407 +4,462 @@
  */
 
 import {
-  TRANSFER_CONFIG,
-  TIMEOUTS,
-  AUDIO_CONFIG,
-  COMMANDS,
-  RESPONSES,
-  LOG_CLASSES,
-  PROTOCOL_MARKERS,
-} from './constants.js';
+	AUDIO_CONFIG,
+	COMMANDS,
+	LOG_CLASSES,
+	RESPONSES,
+	TIMEOUTS,
+	TRANSFER_CONFIG,
+} from "./constants.js";
 import {
-  buildCommand,
-  intToHex,
-  utf16leHex,
-  chunkToHex,
-  sleep,
-  buildFilenamePayload,
-} from './protocol.js';
+	buildCommand,
+	buildFilenamePayload,
+	chunkToHex,
+	intToHex,
+	sleep,
+} from "./protocol.js";
 
 /**
  * File Transfer and Management
  */
 export class FileManager {
-  constructor(bleManager, stateManager, logger, progressCallback = null) {
-    this.connection = bleManager;
-    this.state = stateManager;
-    this.log = logger;
-    this.onProgress = progressCallback;
-    
-    // File picker state
-    this.lastPickedFile = null;
-    this.lastOriginalBytes = null;
-    this.lastFileBytes = null;
-    this.lastFileName = '';
-  }
+	constructor(bleManager, stateManager, logger, progressCallback = null) {
+		this.connection = bleManager;
+		this.state = stateManager;
+		this.log = logger;
+		this.onProgress = progressCallback;
 
-  /**
-   * Start fetching file list from device
-   * @returns {Promise<void>}
-   */
-  async startFetchFiles() {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected — cannot refresh files.', LOG_CLASSES.WARNING);
-      return;
-    }
+		// File picker state
+		this.lastPickedFile = null;
+		this.lastOriginalBytes = null;
+		this.lastFileBytes = null;
+		this.lastFileName = "";
+	}
 
-    // Clear old list and start fresh
-    this.state.resetFiles();
-    this.state.updateFilesMetadata({ activeFetch: true });
+	/**
+	 * Start fetching file list from device
+	 * @returns {Promise<void>}
+	 */
+	async startFetchFiles() {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected — cannot refresh files.", LOG_CLASSES.WARNING);
+			return;
+		}
 
-    // Send query command for files
-    await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
+		// Clear old list and start fresh
+		this.state.resetFiles();
+		this.state.updateFilesMetadata({ activeFetch: true });
 
-    // Set timeout for no response
-    const timer = setTimeout(() => {
-      if (!this.state.files.expected && this.state.files.items.size === 0) {
-        this.state.updateFilesMetadata({ activeFetch: false });
-        this.log('No file info received (timeout).', LOG_CLASSES.WARNING);
-      }
-    }, TIMEOUTS.FILE_LIST);
+		// Send query command for files
+		await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
 
-    this.state.updateFilesMetadata({ fetchTimer: timer });
-  }
+		// Set timeout for no response
+		const timer = setTimeout(() => {
+			if (!this.state.files.expected && this.state.files.items.size === 0) {
+				this.state.updateFilesMetadata({ activeFetch: false });
+				this.log("No file info received (timeout).", LOG_CLASSES.WARNING);
+			}
+		}, TIMEOUTS.FILE_LIST);
 
-  /**
-   * Check if file list is complete and trigger follow-up queries
-   */
-  async finalizeFilesIfDone() {
-    if (!this.state.files.activeFetch || !this.state.files.expected) {
-      return;
-    }
+		this.state.updateFilesMetadata({ fetchTimer: timer });
+	}
 
-    if (this.state.isFileListComplete()) {
-      // Keep activeFetch true - will be cleared when order arrives
-      this.state.updateFilesMetadata({ lastRefresh: new Date() });
-      if (this.state.files.fetchTimer) {
-        clearTimeout(this.state.files.fetchTimer);
-      }
+	/**
+	 * Check if file list is complete and trigger follow-up queries
+	 */
+	async finalizeFilesIfDone() {
+		if (!this.state.files.activeFetch || !this.state.files.expected) {
+			return;
+		}
 
-      // Update the received file count
-      const filesReceived = this.state.files.items.size;
-      this.state.updateDevice({ filesReceived });
+		if (this.state.isFileListComplete()) {
+			// Keep activeFetch true - will be cleared when order arrives
+			this.state.updateFilesMetadata({ lastRefresh: new Date() });
+			if (this.state.files.fetchTimer) {
+				clearTimeout(this.state.files.fetchTimer);
+			}
 
-      this.log('File list complete ✔', LOG_CLASSES.WARNING);
-      
-      // Send follow-up queries - order response will trigger UI update
-      if (this.connection.isConnected()) {
-        await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
-        await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
-      } else {
-        this.log('Not connected - cannot send follow-up queries', LOG_CLASSES.WARNING);
-        this.state.updateFilesMetadata({ activeFetch: false });
-      }
-    }
-  }
+			// Update the received file count
+			const filesReceived = this.state.files.items.size;
+			this.state.updateDevice({ filesReceived });
 
-  /**
-   * Determine safe chunk size based on BLE MTU
-   * @param {number|null} override - Optional override chunk size from user
-   * @returns {number} Safe chunk size in bytes
-   */
-  getChunkSize(override = null) {
-    // If user has specified an override, use it
-    if (override !== null && typeof override === 'number' && override >= 50 && override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE) {
-      this.log(`Using override chunk size: ${override} bytes`, LOG_CLASSES.INFO);
-      return override;
-    }
-    
-    // Try to get MTU from the BLE manager
-    const mtu = this.connection.getMtuSize();
-    
-    if (mtu !== null && typeof mtu === 'number' && mtu > 0) {
-      // Calculate safe chunk size (MTU minus ATT overhead)
-      const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
-      // Cap at tested maximum
-      const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
-      this.log(`Using MTU-based chunk size: ${chunkSize} bytes (MTU=${mtu})`, LOG_CLASSES.INFO);
-      return chunkSize;
-    }
-    
-    // MTU not available, use conservative default
-    this.log(`Using default chunk size: ${TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE} bytes (MTU unknown)`, LOG_CLASSES.INFO);
-    return TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE;
-  }
+			this.log("File list complete ✔", LOG_CLASSES.WARNING);
 
-  /**
-   * Upload file to device
-   * @param {Uint8Array} fileBytes - File data
-   * @param {string} fileName - Target filename
-   * @param {number|null} chunkSizeOverride - Optional chunk size override
-   * @returns {Promise<void>}
-   */
-  async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected — cannot send file.', LOG_CLASSES.WARNING);
-      throw new Error('Device not connected');
-    }
+			// Send follow-up queries - order response will trigger UI update
+			if (this.connection.isConnected()) {
+				await this.connection.send(
+					buildCommand(COMMANDS.QUERY_CAPACITY, "", 8),
+				);
+				await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+			} else {
+				this.log(
+					"Not connected - cannot send follow-up queries",
+					LOG_CLASSES.WARNING,
+				);
+				this.state.updateFilesMetadata({ activeFetch: false });
+			}
+		}
+	}
 
-    this.state.startTransfer(fileName);
+	/**
+	 * Determine safe chunk size based on BLE MTU
+	 * @param {number|null} override - Optional override chunk size from user
+	 * @returns {number} Safe chunk size in bytes
+	 */
+	getChunkSize(override = null) {
+		// If user has specified an override, use it
+		if (
+			override !== null &&
+			typeof override === "number" &&
+			override >= 50 &&
+			override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE
+		) {
+			this.log(
+				`Using override chunk size: ${override} bytes`,
+				LOG_CLASSES.INFO,
+			);
+			return override;
+		}
 
-    try {
-      // === Phase 1: Start Transfer (C0) ===
-      const size = fileBytes.length;
-      const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
-      const maxPackets = Math.ceil(size / chunkSize);
-      const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
+		// Try to get MTU from the BLE manager
+		const mtu = this.connection.getMtuSize();
 
-      const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-      await this.connection.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
+		if (mtu !== null && typeof mtu === "number" && mtu > 0) {
+			// Calculate safe chunk size (MTU minus ATT overhead)
+			const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
+			// Cap at tested maximum
+			const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
+			this.log(
+				`Using MTU-based chunk size: ${chunkSize} bytes (MTU=${mtu})`,
+				LOG_CLASSES.INFO,
+			);
+			return chunkSize;
+		}
 
-      // Wait for start acknowledgment
-      const c0Response = await this.connection.waitForResponse(RESPONSES.TRANSFER_START, TIMEOUTS.ACK_LONG);
-      if (!c0Response) {
-        throw new Error('Timeout waiting for transfer start acknowledgment');
-      }
+		// MTU not available, use conservative default
+		this.log(
+			`Using default chunk size: ${TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE} bytes (MTU unknown)`,
+			LOG_CLASSES.INFO,
+		);
+		return TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE;
+	}
 
-      const c0Failed = parseInt(c0Response.slice(4, 6), 16);
-      const c0Written = parseInt(c0Response.slice(6, 14), 16) || 0;
+	/**
+	 * Upload file to device
+	 * @param {Uint8Array} fileBytes - File data
+	 * @param {string} fileName - Target filename
+	 * @param {number|null} chunkSizeOverride - Optional chunk size override
+	 * @returns {Promise<void>}
+	 */
+	async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected — cannot send file.", LOG_CLASSES.WARNING);
+			throw new Error("Device not connected");
+		}
 
-      if (c0Failed !== 0) {
-        throw new Error('Device rejected transfer start');
-      }
+		this.state.startTransfer(fileName);
 
-      // Resume from last written position if applicable
-      let startIndex = Math.floor(c0Written / chunkSize);
-      if (startIndex > 0) {
-        this.log(`Resuming at chunk ${startIndex} (written=${c0Written})`, LOG_CLASSES.WARNING);
-      }
+		try {
+			// === Phase 1: Start Transfer (C0) ===
+			const size = fileBytes.length;
+			const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
+			const maxPackets = Math.ceil(size / chunkSize);
+			const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
-      // === Phase 2: Send Data Chunks (C1) ===
-      for (let index = startIndex; index < maxPackets; index++) {
-        if (!this.connection.isConnected()) {
-          throw new Error('Disconnected during transfer');
-        }
+			const c0Payload =
+				intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
+			await this.connection.send(
+				buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
+			);
 
-        if (this.state.transfer.cancel) {
-          throw new Error('Transfer cancelled');
-        }
+			// Wait for start acknowledgment
+			const c0Response = await this.connection.waitForResponse(
+				RESPONSES.TRANSFER_START,
+				TIMEOUTS.ACK_LONG,
+			);
+			if (!c0Response) {
+				throw new Error("Timeout waiting for transfer start acknowledgment");
+			}
 
-        // Handle resume request from device
-        if (this.state.transfer.resumeFrom !== null) {
-          index = this.state.transfer.resumeFrom;
-          this.state.setResumePoint(null);
-        }
+			const c0Failed = parseInt(c0Response.slice(4, 6), 16);
+			const c0Written = parseInt(c0Response.slice(6, 14), 16) || 0;
 
-        const offset = index * chunkSize;
-        const dataHex = chunkToHex(fileBytes, offset, chunkSize);
-        const payload = intToHex(index, 2) + dataHex;
+			if (c0Failed !== 0) {
+				throw new Error("Device rejected transfer start");
+			}
 
-        // Store chunk for potential resend
-        this.state.storeChunk(index, payload);
+			// Resume from last written position if applicable
+			const startIndex = Math.floor(c0Written / chunkSize);
+			if (startIndex > 0) {
+				this.log(
+					`Resuming at chunk ${startIndex} (written=${c0Written})`,
+					LOG_CLASSES.WARNING,
+				);
+			}
 
-        await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
-        
-        // Update progress
-        if (this.onProgress) {
-          this.onProgress(index + 1, maxPackets);
-        }
-        
-        await sleep(TRANSFER_CONFIG.CHUNK_DELAY_MS);
-      }
+			// === Phase 2: Send Data Chunks (C1) ===
+			for (let index = startIndex; index < maxPackets; index++) {
+				if (!this.connection.isConnected()) {
+					throw new Error("Disconnected during transfer");
+				}
 
-      // === Phase 3: End Transfer (C2) ===
-      await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, '', 8));
+				if (this.state.transfer.cancel) {
+					throw new Error("Transfer cancelled");
+				}
 
-      const c2Response = await this.connection.waitForResponse(
-        RESPONSES.TRANSFER_END,
-        TIMEOUTS.FILE_TRANSFER
-      );
+				// Handle resume request from device
+				if (this.state.transfer.resumeFrom !== null) {
+					index = this.state.transfer.resumeFrom;
+					this.state.setResumePoint(null);
+				}
 
-      if (!c2Response) {
-        throw new Error('Timeout waiting for transfer end acknowledgment');
-      }
+				const offset = index * chunkSize;
+				const dataHex = chunkToHex(fileBytes, offset, chunkSize);
+				const payload = intToHex(index, 2) + dataHex;
 
-      const c2Failed = parseInt(c2Response.slice(4, 6), 16);
-      if (c2Failed !== 0) {
-        // Device may request resume
-        const lastIndex = c2Response.length >= 10 ? parseInt(c2Response.slice(6, 10), 16) : 0;
-        this.state.setResumePoint(lastIndex);
+				// Store chunk for potential resend
+				this.state.storeChunk(index, payload);
 
-        // Resend tail chunks
-        let tailIndex = Math.min(maxPackets, Math.max(0, this.state.transfer.resumeFrom));
-        while (tailIndex < maxPackets) {
-          if (this.state.transfer.cancel) {
-            throw new Error('Transfer cancelled');
-          }
+				await this.connection.send(
+					buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
+				);
 
-          const payload = this.state.getChunk(tailIndex);
-          if (!payload) break;
+				// Update progress
+				if (this.onProgress) {
+					this.onProgress(index + 1, maxPackets);
+				}
 
-          await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
-          tailIndex += 1;
-          await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
-        }
-      }
+				await sleep(TRANSFER_CONFIG.CHUNK_DELAY_MS);
+			}
 
-      // === Phase 4: Confirm Transfer (C3) ===
-      const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
-      await this.connection.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
+			// === Phase 3: End Transfer (C2) ===
+			await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, "", 8));
 
-      const c3Response = await this.connection.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
-      if (!c3Response) {
-        throw new Error('Timeout waiting for confirm transfer acknowledgment');
-      }
+			const c2Response = await this.connection.waitForResponse(
+				RESPONSES.TRANSFER_END,
+				TIMEOUTS.FILE_TRANSFER,
+			);
 
-      const c3Failed = parseInt(c3Response.slice(4, 6), 16);
-      if (c3Failed !== 0) {
-        throw new Error('Device failed to confirm transfer');
-      }
+			if (!c2Response) {
+				throw new Error("Timeout waiting for transfer end acknowledgment");
+			}
 
-      this.log('File transfer complete ✔', LOG_CLASSES.WARNING);
+			const c2Failed = parseInt(c2Response.slice(4, 6), 16);
+			if (c2Failed !== 0) {
+				// Device may request resume
+				const lastIndex =
+					c2Response.length >= 10 ? parseInt(c2Response.slice(6, 10), 16) : 0;
+				this.state.setResumePoint(lastIndex);
 
-      // Refresh file list
-      this.startFetchFiles();
-    } catch (error) {
-      this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
-      throw error;
-    } finally {
-      this.state.endTransfer();
-    }
-  }
+				// Resend tail chunks
+				let tailIndex = Math.min(
+					maxPackets,
+					Math.max(0, this.state.transfer.resumeFrom),
+				);
+				while (tailIndex < maxPackets) {
+					if (this.state.transfer.cancel) {
+						throw new Error("Transfer cancelled");
+					}
 
-  /**
-   * Cancel ongoing transfer
-   * @returns {Promise<void>}
-   */
-  async cancelTransfer() {
-    if (!this.state.transfer.inProgress) {
-      return;
-    }
+					const payload = this.state.getChunk(tailIndex);
+					if (!payload) break;
 
-    this.state.cancelTransfer();
+					await this.connection.send(
+						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
+					);
+					tailIndex += 1;
+					await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
+				}
+			}
 
-    if (this.connection.isConnected()) {
-      try {
-        await this.connection.send(buildCommand(COMMANDS.CANCEL, '', 8));
-      } catch (error) {
-        this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
-      }
-    }
-  }
+			// === Phase 4: Confirm Transfer (C3) ===
+			const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
+			await this.connection.send(
+				buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8),
+			);
 
-  /**
-   * Play a file by serial number
-   * @param {number} serial - File serial number
-   * @returns {Promise<void>}
-   */
-  async playFile(serial) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
+			const c3Response = await this.connection.waitForResponse(
+				RESPONSES.CONFIRM_TRANSFER_ACK,
+				TIMEOUTS.ACK,
+			);
+			if (!c3Response) {
+				throw new Error("Timeout waiting for confirm transfer acknowledgment");
+			}
 
-    const payload = intToHex(serial, 2) + '01';
-    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
-  }
+			const c3Failed = parseInt(c3Response.slice(4, 6), 16);
+			if (c3Failed !== 0) {
+				throw new Error("Device failed to confirm transfer");
+			}
 
-  /**
-   * Delete a file
-   * @param {number} serial - File serial number
-   * @param {number} cluster - File cluster
-   * @returns {Promise<void>}
-   */
-  async deleteFile(serial, cluster) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
+			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-    const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-    await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
-    this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
-  }
+			// Refresh file list
+			this.startFetchFiles();
+		} catch (error) {
+			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
+			throw error;
+		} finally {
+			this.state.endTransfer();
+		}
+	}
 
-  /**
-   * Update file order on device by sending C9 commands for each enabled file
-   * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
-   */
-  async updateFileOrder(enabledSerials) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
+	/**
+	 * Cancel ongoing transfer
+	 * @returns {Promise<void>}
+	 */
+	async cancelTransfer() {
+		if (!this.state.transfer.inProgress) {
+			return;
+		}
 
-    const enabledCount = enabledSerials.length;
-    this.log(`Updating file order with ${enabledCount} enabled files...`, LOG_CLASSES.INFO);
+		this.state.cancelTransfer();
 
-    // Validate all files first before sending any commands
-    for (const serial of enabledSerials) {
-      const file = this.state.getFile(serial);
-      
-      if (!file) {
-        this.log(`Error: File ${serial} not found in state`, LOG_CLASSES.WARNING);
-        return;
-      }
+		if (this.connection.isConnected()) {
+			try {
+				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+			} catch (error) {
+				this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
+			}
+		}
+	}
 
-      if (!file.name || !file.name.trim()) {
-        this.log(`Error: File ${serial} has no name, cannot update order`, LOG_CLASSES.WARNING);
-        return;
-      }
-    }
+	/**
+	 * Play a file by serial number
+	 * @param {number} serial - File serial number
+	 * @returns {Promise<void>}
+	 */
+	async playFile(serial) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
 
-    // All files validated, now send C9 commands
-    for (let i = 0; i < enabledSerials.length; i++) {
-      const serial = enabledSerials[i];
-      const file = this.state.getFile(serial);
-      const fileOrder = i + 1; // 1-indexed position
-      const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
-      
-      // AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
-      const payload = intToHex(enabledCount, 1) + 
-                      intToHex(fileOrder, 1) + 
-                      intToHex(serial, 2) + 
-                      filenamePart;
-      
-      await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
-      this.log(`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`, LOG_CLASSES.INFO);
-      
-      // Small delay between commands
-      await sleep(50);
-    }
+		const payload = `${intToHex(serial, 2)}01`;
+		await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
+	}
 
-    // Query the new order from device
-    this.log('Querying updated file order...', LOG_CLASSES.INFO);
-    await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
-  }
+	/**
+	 * Delete a file
+	 * @param {number} serial - File serial number
+	 * @param {number} cluster - File cluster
+	 * @returns {Promise<void>}
+	 */
+	async deleteFile(serial, cluster) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
 
-  /**
-   * Store file picker data
-   * @param {File} file - Selected file
-   * @param {Uint8Array} originalBytes - Original file bytes
-   * @param {Uint8Array} processedBytes - Processed file bytes (may be converted)
-   * @param {string} fileName - Final filename
-   */
-  storeFilePickerData(file, originalBytes, processedBytes, fileName) {
-    this.lastPickedFile = file;
-    this.lastOriginalBytes = originalBytes;
-    this.lastFileBytes = processedBytes;
-    this.lastFileName = fileName;
-  }
+		const payload = intToHex(serial, 2) + intToHex(cluster, 4);
+		await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
+		this.log(
+			`Delete request (C7) serial=${serial} cluster=${cluster}`,
+			LOG_CLASSES.WARNING,
+		);
+	}
 
-  /**
-   * Get stored file data
-   * @returns {Object} - {file, originalBytes, fileBytes, fileName}
-   */
-  getFilePickerData() {
-    return {
-      file: this.lastPickedFile,
-      originalBytes: this.lastOriginalBytes,
-      fileBytes: this.lastFileBytes,
-      fileName: this.lastFileName,
-    };
-  }
+	/**
+	 * Update file order on device by sending C9 commands for each enabled file
+	 * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
+	 */
+	async updateFileOrder(enabledSerials) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
 
-  /**
-   * Clear file picker data
-   */
-  clearFilePickerData() {
-    this.lastPickedFile = null;
-    this.lastOriginalBytes = null;
-    this.lastFileBytes = null;
-    this.lastFileName = '';
-  }
+		const enabledCount = enabledSerials.length;
+		this.log(
+			`Updating file order with ${enabledCount} enabled files...`,
+			LOG_CLASSES.INFO,
+		);
+
+		// Validate all files first before sending any commands
+		for (const serial of enabledSerials) {
+			const file = this.state.getFile(serial);
+
+			if (!file) {
+				this.log(
+					`Error: File ${serial} not found in state`,
+					LOG_CLASSES.WARNING,
+				);
+				return;
+			}
+
+			if (!file.name?.trim()) {
+				this.log(
+					`Error: File ${serial} has no name, cannot update order`,
+					LOG_CLASSES.WARNING,
+				);
+				return;
+			}
+		}
+
+		// All files validated, now send C9 commands
+		for (let i = 0; i < enabledSerials.length; i++) {
+			const serial = enabledSerials[i];
+			const file = this.state.getFile(serial);
+			const fileOrder = i + 1; // 1-indexed position
+			const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
+
+			// AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
+			const payload =
+				intToHex(enabledCount, 1) +
+				intToHex(fileOrder, 1) +
+				intToHex(serial, 2) +
+				filenamePart;
+
+			await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+			this.log(
+				`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`,
+				LOG_CLASSES.INFO,
+			);
+
+			// Small delay between commands
+			await sleep(50);
+		}
+
+		// Query the new order from device
+		this.log("Querying updated file order...", LOG_CLASSES.INFO);
+		await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+	}
+
+	/**
+	 * Store file picker data
+	 * @param {File} file - Selected file
+	 * @param {Uint8Array} originalBytes - Original file bytes
+	 * @param {Uint8Array} processedBytes - Processed file bytes (may be converted)
+	 * @param {string} fileName - Final filename
+	 */
+	storeFilePickerData(file, originalBytes, processedBytes, fileName) {
+		this.lastPickedFile = file;
+		this.lastOriginalBytes = originalBytes;
+		this.lastFileBytes = processedBytes;
+		this.lastFileName = fileName;
+	}
+
+	/**
+	 * Get stored file data
+	 * @returns {Object} - {file, originalBytes, fileBytes, fileName}
+	 */
+	getFilePickerData() {
+		return {
+			file: this.lastPickedFile,
+			originalBytes: this.lastOriginalBytes,
+			fileBytes: this.lastFileBytes,
+			fileName: this.lastFileName,
+		};
+	}
+
+	/**
+	 * Clear file picker data
+	 */
+	clearFilePickerData() {
+		this.lastPickedFile = null;
+		this.lastOriginalBytes = null;
+		this.lastFileBytes = null;
+		this.lastFileName = "";
+	}
 }
 
 /**
@@ -412,208 +467,210 @@ export class FileManager {
  * Handles audio file conversion to device-compatible format
  */
 export class AudioConverter {
-  constructor(logger) {
-    this.log = logger;
-  }
+	constructor(logger) {
+		this.log = logger;
+	}
 
-  /**
-   * Get audio duration from file
-   * @param {File} file - Audio file
-   * @returns {Promise<number|null>} - Duration in seconds or null
-   */
-  async getAudioDuration(file) {
-    // Try HTML audio element first (fast)
-    try {
-      const duration = await this.getDurationViaAudioElement(file);
-      if (duration) return duration;
-    } catch (error) {
-      // Fall through to Web Audio API
-    }
+	/**
+	 * Get audio duration from file
+	 * @param {File} file - Audio file
+	 * @returns {Promise<number|null>} - Duration in seconds or null
+	 */
+	async getAudioDuration(file) {
+		// Try HTML audio element first (fast)
+		try {
+			const duration = await this.getDurationViaAudioElement(file);
+			if (duration) return duration;
+		} catch (_error) {
+			// Fall through to Web Audio API
+		}
 
-    // Fallback: decode with Web Audio API
-    try {
-      return await this.getDurationViaWebAudio(file);
-    } catch (error) {
-      this.log(`Failed to get audio duration: ${error.message}`, LOG_CLASSES.WARNING);
-      return null;
-    }
-  }
+		// Fallback: decode with Web Audio API
+		try {
+			return await this.getDurationViaWebAudio(file);
+		} catch (error) {
+			this.log(
+				`Failed to get audio duration: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			return null;
+		}
+	}
 
-  /**
-   * Get duration via HTML audio element
-   * @private
-   */
-  getDurationViaAudioElement(file) {
-    return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file);
-      const audio = new Audio();
-      audio.preload = 'metadata';
+	/**
+	 * Get duration via HTML audio element
+	 * @private
+	 */
+	getDurationViaAudioElement(file) {
+		return new Promise((resolve, reject) => {
+			const url = URL.createObjectURL(file);
+			const audio = new Audio();
+			audio.preload = "metadata";
 
-      audio.onloadedmetadata = () => {
-        const duration = audio.duration;
-        URL.revokeObjectURL(url);
-        if (isFinite(duration) && duration > 0) {
-          resolve(duration);
-        } else {
-          reject(new Error('Non-finite duration'));
-        }
-      };
+			audio.onloadedmetadata = () => {
+				const duration = audio.duration;
+				URL.revokeObjectURL(url);
+				if (Number.isFinite(duration) && duration > 0) {
+					resolve(duration);
+				} else {
+					reject(new Error("Non-finite duration"));
+				}
+			};
 
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Audio element failed'));
-      };
+			audio.onerror = () => {
+				URL.revokeObjectURL(url);
+				reject(new Error("Audio element failed"));
+			};
 
-      audio.src = url;
-    });
-  }
+			audio.src = url;
+		});
+	}
 
-  /**
-   * Get duration via Web Audio API
-   * @private
-   */
-  async getDurationViaWebAudio(file) {
-    const buffer = await file.arrayBuffer();
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) {
-      throw new Error('Web Audio API not supported');
-    }
+	/**
+	 * Get duration via Web Audio API
+	 * @private
+	 */
+	async getDurationViaWebAudio(file) {
+		const buffer = await file.arrayBuffer();
+		const AudioContext = window.AudioContext || window.webkitAudioContext;
+		if (!AudioContext) {
+			throw new Error("Web Audio API not supported");
+		}
 
-    const context = new AudioContext();
-    const audioBuffer = await context.decodeAudioData(buffer.slice(0));
-    context.close?.();
+		const context = new AudioContext();
+		const audioBuffer = await context.decodeAudioData(buffer.slice(0));
+		context.close?.();
 
-    return audioBuffer?.duration ?? null;
-  }
+		return audioBuffer?.duration ?? null;
+	}
 
-  /**
-   * Convert audio file to device-compatible MP3
-   * @param {File} file - Source audio file
-   * @param {number} kbps - Target bitrate
-   * @returns {Promise<{u8: Uint8Array, name: string}>}
-   */
-  async convertToDeviceMp3(file, kbps = AUDIO_CONFIG.DEFAULT_MP3_KBPS) {
-    if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
-      throw new Error('MP3 encoder library (lamejs) not loaded');
-    }
+	/**
+	 * Convert audio file to device-compatible MP3
+	 * @param {File} file - Source audio file
+	 * @param {number} kbps - Target bitrate
+	 * @returns {Promise<{u8: Uint8Array, name: string}>}
+	 */
+	async convertToDeviceMp3(file, kbps = AUDIO_CONFIG.DEFAULT_MP3_KBPS) {
+		if (typeof lamejs === "undefined" || !lamejs.Mp3Encoder) {
+			throw new Error("MP3 encoder library (lamejs) not loaded");
+		}
 
-    // Decode audio
-    const buffer = await file.arrayBuffer();
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) {
-      throw new Error('Web Audio API not supported');
-    }
+		// Decode audio
+		const buffer = await file.arrayBuffer();
+		const AudioContext = window.AudioContext || window.webkitAudioContext;
+		if (!AudioContext) {
+			throw new Error("Web Audio API not supported");
+		}
 
-    const context = new AudioContext();
-    const audioBuffer = await context.decodeAudioData(buffer.slice(0));
-    context.close?.();
+		const context = new AudioContext();
+		const audioBuffer = await context.decodeAudioData(buffer.slice(0));
+		context.close?.();
 
-    // Downmix to mono
-    const monoData = this.downmixToMono(audioBuffer);
+		// Downmix to mono
+		const monoData = this.downmixToMono(audioBuffer);
 
-    // Resample to target rate
-    const resampledData = this.resampleLinear(
-      monoData,
-      audioBuffer.sampleRate,
-      AUDIO_CONFIG.TARGET_SAMPLE_RATE
-    );
+		// Resample to target rate
+		const resampledData = this.resampleLinear(
+			monoData,
+			audioBuffer.sampleRate,
+			AUDIO_CONFIG.TARGET_SAMPLE_RATE,
+		);
 
-    // Convert to 16-bit PCM
-    const pcm16 = this.floatTo16BitPCM(resampledData);
+		// Convert to 16-bit PCM
+		const pcm16 = this.floatTo16BitPCM(resampledData);
 
-    // Encode to MP3
-    const encoder = new lamejs.Mp3Encoder(
-      AUDIO_CONFIG.TARGET_CHANNELS,
-      AUDIO_CONFIG.TARGET_SAMPLE_RATE,
-      kbps | 0 || AUDIO_CONFIG.DEFAULT_MP3_KBPS
-    );
+		// Encode to MP3
+		const encoder = new lamejs.Mp3Encoder(
+			AUDIO_CONFIG.TARGET_CHANNELS,
+			AUDIO_CONFIG.TARGET_SAMPLE_RATE,
+			kbps | 0 || AUDIO_CONFIG.DEFAULT_MP3_KBPS,
+		);
 
-    const blockSize = AUDIO_CONFIG.MP3_ENCODE_BLOCK_SIZE;
-    const mp3Parts = [];
+		const blockSize = AUDIO_CONFIG.MP3_ENCODE_BLOCK_SIZE;
+		const mp3Parts = [];
 
-    for (let i = 0; i < pcm16.length; i += blockSize) {
-      const chunk = pcm16.subarray(i, Math.min(i + blockSize, pcm16.length));
-      const mp3Data = encoder.encodeBuffer(chunk);
-      if (mp3Data?.length) {
-        mp3Parts.push(mp3Data);
-      }
-    }
+		for (let i = 0; i < pcm16.length; i += blockSize) {
+			const chunk = pcm16.subarray(i, Math.min(i + blockSize, pcm16.length));
+			const mp3Data = encoder.encodeBuffer(chunk);
+			if (mp3Data?.length) {
+				mp3Parts.push(mp3Data);
+			}
+		}
 
-    const endData = encoder.flush();
-    if (endData?.length) {
-      mp3Parts.push(endData);
-    }
+		const endData = encoder.flush();
+		if (endData?.length) {
+			mp3Parts.push(endData);
+		}
 
-    // Create output
-    const mp3Blob = new Blob(mp3Parts, { type: 'audio/mpeg' });
-    const u8 = new Uint8Array(await mp3Blob.arrayBuffer());
-    const outputName = (file.name || 'audio').replace(/\.\w+$/i, '') + '.mp3';
+		// Create output
+		const mp3Blob = new Blob(mp3Parts, { type: "audio/mpeg" });
+		const u8 = new Uint8Array(await mp3Blob.arrayBuffer());
+		const outputName = `${(file.name || "audio").replace(/\.\w+$/i, "")}.mp3`;
 
-    return { u8, name: outputName };
-  }
+		return { u8, name: outputName };
+	}
 
-  /**
-   * Downmix audio to mono
-   * @private
-   */
-  downmixToMono(audioBuffer) {
-    if (audioBuffer.numberOfChannels === 1) {
-      return new Float32Array(audioBuffer.getChannelData(0));
-    }
+	/**
+	 * Downmix audio to mono
+	 * @private
+	 */
+	downmixToMono(audioBuffer) {
+		if (audioBuffer.numberOfChannels === 1) {
+			return new Float32Array(audioBuffer.getChannelData(0));
+		}
 
-    const length = audioBuffer.length;
-    const output = new Float32Array(length);
-    const channelCount = audioBuffer.numberOfChannels;
+		const length = audioBuffer.length;
+		const output = new Float32Array(length);
+		const channelCount = audioBuffer.numberOfChannels;
 
-    for (let ch = 0; ch < channelCount; ch++) {
-      const channelData = audioBuffer.getChannelData(ch);
-      for (let i = 0; i < length; i++) {
-        output[i] += channelData[i];
-      }
-    }
+		for (let ch = 0; ch < channelCount; ch++) {
+			const channelData = audioBuffer.getChannelData(ch);
+			for (let i = 0; i < length; i++) {
+				output[i] += channelData[i];
+			}
+		}
 
-    for (let i = 0; i < length; i++) {
-      output[i] /= channelCount;
-    }
+		for (let i = 0; i < length; i++) {
+			output[i] /= channelCount;
+		}
 
-    return output;
-  }
+		return output;
+	}
 
-  /**
-   * Resample audio using linear interpolation
-   * @private
-   */
-  resampleLinear(sourceData, sourceRate, targetRate) {
-    if (sourceRate === targetRate) {
-      return sourceData;
-    }
+	/**
+	 * Resample audio using linear interpolation
+	 * @private
+	 */
+	resampleLinear(sourceData, sourceRate, targetRate) {
+		if (sourceRate === targetRate) {
+			return sourceData;
+		}
 
-    const ratio = sourceRate / targetRate;
-    const targetLength = Math.max(1, Math.round(sourceData.length / ratio));
-    const output = new Float32Array(targetLength);
+		const ratio = sourceRate / targetRate;
+		const targetLength = Math.max(1, Math.round(sourceData.length / ratio));
+		const output = new Float32Array(targetLength);
 
-    for (let i = 0; i < targetLength; i++) {
-      const position = i * ratio;
-      const i0 = Math.floor(position);
-      const i1 = Math.min(i0 + 1, sourceData.length - 1);
-      const t = position - i0;
-      output[i] = (1 - t) * sourceData[i0] + t * sourceData[i1];
-    }
+		for (let i = 0; i < targetLength; i++) {
+			const position = i * ratio;
+			const i0 = Math.floor(position);
+			const i1 = Math.min(i0 + 1, sourceData.length - 1);
+			const t = position - i0;
+			output[i] = (1 - t) * sourceData[i0] + t * sourceData[i1];
+		}
 
-    return output;
-  }
+		return output;
+	}
 
-  /**
-   * Convert float32 PCM to 16-bit PCM
-   * @private
-   */
-  floatTo16BitPCM(float32Array) {
-    const output = new Int16Array(float32Array.length);
-    for (let i = 0; i < float32Array.length; i++) {
-      const sample = Math.max(-1, Math.min(1, float32Array[i]));
-      output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-    }
-    return output;
-  }
+	/**
+	 * Convert float32 PCM to 16-bit PCM
+	 * @private
+	 */
+	floatTo16BitPCM(float32Array) {
+		const output = new Int16Array(float32Array.length);
+		for (let i = 0; i < float32Array.length; i++) {
+			const sample = Math.max(-1, Math.min(1, float32Array[i]));
+			output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+		}
+		return output;
+	}
 }
-

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T16:46:08.763858
+ * Generated: 2026-04-25T17:15:35.210638
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -34,223 +34,268 @@
 
 // BLE Service UUIDs
 const BLE_CONFIG = {
-  SERVICE_UUID: '0000ae00-0000-1000-8000-00805f9b34fb',
-  WRITE_UUID: '0000ae01-0000-1000-8000-00805f9b34fb',
-  NOTIFY_UUID: '0000ae02-0000-1000-8000-00805f9b34fb',
+	SERVICE_UUID: "0000ae00-0000-1000-8000-00805f9b34fb",
+	WRITE_UUID: "0000ae01-0000-1000-8000-00805f9b34fb",
+	NOTIFY_UUID: "0000ae02-0000-1000-8000-00805f9b34fb",
 };
 
 // Device Types
 const DEVICE_TYPES = {
-  SKELLY: 'skelly',
-  LILY: 'lily',
+	SKELLY: "skelly",
+	LILY: "lily",
 };
 
 // Device Profiles — per-device UI configuration
 const DEVICE_PROFILES = {
-  [DEVICE_TYPES.SKELLY]: {
-    defaultBleName: 'Animated Skelly',
-    uiName: 'Ultra Skelly',
-    hasEyes: true,
-    movements: [
-      { part: 'all',   label: 'All',   icon: 'images/skelly/icon_action1.png', bit: 255 },
-      { part: 'head',  label: 'Head',  icon: 'images/skelly/icon_action2.png', bit: 0x01 },
-      { part: 'arm',   label: 'Arm',   icon: 'images/skelly/icon_action3.png', bit: 0x02 },
-      { part: 'torso', label: 'Torso', icon: 'images/skelly/icon_action4.png', bit: 0x04 },
-    ],
-    lights: [
-      { id: 'head',  label: 'Head Light',   channel: '00' },
-      { id: 'torso', label: 'Torso Light',  channel: '01' },
-    ],
-    lightModes: [
-      { value: 1, label: 'Static' },
-      { value: 2, label: 'Strobe' },
-      { value: 3, label: 'Pulsing' },
-    ],
-  },
-  [DEVICE_TYPES.LILY]: {
-    defaultBleName: 'Lethal Lily',
-    uiName: 'Lethal Lily',
-    hasEyes: false,
-    movements: [
-      { part: 'all',   label: 'All',   icon: 'images/lily/icon_action1.png', bit: 255 },
-      { part: 'wrist', label: 'Wrist', icon: 'images/lily/icon_action2.png', bit: 0x01 },
-      { part: 'elbow', label: 'Elbow', icon: 'images/lily/icon_action3.png', bit: 0x02 },
-      { part: 'head',  label: 'Head',  icon: 'images/lily/icon_action4.png', bit: 0x10 },
-      { part: 'eyes',  label: 'Eyes',  icon: 'images/lily/icon_action5.png', bit: 0x20 },
-    ],
-    lights: [
-      { id: 'torso', label: 'Lantern', channel: '01' },
-    ],
-    lightModes: [
-      { value: 1, label: 'Flickering' },
-      { value: 2, label: 'Pulsing' },
-      { value: 3, label: 'Chasing' },
-    ],
-  },
+	[DEVICE_TYPES.SKELLY]: {
+		defaultBleName: "Animated Skelly",
+		uiName: "Ultra Skelly",
+		hasEyes: true,
+		movements: [
+			{
+				part: "all",
+				label: "All",
+				icon: "images/skelly/icon_action1.png",
+				bit: 255,
+			},
+			{
+				part: "head",
+				label: "Head",
+				icon: "images/skelly/icon_action2.png",
+				bit: 0x01,
+			},
+			{
+				part: "arm",
+				label: "Arm",
+				icon: "images/skelly/icon_action3.png",
+				bit: 0x02,
+			},
+			{
+				part: "torso",
+				label: "Torso",
+				icon: "images/skelly/icon_action4.png",
+				bit: 0x04,
+			},
+		],
+		lights: [
+			{ id: "head", label: "Head Light", channel: "00" },
+			{ id: "torso", label: "Torso Light", channel: "01" },
+		],
+		lightModes: [
+			{ value: 1, label: "Static" },
+			{ value: 2, label: "Strobe" },
+			{ value: 3, label: "Pulsing" },
+		],
+	},
+	[DEVICE_TYPES.LILY]: {
+		defaultBleName: "Lethal Lily",
+		uiName: "Lethal Lily",
+		hasEyes: false,
+		movements: [
+			{
+				part: "all",
+				label: "All",
+				icon: "images/lily/icon_action1.png",
+				bit: 255,
+			},
+			{
+				part: "wrist",
+				label: "Wrist",
+				icon: "images/lily/icon_action2.png",
+				bit: 0x01,
+			},
+			{
+				part: "elbow",
+				label: "Elbow",
+				icon: "images/lily/icon_action3.png",
+				bit: 0x02,
+			},
+			{
+				part: "head",
+				label: "Head",
+				icon: "images/lily/icon_action4.png",
+				bit: 0x10,
+			},
+			{
+				part: "eyes",
+				label: "Eyes",
+				icon: "images/lily/icon_action5.png",
+				bit: 0x20,
+			},
+		],
+		lights: [{ id: "torso", label: "Lantern", channel: "01" }],
+		lightModes: [
+			{ value: 1, label: "Flickering" },
+			{ value: 2, label: "Pulsing" },
+			{ value: 3, label: "Chasing" },
+		],
+	},
 };
 
 // LocalStorage Keys
 const STORAGE_KEYS = {
-  RISK_ACK: 'skelly_ack_v2',
-  ADV_RAW: 'skelly_adv_raw',
-  ADV_FEDC: 'skelly_adv_fedc',
-  CHUNK_OVERRIDE: 'skelly_chunk_override',
-  CHUNK_SIZE: 'skelly_chunk_size',
-  BITRATE_OVERRIDE: 'skelly_bitrate_override',
-  BITRATE: 'skelly_bitrate',
-  SHOW_FILE_DETAILS: 'skelly_show_file_details',
-  CONNECTION_TYPE: 'skelly_connection_type',
-  REST_URL: 'skelly_rest_url',
-  DEVICE_TYPE: 'skelly_device_type',
-  LOG_FILTER_NORMAL: 'skelly_log_filter_normal',
-  LOG_FILTER_WARNING: 'skelly_log_filter_warning',
-  LOG_FILTER_TX: 'skelly_log_filter_tx',
-  LOG_FILTER_RX: 'skelly_log_filter_rx',
+	RISK_ACK: "skelly_ack_v2",
+	ADV_RAW: "skelly_adv_raw",
+	ADV_FEDC: "skelly_adv_fedc",
+	CHUNK_OVERRIDE: "skelly_chunk_override",
+	CHUNK_SIZE: "skelly_chunk_size",
+	BITRATE_OVERRIDE: "skelly_bitrate_override",
+	BITRATE: "skelly_bitrate",
+	SHOW_FILE_DETAILS: "skelly_show_file_details",
+	CONNECTION_TYPE: "skelly_connection_type",
+	REST_URL: "skelly_rest_url",
+	DEVICE_TYPE: "skelly_device_type",
+	LOG_FILTER_NORMAL: "skelly_log_filter_normal",
+	LOG_FILTER_WARNING: "skelly_log_filter_warning",
+	LOG_FILTER_TX: "skelly_log_filter_tx",
+	LOG_FILTER_RX: "skelly_log_filter_rx",
 };
 
 // Protocol Padding Defaults (bytes)
 const PADDING = {
-  DEFAULT: 8,
+	DEFAULT: 8,
 };
 
 // File Transfer Configuration
 const TRANSFER_CONFIG = {
-  MAX_CHUNK_SIZE: 500,       // Maximum bytes per chunk (tested maximum)
-  DEFAULT_CHUNK_SIZE: 250,   // Conservative default for unknown MTU
-  ATT_OVERHEAD: 3,           // ATT protocol overhead bytes
-  CHUNK_DELAY_MS: 50,
-  EDIT_CHUNK_DELAY_MS: 12,
+	MAX_CHUNK_SIZE: 500, // Maximum bytes per chunk (tested maximum)
+	DEFAULT_CHUNK_SIZE: 250, // Conservative default for unknown MTU
+	ATT_OVERHEAD: 3, // ATT protocol overhead bytes
+	CHUNK_DELAY_MS: 50,
+	EDIT_CHUNK_DELAY_MS: 12,
 };
 
 // Timeout Values (milliseconds)
 const TIMEOUTS = {
-  ACK: 5000,
-  ACK_LONG: 5000,
-  FILE_TRANSFER: 240000,
-  FILE_LIST: 6000,
-  CONNECTION: 5000,
+	ACK: 5000,
+	ACK_LONG: 5000,
+	FILE_TRANSFER: 240000,
+	FILE_LIST: 6000,
+	CONNECTION: 5000,
 };
 
 // Audio Configuration
 const AUDIO_CONFIG = {
-  LONG_TRACK_LIMIT_SECONDS: 30,
-  TARGET_SAMPLE_RATE: 8000,
-  TARGET_CHANNELS: 1, // mono
-  DEFAULT_MP3_KBPS: 32,
-  MP3_ENCODE_BLOCK_SIZE: 1152,
+	LONG_TRACK_LIMIT_SECONDS: 30,
+	TARGET_SAMPLE_RATE: 8000,
+	TARGET_CHANNELS: 1, // mono
+	DEFAULT_MP3_KBPS: 32,
+	MP3_ENCODE_BLOCK_SIZE: 1152,
 };
 
 // Movement Bitfield Definitions
 const MOVEMENT_BITS = {
-  HEAD: 0b001,   // bit 0
-  ARM: 0b010,    // bit 1
-  TORSO: 0b100,  // bit 2
-  ALL_ON: 255,   // special value for all movements enabled
+	HEAD: 0b001, // bit 0
+	ARM: 0b010, // bit 1
+	TORSO: 0b100, // bit 2
+	ALL_ON: 255, // special value for all movements enabled
 };
 
 // BLE Command Tags
 const COMMANDS = {
-  // File Transfer
-  START_TRANSFER: 'AAC0',    // Initialize file transfer
-  CHUNK_DATA: 'AAC1',        // Send data chunk
-  END_TRANSFER: 'AAC2',      // End file transfer
-  CONFIRM_TRANSFER: 'AAC3',  // Confirm file transfer
-  CANCEL: 'AAC4',            // Cancel transfer
-  RESUME: 'AAC5',            // Resume transfer
-  PLAY_PAUSE: 'AAC6',        // Play/pause file
-  DELETE: 'AAC7',            // Delete file
-  SET_ORDER: 'AAC9',         // Set file order
-  
-  // Device Queries
-  QUERY_PARAMS: 'AAE0',      // Query device parameters
-  QUERY_LIVE: 'AAE1',        // Query live status
-  QUERY_VOLUME: 'AAE5',      // Query volume
-  QUERY_BT_NAME: 'AAE6',     // Query Bluetooth name
-  QUERY_VERSION: 'AAEE',     // Query version
-  QUERY_FILES: 'AAD0',       // Query file list
-  QUERY_ORDER: 'AAD1',       // Query file order
-  QUERY_CAPACITY: 'AAD2',    // Query storage capacity
-  
-  // Various Controls
-  SET_VOLUME: 'AAFA',        // Set volume (0-255)
-  SET_PIN_AND_NAME: 'AAFB',  // Set device PIN and Bluetooth name
-  MEDIA_PLAY: 'AAFC',        // Play media (payload: 01)
-  MEDIA_PAUSE: 'AAFC',       // Pause media (payload: 00)
-  ENABLE_CLASSIC_BT: 'AAFD', // Enable classic Bluetooth audio, aka live mode (payload: 01)
-  
-  // Lighting
-  SET_MODE: 'AAF2',          // Set effect mode (1=static, 2=strobe, 3=pulsing)
-  SET_BRIGHTNESS: 'AAF3',    // Set brightness (0-255)
-  SET_RGB: 'AAF4',           // Set RGB color (with optional loop for color cycling)
-  SET_SPEED: 'AAF6',         // Set effect speed (for strobe/pulsing)
-  
-  // Appearance
-  SET_EYE: 'AAF9',           // Set eye icon
-  SET_MOVEMENT: 'AACA',      // Set movement animation
+	// File Transfer
+	START_TRANSFER: "AAC0", // Initialize file transfer
+	CHUNK_DATA: "AAC1", // Send data chunk
+	END_TRANSFER: "AAC2", // End file transfer
+	CONFIRM_TRANSFER: "AAC3", // Confirm file transfer
+	CANCEL: "AAC4", // Cancel transfer
+	RESUME: "AAC5", // Resume transfer
+	PLAY_PAUSE: "AAC6", // Play/pause file
+	DELETE: "AAC7", // Delete file
+	SET_ORDER: "AAC9", // Set file order
+
+	// Device Queries
+	QUERY_PARAMS: "AAE0", // Query device parameters
+	QUERY_LIVE: "AAE1", // Query live status
+	QUERY_VOLUME: "AAE5", // Query volume
+	QUERY_BT_NAME: "AAE6", // Query Bluetooth name
+	QUERY_VERSION: "AAEE", // Query version
+	QUERY_FILES: "AAD0", // Query file list
+	QUERY_ORDER: "AAD1", // Query file order
+	QUERY_CAPACITY: "AAD2", // Query storage capacity
+
+	// Various Controls
+	SET_VOLUME: "AAFA", // Set volume (0-255)
+	SET_PIN_AND_NAME: "AAFB", // Set device PIN and Bluetooth name
+	MEDIA_PLAY: "AAFC", // Play media (payload: 01)
+	MEDIA_PAUSE: "AAFC", // Pause media (payload: 00)
+	ENABLE_CLASSIC_BT: "AAFD", // Enable classic Bluetooth audio, aka live mode (payload: 01)
+
+	// Lighting
+	SET_MODE: "AAF2", // Set effect mode (1=static, 2=strobe, 3=pulsing)
+	SET_BRIGHTNESS: "AAF3", // Set brightness (0-255)
+	SET_RGB: "AAF4", // Set RGB color (with optional loop for color cycling)
+	SET_SPEED: "AAF6", // Set effect speed (for strobe/pulsing)
+
+	// Appearance
+	SET_EYE: "AAF9", // Set eye icon
+	SET_MOVEMENT: "AACA", // Set movement animation
 };
 
 // Response Prefixes
 const RESPONSES = {
-  DEVICE_PARAMS: 'BBE0',     // Device parameters response
-  LIVE_STATUS: 'BBE1',       // Live status response
-  CAPACITY: 'BBD2',          // Capacity response
-  ORDER: 'BBD1',             // Play order response
-  FILE_INFO: 'BBD0',         // File info response
-  VOLUME: 'BBE5',            // Volume response
-  BT_NAME: 'BBE6',           // BT name response
-  ENABLE_CLASSIC_BT: 'BBFD', // Enable classic BT response
+	DEVICE_PARAMS: "BBE0", // Device parameters response
+	LIVE_STATUS: "BBE1", // Live status response
+	CAPACITY: "BBD2", // Capacity response
+	ORDER: "BBD1", // Play order response
+	FILE_INFO: "BBD0", // File info response
+	VOLUME: "BBE5", // Volume response
+	BT_NAME: "BBE6", // BT name response
+	ENABLE_CLASSIC_BT: "BBFD", // Enable classic BT response
 
-  TRANSFER_START: 'BBC0',    // Transfer start ACK
-  CHUNK_DROPPED: 'BBC1',     // Chunk dropped (resend request)
-  TRANSFER_END: 'BBC2',      // Transfer end ACK
-  CONFIRM_TRANSFER_ACK: 'BBC3', // Confirm transfer ACK
-  CANCEL_ACK: 'BBC4',        // Cancel ACK
-  RESUME_ACK: 'BBC5',        // Resume ACK
-  PLAY_ACK: 'BBC6',          // Play/pause ACK
-  DELETE_ACK: 'BBC7',        // Delete ACK
-  FORMAT_ACK: 'BBC8',        // Format ACK
+	TRANSFER_START: "BBC0", // Transfer start ACK
+	CHUNK_DROPPED: "BBC1", // Chunk dropped (resend request)
+	TRANSFER_END: "BBC2", // Transfer end ACK
+	CONFIRM_TRANSFER_ACK: "BBC3", // Confirm transfer ACK
+	CANCEL_ACK: "BBC4", // Cancel ACK
+	RESUME_ACK: "BBC5", // Resume ACK
+	PLAY_ACK: "BBC6", // Play/pause ACK
+	DELETE_ACK: "BBC7", // Delete ACK
+	FORMAT_ACK: "BBC8", // Format ACK
 
-  KEEPALIVE: 'FEDC',         // Keepalive packet
+	KEEPALIVE: "FEDC", // Keepalive packet
 };
 
 // Lighting Modes
 const LIGHTING_MODES = {
-  STATIC: 1,
-  STROBE: 2,
-  PULSING: 3,
+	STATIC: 1,
+	STROBE: 2,
+	PULSING: 3,
 };
 
 // Warning Messages
 const WARNINGS = {
-  LONG_TRACK: 'Uploading a track longer than 30 seconds is experimental, please proceed with caution.',
-  SLOW_UPLOAD: 'File uploads can take several minutes due to Bluetooth limitations. The device may appear frozen during this time but is still transferring data.',
+	LONG_TRACK:
+		"Uploading a track longer than 30 seconds is experimental, please proceed with caution.",
+	SLOW_UPLOAD:
+		"File uploads can take several minutes due to Bluetooth limitations. The device may appear frozen during this time but is still transferring data.",
 };
 
 // Log CSS Classes
 const LOG_CLASSES = {
-  NORMAL: '',
-  WARNING: 'warn',
-  TX: 'tx',
-  RX: 'rx',
+	NORMAL: "",
+	WARNING: "warn",
+	TX: "tx",
+	RX: "rx",
 };
 
 // Default Values
 const DEFAULTS = {
-  CHANNEL_COUNT: 6,
-  TARGET_CHANNEL: 'FF', // All channels
-  VOLUME: 0,
-  BRIGHTNESS: 255,
-  COLOR_RED: 255,
-  COLOR_GREEN: 0,
-  COLOR_BLUE: 0,
-  EYE_ICON: 1,
-  LIGHTING_MODE: LIGHTING_MODES.STATIC,
-  SPEED: 0,
+	CHANNEL_COUNT: 6,
+	TARGET_CHANNEL: "FF", // All channels
+	VOLUME: 0,
+	BRIGHTNESS: 255,
+	COLOR_RED: 255,
+	COLOR_GREEN: 0,
+	COLOR_BLUE: 0,
+	EYE_ICON: 1,
+	LIGHTING_MODE: LIGHTING_MODES.STATIC,
+	SPEED: 0,
 };
 
 // File name marker in protocol
 const PROTOCOL_MARKERS = {
-  FILENAME: '5C55', // UTF16LE filename marker
+	FILENAME: "5C55", // UTF16LE filename marker
 };
 
   // ============================================================
@@ -267,15 +312,15 @@ const PROTOCOL_MARKERS = {
  * @returns {string} - 2-character hex string
  */
 function crc8(bytes) {
-  let crc = 0;
-  for (const b of bytes) {
-    let x = crc ^ b;
-    for (let i = 0; i < 8; i++) {
-      x = (x & 1) ? ((x >>> 1) ^ 0x8C) : (x >>> 1);
-    }
-    crc = x & 0xFF;
-  }
-  return crc.toString(16).toUpperCase().padStart(2, '0');
+	let crc = 0;
+	for (const b of bytes) {
+		let x = crc ^ b;
+		for (let i = 0; i < 8; i++) {
+			x = x & 1 ? (x >>> 1) ^ 0x8c : x >>> 1;
+		}
+		crc = x & 0xff;
+	}
+	return crc.toString(16).toUpperCase().padStart(2, "0");
 }
 
 /**
@@ -284,16 +329,16 @@ function crc8(bytes) {
  * @returns {Uint8Array}
  */
 function hexToBytes(hex) {
-  if (!hex) return new Uint8Array();
-  const clean = hex.replace(/\s+/g, '');
-  if (clean.length % 2 !== 0) {
-    throw new Error('Hex length must be even');
-  }
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = parseInt(clean.substr(i * 2, 2), 16);
-  }
-  return out;
+	if (!hex) return new Uint8Array();
+	const clean = hex.replace(/\s+/g, "");
+	if (clean.length % 2 !== 0) {
+		throw new Error("Hex length must be even");
+	}
+	const out = new Uint8Array(clean.length / 2);
+	for (let i = 0; i < out.length; i++) {
+		out[i] = parseInt(clean.substr(i * 2, 2), 16);
+	}
+	return out;
 }
 
 /**
@@ -302,7 +347,9 @@ function hexToBytes(hex) {
  * @returns {string} - Uppercase hex string
  */
 function bytesToHex(u8) {
-  return Array.from(u8, b => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+	return Array.from(u8, (b) =>
+		b.toString(16).toUpperCase().padStart(2, "0"),
+	).join("");
 }
 
 /**
@@ -312,7 +359,11 @@ function bytesToHex(u8) {
  * @returns {string} - Uppercase hex string
  */
 function intToHex(n, bytes) {
-  return (n >>> 0).toString(16).toUpperCase().padStart(bytes * 2, '0').slice(-bytes * 2);
+	return (n >>> 0)
+		.toString(16)
+		.toUpperCase()
+		.padStart(bytes * 2, "0")
+		.slice(-bytes * 2);
 }
 
 /**
@@ -321,26 +372,29 @@ function intToHex(n, bytes) {
  * @returns {string} - Uppercase hex string
  */
 function utf16leHex(str) {
-  if (!str) return '';
-  let hex = '';
-  for (const ch of str) {
-    const cp = ch.codePointAt(0);
-    if (cp <= 0xFFFF) {
-      const lo = cp & 0xFF;
-      const hi = (cp >> 8) & 0xFF;
-      hex += lo.toString(16).padStart(2, '0') + hi.toString(16).padStart(2, '0');
-    } else {
-      // Surrogate pair for characters outside BMP
-      const v = cp - 0x10000;
-      const hiS = 0xD800 + ((v >> 10) & 0x3FF);
-      const loS = 0xDC00 + (v & 0x3FF);
-      hex += (hiS & 0xFF).toString(16).padStart(2, '0') + 
-             ((hiS >> 8) & 0xFF).toString(16).padStart(2, '0');
-      hex += (loS & 0xFF).toString(16).padStart(2, '0') + 
-             ((loS >> 8) & 0xFF).toString(16).padStart(2, '0');
-    }
-  }
-  return hex.toUpperCase();
+	if (!str) return "";
+	let hex = "";
+	for (const ch of str) {
+		const cp = ch.codePointAt(0);
+		if (cp <= 0xffff) {
+			const lo = cp & 0xff;
+			const hi = (cp >> 8) & 0xff;
+			hex +=
+				lo.toString(16).padStart(2, "0") + hi.toString(16).padStart(2, "0");
+		} else {
+			// Surrogate pair for characters outside BMP
+			const v = cp - 0x10000;
+			const hiS = 0xd800 + ((v >> 10) & 0x3ff);
+			const loS = 0xdc00 + (v & 0x3ff);
+			hex +=
+				(hiS & 0xff).toString(16).padStart(2, "0") +
+				((hiS >> 8) & 0xff).toString(16).padStart(2, "0");
+			hex +=
+				(loS & 0xff).toString(16).padStart(2, "0") +
+				((loS >> 8) & 0xff).toString(16).padStart(2, "0");
+		}
+	}
+	return hex.toUpperCase();
 }
 
 /**
@@ -349,15 +403,15 @@ function utf16leHex(str) {
  * @returns {string} - Decoded string
  */
 function decodeUtf16le(u8) {
-  let s = '';
-  for (let i = 0; i + 1 < u8.length; i += 2) {
-    const lo = u8[i];
-    const hi = u8[i + 1];
-    const code = (hi << 8) | lo;
-    if (code === 0) continue;
-    s += String.fromCharCode(code);
-  }
-  return s;
+	let s = "";
+	for (let i = 0; i + 1 < u8.length; i += 2) {
+		const lo = u8[i];
+		const hi = u8[i + 1];
+		const code = (hi << 8) | lo;
+		if (code === 0) continue;
+		s += String.fromCharCode(code);
+	}
+	return s;
 }
 
 /**
@@ -367,13 +421,13 @@ function decodeUtf16le(u8) {
  * @param {number} minBytes - Minimum payload bytes (for padding)
  * @returns {Uint8Array} - Complete command bytes with CRC
  */
-function buildCommand(tag, payloadHex = '', minBytes = PADDING.DEFAULT) {
-  const p = (payloadHex || '').replace(/\s+/g, '').toUpperCase();
-  const minLen = Math.max(0, (minBytes | 0) * 2);
-  const padded = p.length < minLen ? p + '0'.repeat(minLen - p.length) : p;
-  const base = tag.toUpperCase() + padded;
-  const crcValue = crc8(hexToBytes(base));
-  return hexToBytes(base + crcValue);
+function buildCommand(tag, payloadHex = "", minBytes = PADDING.DEFAULT) {
+	const p = (payloadHex || "").replace(/\s+/g, "").toUpperCase();
+	const minLen = Math.max(0, (minBytes | 0) * 2);
+	const padded = p.length < minLen ? p + "0".repeat(minLen - p.length) : p;
+	const base = tag.toUpperCase() + padded;
+	const crcValue = crc8(hexToBytes(base));
+	return hexToBytes(base + crcValue);
 }
 
 /**
@@ -382,15 +436,15 @@ function buildCommand(tag, payloadHex = '', minBytes = PADDING.DEFAULT) {
  * @returns {string} - ASCII string (printable chars only)
  */
 function getAsciiFromHex(hexString) {
-  const clean = hexString.replace(/[^0-9A-F]/gi, '');
-  const u8 = hexToBytes(clean);
-  let out = '';
-  for (const b of u8) {
-    if (b >= 32 && b <= 126) {
-      out += String.fromCharCode(b);
-    }
-  }
-  return out.trim();
+	const clean = hexString.replace(/[^0-9A-F]/gi, "");
+	const u8 = hexToBytes(clean);
+	let out = "";
+	for (const b of u8) {
+		if (b >= 32 && b <= 126) {
+			out += String.fromCharCode(b);
+		}
+	}
+	return out.trim();
 }
 
 /**
@@ -399,19 +453,19 @@ function getAsciiFromHex(hexString) {
  * @returns {Object} - {nameHex, nameLenHex, fullPayload}
  */
 function buildFilenamePayload(name) {
-  if (!name || !name.trim()) {
-    return {
-      nameHex: '',
-      nameLenHex: '00',
-      fullPayload: '00',
-    };
-  }
-  
-  const nameHex = utf16leHex(name.trim());
-  const nameLenHex = intToHex((nameHex.length / 2) + 2, 1);
-  const fullPayload = nameLenHex + PROTOCOL_MARKERS.FILENAME + nameHex;
-  
-  return { nameHex, nameLenHex, fullPayload };
+	if (!name?.trim()) {
+		return {
+			nameHex: "",
+			nameLenHex: "00",
+			fullPayload: "00",
+		};
+	}
+
+	const nameHex = utf16leHex(name.trim());
+	const nameLenHex = intToHex(nameHex.length / 2 + 2, 1);
+	const fullPayload = nameLenHex + PROTOCOL_MARKERS.FILENAME + nameHex;
+
+	return { nameHex, nameLenHex, fullPayload };
 }
 
 /**
@@ -422,9 +476,11 @@ function buildFilenamePayload(name) {
  * @returns {string} - Hex string
  */
 function chunkToHex(u8, offset, length) {
-  const end = Math.min(offset + length, u8.length);
-  const chunk = u8.subarray(offset, end);
-  return Array.from(chunk, b => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+	const end = Math.min(offset + length, u8.length);
+	const chunk = u8.subarray(offset, end);
+	return Array.from(chunk, (b) =>
+		b.toString(16).toUpperCase().padStart(2, "0"),
+	).join("");
 }
 
 /**
@@ -435,7 +491,7 @@ function chunkToHex(u8, offset, length) {
  * @returns {number} - Clamped value
  */
 function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, Number(n) || 0));
+	return Math.max(min, Math.min(max, Number(n) || 0));
 }
 
 /**
@@ -444,7 +500,7 @@ function clamp(n, min, max) {
  * @returns {Promise<void>}
  */
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -453,12 +509,16 @@ function sleep(ms) {
  * @returns {string} - Escaped string
  */
 function escapeHtml(s) {
-  return s.replace(/[&<>"]/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;'
-  }[c]));
+	return s.replace(
+		/[&<>"]/g,
+		(c) =>
+			({
+				"&": "&amp;",
+				"<": "&lt;",
+				">": "&gt;",
+				'"': "&quot;",
+			})[c],
+	);
 }
 
 /**
@@ -467,7 +527,7 @@ function escapeHtml(s) {
  * @returns {string} - Normalized name
  */
 function normalizeDeviceName(s) {
-  return (s || '').trim().toLowerCase();
+	return (s || "").trim().toLowerCase();
 }
 
 /**
@@ -478,14 +538,14 @@ function normalizeDeviceName(s) {
  * @returns {number} - Speed value for UI (0-254)
  */
 function deviceSpeedToUI(deviceSpeed) {
-  const speed = parseInt(deviceSpeed, 10);
-  // Device speed 255 is fastest (same as 0), map to UI 254
-  if (speed === 255) {
-    return 254;
-  }
-  // Invert: device 0 (fast) -> UI 254 (fast)
-  //         device 254 (slow) -> UI 0 (slow)
-  return 254 - speed;
+	const speed = parseInt(deviceSpeed, 10);
+	// Device speed 255 is fastest (same as 0), map to UI 254
+	if (speed === 255) {
+		return 254;
+	}
+	// Invert: device 0 (fast) -> UI 254 (fast)
+	//         device 254 (slow) -> UI 0 (slow)
+	return 254 - speed;
 }
 
 /**
@@ -496,10 +556,10 @@ function deviceSpeedToUI(deviceSpeed) {
  * @returns {number} - Speed value for device (0-255)
  */
 function uiSpeedToDevice(uiSpeed) {
-  const speed = clamp(uiSpeed, 0, 254);
-  // Invert: UI 254 (fast) -> device 0 (fast)
-  //         UI 0 (slow) -> device 254 (slow)
-  return 254 - speed;
+	const speed = clamp(uiSpeed, 0, 254);
+	// Invert: UI 254 (fast) -> device 0 (fast)
+	//         UI 0 (slow) -> device 254 (slow)
+	return 254 - speed;
 }
 
   // ============================================================
@@ -515,363 +575,365 @@ function uiSpeedToDevice(uiSpeed) {
  * Manages device status, file list, and transfer state with change notifications
  */
 class StateManager {
-  constructor() {
-    // Device state
-    this.device = {
-      name: '',
-      btName: '',
-      connected: false,
-      showMode: null,
-      channels: [],
-      volume: null,
-      capacity: null,
-      filesReported: null,  // Count reported by device in capacity query
-      filesReceived: null,  // Count of files actually received in file list
-      order: null, // Music play order
-      pin: null, // Device PIN
-    };
+	constructor() {
+		// Device state
+		this.device = {
+			name: "",
+			btName: "",
+			connected: false,
+			showMode: null,
+			channels: [],
+			volume: null,
+			capacity: null,
+			filesReported: null, // Count reported by device in capacity query
+			filesReceived: null, // Count of files actually received in file list
+			order: null, // Music play order
+			pin: null, // Device PIN
+		};
 
-    // Active device type (drives UI profile)
-    this.deviceType = DEVICE_TYPES.SKELLY;
+		// Active device type (drives UI profile)
+		this.deviceType = DEVICE_TYPES.SKELLY;
 
-    // Live status (action, eye icon, lights)
-    this.live = {
-      action: null,
-      eye: null,
-      lights: [],
-    };
+		// Live status (action, eye icon, lights)
+		this.live = {
+			action: null,
+			eye: null,
+			lights: [],
+		};
 
-    // File list state
-    this.files = {
-      expected: null,
-      items: new Map(), // serial -> file object
-      activeFetch: false, // When true, UI is disabled waiting for complete list
-      fetchTimer: null,
-      lastRefresh: null, // Timestamp of last successful refresh
-    };
+		// File list state
+		this.files = {
+			expected: null,
+			items: new Map(), // serial -> file object
+			activeFetch: false, // When true, UI is disabled waiting for complete list
+			fetchTimer: null,
+			lastRefresh: null, // Timestamp of last successful refresh
+		};
 
-    // Transfer state
-    this.transfer = {
-      inProgress: false,
-      cancel: false,
-      resumeFrom: null,
-      chunks: new Map(), // index -> payload hex
-      currentFile: null,
-    };
+		// Transfer state
+		this.transfer = {
+			inProgress: false,
+			cancel: false,
+			resumeFrom: null,
+			chunks: new Map(), // index -> payload hex
+			currentFile: null,
+		};
 
-    // Edit modal state
-    this.editModal = {
-      serial: null,
-      cluster: 0,
-      name: '',
-      eye: 1,
-    };
+		// Edit modal state
+		this.editModal = {
+			serial: null,
+			cluster: 0,
+			name: "",
+			eye: 1,
+		};
 
-    // Observers: key -> Set of callbacks
-    this.observers = new Map();
-    
-    // Build flag
-    this.targetsBuiltFromE0 = false;
-  }
+		// Observers: key -> Set of callbacks
+		this.observers = new Map();
 
-  /**
-   * Subscribe to state changes
-   * @param {string} key - State key to watch (e.g., 'device', 'files', 'transfer')
-   * @param {Function} callback - Callback function to invoke on changes
-   * @returns {Function} - Unsubscribe function
-   */
-  subscribe(key, callback) {
-    if (!this.observers.has(key)) {
-      this.observers.set(key, new Set());
-    }
-    this.observers.get(key).add(callback);
+		// Build flag
+		this.targetsBuiltFromE0 = false;
+	}
 
-    // Return unsubscribe function
-    return () => {
-      const observers = this.observers.get(key);
-      if (observers) {
-        observers.delete(callback);
-      }
-    };
-  }
+	/**
+	 * Subscribe to state changes
+	 * @param {string} key - State key to watch (e.g., 'device', 'files', 'transfer')
+	 * @param {Function} callback - Callback function to invoke on changes
+	 * @returns {Function} - Unsubscribe function
+	 */
+	subscribe(key, callback) {
+		if (!this.observers.has(key)) {
+			this.observers.set(key, new Set());
+		}
+		this.observers.get(key).add(callback);
 
-  /**
-   * Notify observers of state changes
-   * @param {string} key - State key that changed
-   */
-  notify(key) {
-    const observers = this.observers.get(key);
-    if (observers) {
-      observers.forEach(callback => {
-        try {
-          callback(this[key]);
-        } catch (error) {
-          console.error(`Error in observer for ${key}:`, error);
-        }
-      });
-    }
-  }
+		// Return unsubscribe function
+		return () => {
+			const observers = this.observers.get(key);
+			if (observers) {
+				observers.delete(callback);
+			}
+		};
+	}
 
-  /**
-   * Set the active device type and notify observers
-   * @param {string} type - DEVICE_TYPES value
-   */
-  setDeviceType(type) {
-    this.deviceType = type;
-    this.notify('deviceType');
-  }
+	/**
+	 * Notify observers of state changes
+	 * @param {string} key - State key that changed
+	 */
+	notify(key) {
+		const observers = this.observers.get(key);
+		if (observers) {
+			observers.forEach((callback) => {
+				try {
+					callback(this[key]);
+				} catch (error) {
+					console.error(`Error in observer for ${key}:`, error);
+				}
+			});
+		}
+	}
 
-  // === Device State Methods ===
+	/**
+	 * Set the active device type and notify observers
+	 * @param {string} type - DEVICE_TYPES value
+	 */
+	setDeviceType(type) {
+		this.deviceType = type;
+		this.notify("deviceType");
+	}
 
-  /**
-   * Update device state
-   * @param {Object} updates - Partial device state updates
-   */
-  updateDevice(updates) {
-    Object.assign(this.device, updates);
-    this.notify('device');
-  }
+	// === Device State Methods ===
 
-  /**
-   * Set connection status
-   * @param {boolean} connected - Connection status
-   */
-  setConnected(connected) {
-    this.device.connected = connected;
-    this.notify('device');
-  }
+	/**
+	 * Update device state
+	 * @param {Object} updates - Partial device state updates
+	 */
+	updateDevice(updates) {
+		Object.assign(this.device, updates);
+		this.notify("device");
+	}
 
-  /**
-   * Update live status
-   * @param {Object} updates - Partial live status updates
-   */
-  updateLive(updates) {
-    Object.assign(this.live, updates);
-    this.notify('live');
-  }
+	/**
+	 * Set connection status
+	 * @param {boolean} connected - Connection status
+	 */
+	setConnected(connected) {
+		this.device.connected = connected;
+		this.notify("device");
+	}
 
-  // === File State Methods ===
+	/**
+	 * Update live status
+	 * @param {Object} updates - Partial live status updates
+	 */
+	updateLive(updates) {
+		Object.assign(this.live, updates);
+		this.notify("live");
+	}
 
-  /**
-   * Reset file list state and clear old items
-   */
-  resetFiles() {
-    this.files.expected = null;
-    this.files.items.clear(); // Clear old items immediately at start of refresh
-    this.files.activeFetch = false;
-    if (this.files.fetchTimer) {
-      clearTimeout(this.files.fetchTimer);
-      this.files.fetchTimer = null;
-    }
-    this.notify('files');
-  }
+	// === File State Methods ===
 
-  /**
-   * Add or update a file in the list
-   * @param {number} serial - File serial number
-   * @param {Object} fileData - File data object
-   */
-  setFile(serial, fileData) {
-    this.files.items.set(serial, fileData);
-    // Never notify during active fetch - wait until order arrives
-    if (!this.files.activeFetch) {
-      this.notify('files');
-    }
-  }
+	/**
+	 * Reset file list state and clear old items
+	 */
+	resetFiles() {
+		this.files.expected = null;
+		this.files.items.clear(); // Clear old items immediately at start of refresh
+		this.files.activeFetch = false;
+		if (this.files.fetchTimer) {
+			clearTimeout(this.files.fetchTimer);
+			this.files.fetchTimer = null;
+		}
+		this.notify("files");
+	}
 
-  /**
-   * Get file by serial number
-   * @param {number} serial - File serial number
-   * @returns {Object|undefined} - File data or undefined
-   */
-  getFile(serial) {
-    return this.files.items.get(serial);
-  }
+	/**
+	 * Add or update a file in the list
+	 * @param {number} serial - File serial number
+	 * @param {Object} fileData - File data object
+	 */
+	setFile(serial, fileData) {
+		this.files.items.set(serial, fileData);
+		// Never notify during active fetch - wait until order arrives
+		if (!this.files.activeFetch) {
+			this.notify("files");
+		}
+	}
 
-  /**
-   * Check if a filename exists on device
-   * @param {string} name - Filename to check
-   * @returns {Object|null} - File object if found, null otherwise
-   */
-  hasFileName(name) {
-    if (!name) return null;
-    const needle = name.trim().toLowerCase();
-    for (const file of this.files.items.values()) {
-      if ((file.name || '').trim().toLowerCase() === needle) {
-        return file;
-      }
-    }
-    return null;
-  }
+	/**
+	 * Get file by serial number
+	 * @param {number} serial - File serial number
+	 * @returns {Object|undefined} - File data or undefined
+	 */
+	getFile(serial) {
+		return this.files.items.get(serial);
+	}
 
-  /**
-   * Update file list metadata
-   * @param {Object} updates - Updates to files metadata
-   */
-  updateFilesMetadata(updates) {
-    Object.assign(this.files, updates);
-    this.notify('files');
-  }
+	/**
+	 * Check if a filename exists on device
+	 * @param {string} name - Filename to check
+	 * @returns {Object|null} - File object if found, null otherwise
+	 */
+	hasFileName(name) {
+		if (!name) return null;
+		const needle = name.trim().toLowerCase();
+		for (const file of this.files.items.values()) {
+			if ((file.name || "").trim().toLowerCase() === needle) {
+				return file;
+			}
+		}
+		return null;
+	}
 
-  /**
-   * Check if file list is complete
-   * @returns {boolean}
-   */
-  isFileListComplete() {
-    return this.files.expected !== null && 
-           this.files.items.size >= this.files.expected;
-  }
+	/**
+	 * Update file list metadata
+	 * @param {Object} updates - Updates to files metadata
+	 */
+	updateFilesMetadata(updates) {
+		Object.assign(this.files, updates);
+		this.notify("files");
+	}
 
-  // === Transfer State Methods ===
+	/**
+	 * Check if file list is complete
+	 * @returns {boolean}
+	 */
+	isFileListComplete() {
+		return (
+			this.files.expected !== null &&
+			this.files.items.size >= this.files.expected
+		);
+	}
 
-  /**
-   * Start a transfer
-   * @param {string} fileName - Name of file being transferred
-   */
-  startTransfer(fileName) {
-    this.transfer.inProgress = true;
-    this.transfer.cancel = false;
-    this.transfer.resumeFrom = null;
-    this.transfer.chunks.clear();
-    this.transfer.currentFile = fileName;
-    this.notify('transfer');
-  }
+	// === Transfer State Methods ===
 
-  /**
-   * Cancel transfer
-   */
-  cancelTransfer() {
-    this.transfer.cancel = true;
-    this.notify('transfer');
-  }
+	/**
+	 * Start a transfer
+	 * @param {string} fileName - Name of file being transferred
+	 */
+	startTransfer(fileName) {
+		this.transfer.inProgress = true;
+		this.transfer.cancel = false;
+		this.transfer.resumeFrom = null;
+		this.transfer.chunks.clear();
+		this.transfer.currentFile = fileName;
+		this.notify("transfer");
+	}
 
-  /**
-   * End transfer
-   */
-  endTransfer() {
-    this.transfer.inProgress = false;
-    this.transfer.cancel = false;
-    this.transfer.currentFile = null;
-    this.transfer.chunks.clear();
-    this.notify('transfer');
-  }
+	/**
+	 * Cancel transfer
+	 */
+	cancelTransfer() {
+		this.transfer.cancel = true;
+		this.notify("transfer");
+	}
 
-  /**
-   * Set resume point for transfer
-   * @param {number} index - Chunk index to resume from
-   */
-  setResumePoint(index) {
-    this.transfer.resumeFrom = index;
-    this.notify('transfer');
-  }
+	/**
+	 * End transfer
+	 */
+	endTransfer() {
+		this.transfer.inProgress = false;
+		this.transfer.cancel = false;
+		this.transfer.currentFile = null;
+		this.transfer.chunks.clear();
+		this.notify("transfer");
+	}
 
-  /**
-   * Store a chunk for potential resend
-   * @param {number} index - Chunk index
-   * @param {string} payload - Chunk payload hex
-   */
-  storeChunk(index, payload) {
-    this.transfer.chunks.set(index, payload);
-  }
+	/**
+	 * Set resume point for transfer
+	 * @param {number} index - Chunk index to resume from
+	 */
+	setResumePoint(index) {
+		this.transfer.resumeFrom = index;
+		this.notify("transfer");
+	}
 
-  /**
-   * Get stored chunk
-   * @param {number} index - Chunk index
-   * @returns {string|undefined} - Chunk payload hex or undefined
-   */
-  getChunk(index) {
-    return this.transfer.chunks.get(index);
-  }
+	/**
+	 * Store a chunk for potential resend
+	 * @param {number} index - Chunk index
+	 * @param {string} payload - Chunk payload hex
+	 */
+	storeChunk(index, payload) {
+		this.transfer.chunks.set(index, payload);
+	}
 
-  // === Edit Modal State Methods ===
+	/**
+	 * Get stored chunk
+	 * @param {number} index - Chunk index
+	 * @returns {string|undefined} - Chunk payload hex or undefined
+	 */
+	getChunk(index) {
+		return this.transfer.chunks.get(index);
+	}
 
-  /**
-   * Open edit modal with file data
-   * @param {Object} fileData - File data object
-   */
-  openEditModal(fileData) {
-    this.editModal.serial = fileData.serial;
-    this.editModal.cluster = fileData.cluster;
-    this.editModal.name = fileData.name || '';
-    this.editModal.eye = fileData.eye || 1;
-    this.notify('editModal');
-  }
+	// === Edit Modal State Methods ===
 
-  /**
-   * Update edit modal state
-   * @param {Object} updates - Partial edit modal updates
-   */
-  updateEditModal(updates) {
-    Object.assign(this.editModal, updates);
-    this.notify('editModal');
-  }
+	/**
+	 * Open edit modal with file data
+	 * @param {Object} fileData - File data object
+	 */
+	openEditModal(fileData) {
+		this.editModal.serial = fileData.serial;
+		this.editModal.cluster = fileData.cluster;
+		this.editModal.name = fileData.name || "";
+		this.editModal.eye = fileData.eye || 1;
+		this.notify("editModal");
+	}
 
-  /**
-   * Close edit modal
-   */
-  closeEditModal() {
-    this.editModal.serial = null;
-    this.notify('editModal');
-  }
+	/**
+	 * Update edit modal state
+	 * @param {Object} updates - Partial edit modal updates
+	 */
+	updateEditModal(updates) {
+		Object.assign(this.editModal, updates);
+		this.notify("editModal");
+	}
 
-  // === Utility Methods ===
+	/**
+	 * Close edit modal
+	 */
+	closeEditModal() {
+		this.editModal.serial = null;
+		this.notify("editModal");
+	}
 
-  /**
-   * Get current state snapshot
-   * @returns {Object} - Complete state object
-   */
-  getSnapshot() {
-    return {
-      device: { ...this.device },
-      live: { ...this.live },
-      files: {
-        ...this.files,
-        items: new Map(this.files.items),
-      },
-      transfer: {
-        ...this.transfer,
-        chunks: new Map(this.transfer.chunks),
-      },
-      editModal: { ...this.editModal },
-    };
-  }
+	// === Utility Methods ===
 
-  /**
-   * Reset all state
-   */
-  reset() {
-    this.device = {
-      name: '',
-      btName: '',
-      connected: false,
-      showMode: null,
-      channels: [],
-      volume: null,
-      capacity: null,
-      filesReported: null,
-    };
-    this.live = {
-      action: null,
-      eye: null,
-      lights: [],
-    };
-    this.resetFiles();
-    this.endTransfer();
-    this.editModal = {
-      serial: null,
-      cluster: 0,
-      name: '',
-      eye: 1,
-    };
-    this.targetsBuiltFromE0 = false;
-    
-    // Notify all observers
-    this.notify('device');
-    this.notify('live');
-    this.notify('files');
-    this.notify('transfer');
-    this.notify('editModal');
-  }
+	/**
+	 * Get current state snapshot
+	 * @returns {Object} - Complete state object
+	 */
+	getSnapshot() {
+		return {
+			device: { ...this.device },
+			live: { ...this.live },
+			files: {
+				...this.files,
+				items: new Map(this.files.items),
+			},
+			transfer: {
+				...this.transfer,
+				chunks: new Map(this.transfer.chunks),
+			},
+			editModal: { ...this.editModal },
+		};
+	}
+
+	/**
+	 * Reset all state
+	 */
+	reset() {
+		this.device = {
+			name: "",
+			btName: "",
+			connected: false,
+			showMode: null,
+			channels: [],
+			volume: null,
+			capacity: null,
+			filesReported: null,
+		};
+		this.live = {
+			action: null,
+			eye: null,
+			lights: [],
+		};
+		this.resetFiles();
+		this.endTransfer();
+		this.editModal = {
+			serial: null,
+			cluster: 0,
+			name: "",
+			eye: 1,
+		};
+		this.targetsBuiltFromE0 = false;
+
+		// Notify all observers
+		this.notify("device");
+		this.notify("live");
+		this.notify("files");
+		this.notify("transfer");
+		this.notify("editModal");
+	}
 }
 
   // ============================================================
@@ -886,360 +948,387 @@ class StateManager {
  * BLE Connection and Communication Manager
  */
 class BLEManager {
-  constructor(stateManager, logger) {
-    this.state = stateManager;
-    this.log = logger;
-    
-    // BLE objects
-    this.device = null;
-    this.server = null;
-    this.service = null;
-    this.writeCharacteristic = null;
-    this.notifyCharacteristic = null;
-    
-    // Connection state
-    this.isConnecting = false;
-    
-    // Notification handlers
-    this.notificationHandlers = [];
-    
-    // ACK waiters for request/response patterns
-    this.waiters = [];
-    
-    // Bind methods to preserve 'this' context
-    this.handleDisconnect = this.handleDisconnect.bind(this);
-    this.handleNotification = this.handleNotification.bind(this);
-  }
+	constructor(stateManager, logger) {
+		this.state = stateManager;
+		this.log = logger;
 
-  /**
-   * Check if device is connected
-   * @returns {boolean}
-   */
-  isConnected() {
-    return !!(
-      this.device &&
-      this.device.gatt &&
-      this.device.gatt.connected &&
-      this.writeCharacteristic
-    );
-  }
+		// BLE objects
+		this.device = null;
+		this.server = null;
+		this.service = null;
+		this.writeCharacteristic = null;
+		this.notifyCharacteristic = null;
 
-  /**
-   * Get the BLE MTU size if available
-   * @returns {number|null} MTU size in bytes, or null if not available
-   */
-  getMtuSize() {
-    try {
-      // Web Bluetooth API doesn't expose MTU directly in most browsers
-      // Some browsers may have it on the server object
-      if (this.server && typeof this.server.mtu === 'number') {
-        return this.server.mtu;
-      }
-      
-      // Check if device has mtu property (non-standard)
-      if (this.device && typeof this.device.mtu === 'number') {
-        return this.device.mtu;
-      }
-    } catch (error) {
-      // Silently fail - MTU not available
-    }
-    return null;
-  }
+		// Connection state
+		this.isConnecting = false;
 
-  /**
-   * Connect to a BLE device
-   * @param {string} nameFilter - Optional device name prefix filter
-   * @returns {Promise<void>}
-   */
-  async connect(nameFilter = '') {
-    try {
-      // Set connecting flag to prevent disconnect handler from clearing device during retries
-      this.isConnecting = true;
-      
-      // Request device
-      const options = nameFilter.trim()
-        ? {
-            filters: [{ namePrefix: nameFilter.trim() }],
-            optionalServices: [BLE_CONFIG.SERVICE_UUID],
-          }
-        : {
-            acceptAllDevices: true,
-            optionalServices: [BLE_CONFIG.SERVICE_UUID],
-          };
+		// Notification handlers
+		this.notificationHandlers = [];
 
-      this.device = await navigator.bluetooth.requestDevice(options);
-      this.device.addEventListener('gattserverdisconnected', this.handleDisconnect);
-      
-      this.log(`Selected: ${this.device.name || '(unnamed)'} ${this.device.id}`, LOG_CLASSES.WARNING);
+		// ACK waiters for request/response patterns
+		this.waiters = [];
 
-      // Connect to GATT server with retry logic
-      const maxRetries = 3;
-      let lastError = null;
-      
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          // Add small delay before connection attempt (helps with timing issues)
-          if (attempt > 1) {
-            this.log(`Retry ${attempt}/${maxRetries}...`, LOG_CLASSES.WARNING);
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
+		// Bind methods to preserve 'this' context
+		this.handleDisconnect = this.handleDisconnect.bind(this);
+		this.handleNotification = this.handleNotification.bind(this);
+	}
 
-          // Connect to GATT server
-          this.server = await this.device.gatt.connect();
-          
-          // Small delay after connection to let it stabilize
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Verify still connected
-          if (!this.server.connected) {
-            throw new Error('Connection lost immediately after connect');
-          }
-          
-          this.service = await this.server.getPrimaryService(BLE_CONFIG.SERVICE_UUID);
-          
-          // Get characteristics
-          this.writeCharacteristic = await this.service.getCharacteristic(BLE_CONFIG.WRITE_UUID);
-          this.notifyCharacteristic = await this.service.getCharacteristic(BLE_CONFIG.NOTIFY_UUID);
-          
-          // Start notifications
-          await this.notifyCharacteristic.startNotifications();
-          this.notifyCharacteristic.addEventListener('characteristicvaluechanged', this.handleNotification);
+	/**
+	 * Check if device is connected
+	 * @returns {boolean}
+	 */
+	isConnected() {
+		return !!(this.device?.gatt?.connected && this.writeCharacteristic);
+	}
 
-          // Update state
-          this.state.updateDevice({
-            name: this.device.name || '',
-            connected: true,
-          });
+	/**
+	 * Get the BLE MTU size if available
+	 * @returns {number|null} MTU size in bytes, or null if not available
+	 */
+	getMtuSize() {
+		try {
+			// Web Bluetooth API doesn't expose MTU directly in most browsers
+			// Some browsers may have it on the server object
+			if (this.server && typeof this.server.mtu === "number") {
+				return this.server.mtu;
+			}
 
-          this.log('Connected and notifications started ✓', LOG_CLASSES.WARNING);
-          
-          // Clear connecting flag on success
-          this.isConnecting = false;
-          
-          return true;
-        } catch (error) {
-          lastError = error;
-          
-          // Don't retry if it's a user cancellation or device not found
-          if (error.message.includes('User cancelled') || 
-              error.message.includes('No device selected')) {
-            throw error;
-          }
-          
-          // If not the last attempt, continue to retry
-          if (attempt < maxRetries) {
-            this.log(`Connection attempt ${attempt} failed: ${error.message}`, LOG_CLASSES.WARNING);
-            continue;
-          }
-        }
-      }
-      
-      // All retries exhausted
-      throw new Error(`Failed after ${maxRetries} attempts. Last error: ${lastError?.message || 'Unknown error'}`);
-      
-    } catch (error) {
-      this.log(`Connect error: ${error.message}`, LOG_CLASSES.WARNING);
-      
-      // Clear connecting flag on error
-      this.isConnecting = false;
-      
-      // Clean up on connection failure
-      if (this.device) {
-        this.device.removeEventListener('gattserverdisconnected', this.handleDisconnect);
-        this.device = null;
-      }
-      this.server = null;
-      this.service = null;
-      this.writeCharacteristic = null;
-      this.notifyCharacteristic = null;
-      this.state.setConnected(false);
-      
-      throw error;
-    }
-  }
+			// Check if device has mtu property (non-standard)
+			if (this.device && typeof this.device.mtu === "number") {
+				return this.device.mtu;
+			}
+		} catch (_error) {
+			// Silently fail - MTU not available
+		}
+		return null;
+	}
 
-  /**
-   * Disconnect from device
-   * @returns {Promise<void>}
-   */
-  async disconnect() {
-    try {
-      // Stop notifications
-      if (this.notifyCharacteristic) {
-        try {
-          await this.notifyCharacteristic.stopNotifications();
-        } catch (error) {
-          // Ignore errors during cleanup
-        }
-        this.notifyCharacteristic.removeEventListener('characteristicvaluechanged', this.handleNotification);
-      }
+	/**
+	 * Connect to a BLE device
+	 * @param {string} nameFilter - Optional device name prefix filter
+	 * @returns {Promise<void>}
+	 */
+	async connect(nameFilter = "") {
+		try {
+			// Set connecting flag to prevent disconnect handler from clearing device during retries
+			this.isConnecting = true;
 
-      // Disconnect GATT
-      if (this.device && this.device.gatt.connected) {
-        this.device.gatt.disconnect();
-      }
-    } finally {
-      this.handleDisconnect();
-    }
-  }
+			// Request device
+			const options = nameFilter.trim()
+				? {
+						filters: [{ namePrefix: nameFilter.trim() }],
+						optionalServices: [BLE_CONFIG.SERVICE_UUID],
+					}
+				: {
+						acceptAllDevices: true,
+						optionalServices: [BLE_CONFIG.SERVICE_UUID],
+					};
 
-  /**
-   * Handle disconnect event
-   */
-  handleDisconnect() {
-    // If we're in the middle of connecting, don't clear the device reference
-    // as the retry logic needs it. Only log the disconnect.
-    if (this.isConnecting) {
-      this.log('Disconnected during connection attempt (will retry)', LOG_CLASSES.WARNING);
-      return;
-    }
-    
-    this.log('Disconnected', LOG_CLASSES.WARNING);
-    
-    // Clear BLE objects
-    this.device = null;
-    this.server = null;
-    this.service = null;
-    this.writeCharacteristic = null;
-    this.notifyCharacteristic = null;
-    
-    // Clear waiters
-    this.waiters.splice(0);
-    
-    // Update state
-    this.state.setConnected(false);
-    this.state.updateFilesMetadata({ activeFetch: false });
-    if (this.state.files.fetchTimer) {
-      clearTimeout(this.state.files.fetchTimer);
-    }
-  }
+			this.device = await navigator.bluetooth.requestDevice(options);
+			this.device.addEventListener(
+				"gattserverdisconnected",
+				this.handleDisconnect,
+			);
 
-  /**
-   * Send command bytes to device
-   * @param {Uint8Array} commandBytes - Command bytes to send
-   * @returns {Promise<void>}
-   */
-  async send(commandBytes) {
-    if (!this.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      throw new Error('Device not connected');
-    }
+			this.log(
+				`Selected: ${this.device.name || "(unnamed)"} ${this.device.id}`,
+				LOG_CLASSES.WARNING,
+			);
 
-    const hex = bytesToHex(commandBytes);
-    this.log(`TX ${hex}`, LOG_CLASSES.TX);
-    
-    await this.writeCharacteristic.writeValue(commandBytes);
-  }
+			// Connect to GATT server with retry logic
+			const maxRetries = 3;
+			let lastError = null;
 
-  /**
-   * Handle incoming notification
-   * @param {Event} event - Characteristic value changed event
-   */
-  handleNotification(event) {
-    const value = new Uint8Array(event.target.value.buffer);
-    const hex = bytesToHex(value);
-    
-    this.log(`RX ${hex}`, LOG_CLASSES.RX);
+			for (let attempt = 1; attempt <= maxRetries; attempt++) {
+				try {
+					// Add small delay before connection attempt (helps with timing issues)
+					if (attempt > 1) {
+						this.log(`Retry ${attempt}/${maxRetries}...`, LOG_CLASSES.WARNING);
+						await new Promise((resolve) => setTimeout(resolve, 500));
+					}
 
-    // Notify all registered handlers
-    for (const handler of this.notificationHandlers) {
-      try {
-        handler(hex, value);
-      } catch (error) {
-        console.error('Error in notification handler:', error);
-      }
-    }
+					// Connect to GATT server
+					this.server = await this.device.gatt.connect();
 
-    // Handle waiters for request/response patterns
-    this.handleWaiters(hex);
-  }
+					// Small delay after connection to let it stabilize
+					await new Promise((resolve) => setTimeout(resolve, 100));
 
-  /**
-   * Register a notification handler
-   * @param {Function} handler - Handler function (hex, bytes) => void
-   * @returns {Function} - Unsubscribe function
-   */
-  onNotification(handler) {
-    this.notificationHandlers.push(handler);
-    
-    // Return unsubscribe function
-    return () => {
-      const index = this.notificationHandlers.indexOf(handler);
-      if (index >= 0) {
-        this.notificationHandlers.splice(index, 1);
-      }
-    };
-  }
+					// Verify still connected
+					if (!this.server.connected) {
+						throw new Error("Connection lost immediately after connect");
+					}
 
-  /**
-   * Clear all notification handlers
-   */
-  clearNotificationHandlers() {
-    this.notificationHandlers = [];
-  }
+					this.service = await this.server.getPrimaryService(
+						BLE_CONFIG.SERVICE_UUID,
+					);
 
-  /**
-   * Wait for a response with specific prefix
-   * @param {string} prefix - Response prefix to wait for
-   * @param {number} timeoutMs - Timeout in milliseconds
-   * @returns {Promise<string>} - Response hex string
-   */
-  waitForResponse(prefix, timeoutMs = TIMEOUTS.ACK) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`Timeout waiting for ${prefix}`));
-      }, timeoutMs);
+					// Get characteristics
+					this.writeCharacteristic = await this.service.getCharacteristic(
+						BLE_CONFIG.WRITE_UUID,
+					);
+					this.notifyCharacteristic = await this.service.getCharacteristic(
+						BLE_CONFIG.NOTIFY_UUID,
+					);
 
-      const waiter = {
-        prefix,
-        resolve,
-        reject,
-        timer,
-      };
+					// Start notifications
+					await this.notifyCharacteristic.startNotifications();
+					this.notifyCharacteristic.addEventListener(
+						"characteristicvaluechanged",
+						this.handleNotification,
+					);
 
-      this.waiters.push(waiter);
-    });
-  }
+					// Update state
+					this.state.updateDevice({
+						name: this.device.name || "",
+						connected: true,
+					});
 
-  /**
-   * Handle waiters by checking if any match the received response
-   * @param {string} hex - Received hex string
-   */
-  handleWaiters(hex) {
-    for (let i = this.waiters.length - 1; i >= 0; i--) {
-      const waiter = this.waiters[i];
-      if (hex.startsWith(waiter.prefix)) {
-        clearTimeout(waiter.timer);
-        waiter.resolve(hex);
-        this.waiters.splice(i, 1);
-      }
-    }
-  }
+					this.log(
+						"Connected and notifications started ✓",
+						LOG_CLASSES.WARNING,
+					);
 
-  /**
-   * Clear all pending waiters (useful on disconnect)
-   */
-  clearWaiters() {
-    for (const waiter of this.waiters) {
-      clearTimeout(waiter.timer);
-      waiter.reject(new Error('Cleared'));
-    }
-    this.waiters.splice(0);
-  }
+					// Clear connecting flag on success
+					this.isConnecting = false;
 
-  /**
-   * Get device info
-   * @returns {Object|null} - Device info or null if not connected
-   */
-  getDeviceInfo() {
-    if (!this.device) return null;
-    
-    return {
-      name: this.device.name || 'Unknown',
-      id: this.device.id,
-      connected: this.isConnected(),
-    };
-  }
+					return true;
+				} catch (error) {
+					lastError = error;
+
+					// Don't retry if it's a user cancellation or device not found
+					if (
+						error.message.includes("User cancelled") ||
+						error.message.includes("No device selected")
+					) {
+						throw error;
+					}
+
+					// If not the last attempt, continue to retry
+					if (attempt < maxRetries) {
+						this.log(
+							`Connection attempt ${attempt} failed: ${error.message}`,
+							LOG_CLASSES.WARNING,
+						);
+					}
+				}
+			}
+
+			// All retries exhausted
+			throw new Error(
+				`Failed after ${maxRetries} attempts. Last error: ${lastError?.message || "Unknown error"}`,
+			);
+		} catch (error) {
+			this.log(`Connect error: ${error.message}`, LOG_CLASSES.WARNING);
+
+			// Clear connecting flag on error
+			this.isConnecting = false;
+
+			// Clean up on connection failure
+			if (this.device) {
+				this.device.removeEventListener(
+					"gattserverdisconnected",
+					this.handleDisconnect,
+				);
+				this.device = null;
+			}
+			this.server = null;
+			this.service = null;
+			this.writeCharacteristic = null;
+			this.notifyCharacteristic = null;
+			this.state.setConnected(false);
+
+			throw error;
+		}
+	}
+
+	/**
+	 * Disconnect from device
+	 * @returns {Promise<void>}
+	 */
+	async disconnect() {
+		try {
+			// Stop notifications
+			if (this.notifyCharacteristic) {
+				try {
+					await this.notifyCharacteristic.stopNotifications();
+				} catch (_error) {
+					// Ignore errors during cleanup
+				}
+				this.notifyCharacteristic.removeEventListener(
+					"characteristicvaluechanged",
+					this.handleNotification,
+				);
+			}
+
+			// Disconnect GATT
+			if (this.device?.gatt.connected) {
+				this.device.gatt.disconnect();
+			}
+		} finally {
+			this.handleDisconnect();
+		}
+	}
+
+	/**
+	 * Handle disconnect event
+	 */
+	handleDisconnect() {
+		// If we're in the middle of connecting, don't clear the device reference
+		// as the retry logic needs it. Only log the disconnect.
+		if (this.isConnecting) {
+			this.log(
+				"Disconnected during connection attempt (will retry)",
+				LOG_CLASSES.WARNING,
+			);
+			return;
+		}
+
+		this.log("Disconnected", LOG_CLASSES.WARNING);
+
+		// Clear BLE objects
+		this.device = null;
+		this.server = null;
+		this.service = null;
+		this.writeCharacteristic = null;
+		this.notifyCharacteristic = null;
+
+		// Clear waiters
+		this.waiters.splice(0);
+
+		// Update state
+		this.state.setConnected(false);
+		this.state.updateFilesMetadata({ activeFetch: false });
+		if (this.state.files.fetchTimer) {
+			clearTimeout(this.state.files.fetchTimer);
+		}
+	}
+
+	/**
+	 * Send command bytes to device
+	 * @param {Uint8Array} commandBytes - Command bytes to send
+	 * @returns {Promise<void>}
+	 */
+	async send(commandBytes) {
+		if (!this.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			throw new Error("Device not connected");
+		}
+
+		const hex = bytesToHex(commandBytes);
+		this.log(`TX ${hex}`, LOG_CLASSES.TX);
+
+		await this.writeCharacteristic.writeValue(commandBytes);
+	}
+
+	/**
+	 * Handle incoming notification
+	 * @param {Event} event - Characteristic value changed event
+	 */
+	handleNotification(event) {
+		const value = new Uint8Array(event.target.value.buffer);
+		const hex = bytesToHex(value);
+
+		this.log(`RX ${hex}`, LOG_CLASSES.RX);
+
+		// Notify all registered handlers
+		for (const handler of this.notificationHandlers) {
+			try {
+				handler(hex, value);
+			} catch (error) {
+				console.error("Error in notification handler:", error);
+			}
+		}
+
+		// Handle waiters for request/response patterns
+		this.handleWaiters(hex);
+	}
+
+	/**
+	 * Register a notification handler
+	 * @param {Function} handler - Handler function (hex, bytes) => void
+	 * @returns {Function} - Unsubscribe function
+	 */
+	onNotification(handler) {
+		this.notificationHandlers.push(handler);
+
+		// Return unsubscribe function
+		return () => {
+			const index = this.notificationHandlers.indexOf(handler);
+			if (index >= 0) {
+				this.notificationHandlers.splice(index, 1);
+			}
+		};
+	}
+
+	/**
+	 * Clear all notification handlers
+	 */
+	clearNotificationHandlers() {
+		this.notificationHandlers = [];
+	}
+
+	/**
+	 * Wait for a response with specific prefix
+	 * @param {string} prefix - Response prefix to wait for
+	 * @param {number} timeoutMs - Timeout in milliseconds
+	 * @returns {Promise<string>} - Response hex string
+	 */
+	waitForResponse(prefix, timeoutMs = TIMEOUTS.ACK) {
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => {
+				reject(new Error(`Timeout waiting for ${prefix}`));
+			}, timeoutMs);
+
+			const waiter = {
+				prefix,
+				resolve,
+				reject,
+				timer,
+			};
+
+			this.waiters.push(waiter);
+		});
+	}
+
+	/**
+	 * Handle waiters by checking if any match the received response
+	 * @param {string} hex - Received hex string
+	 */
+	handleWaiters(hex) {
+		for (let i = this.waiters.length - 1; i >= 0; i--) {
+			const waiter = this.waiters[i];
+			if (hex.startsWith(waiter.prefix)) {
+				clearTimeout(waiter.timer);
+				waiter.resolve(hex);
+				this.waiters.splice(i, 1);
+			}
+		}
+	}
+
+	/**
+	 * Clear all pending waiters (useful on disconnect)
+	 */
+	clearWaiters() {
+		for (const waiter of this.waiters) {
+			clearTimeout(waiter.timer);
+			waiter.reject(new Error("Cleared"));
+		}
+		this.waiters.splice(0);
+	}
+
+	/**
+	 * Get device info
+	 * @returns {Object|null} - Device info or null if not connected
+	 */
+	getDeviceInfo() {
+		if (!this.device) return null;
+
+		return {
+			name: this.device.name || "Unknown",
+			id: this.device.id,
+			connected: this.isConnected(),
+		};
+	}
 }
 
   // ============================================================
@@ -1254,554 +1343,593 @@ class BLEManager {
  * REST Server Proxy for BLE Communication
  */
 class RestProxy {
-  constructor(stateManager, logger) {
-    this.state = stateManager;
-    this.log = logger;
-    
-    // Connection state
-    this.baseUrl = '';
-    this.sessionId = null;
-    this.connected = false;
-    this.mtuSize = null;
-    this.deviceAddress = null;
-    this.deviceName = null;
-    
-    // Notification handling
-    this.notificationHandlers = [];
-    this.pollingActive = false;
-    this.nextSequence = 0;
-    this.pollingAbortController = null;
-    this.pollingErrorCount = 0;
-    this.maxPollingErrors = 3; // Give up after 3 consecutive errors
-    
-    // Response waiters (for waitForResponse)
-    this.waiters = [];
-    
-    // Keepalive
-    this.keepaliveInterval = null;
-    
-    // Bind methods
-    this.pollNotifications = this.pollNotifications.bind(this);
-  }
+	constructor(stateManager, logger) {
+		this.state = stateManager;
+		this.log = logger;
 
-  /**
-   * Check if device is connected
-   * @returns {boolean}
-   */
-  isConnected() {
-    return this.connected && this.sessionId !== null;
-  }
+		// Connection state
+		this.baseUrl = "";
+		this.sessionId = null;
+		this.connected = false;
+		this.mtuSize = null;
+		this.deviceAddress = null;
+		this.deviceName = null;
 
-  /**
-   * Get the MTU size
-   * @returns {number|null} MTU size in bytes, or null if not available
-   */
-  getMtuSize() {
-    return this.mtuSize;
-  }
+		// Notification handling
+		this.notificationHandlers = [];
+		this.pollingActive = false;
+		this.nextSequence = 0;
+		this.pollingAbortController = null;
+		this.pollingErrorCount = 0;
+		this.maxPollingErrors = 3; // Give up after 3 consecutive errors
 
-  /**
-   * Scan for BLE devices via REST proxy
-   * @param {string} baseUrl - REST server base URL
-   * @param {string} nameFilter - Optional device name filter
-   * @param {number} timeout - Scan timeout in seconds
-   * @returns {Promise<Array>} - Array of discovered devices
-   */
-  async scanDevices(baseUrl, nameFilter = '', timeout = 10) {
-    try {
-      this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
-      
-      const params = new URLSearchParams();
-      if (nameFilter.trim()) {
-        params.append('name_filter', nameFilter.trim());
-      }
-      params.append('timeout', timeout.toString());
-      
-      const scanUrl = `${this.baseUrl}/ble/scan_devices?${params.toString()}`;
-      console.log('Scanning for devices:', scanUrl);
-      this.log(`Scanning for devices via REST proxy...`, LOG_CLASSES.WARNING);
-      
-      let response;
-      try {
-        response = await fetch(scanUrl);
-        console.log('Fetch completed, status:', response.status);
-      } catch (fetchError) {
-        console.error('Fetch failed:', fetchError);
-        // Check for common network issues
-        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error(`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
-        }
-        throw new Error(`Network error: ${fetchError.message}`);
-      }
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Scan error response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Scan response:', data);
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Scan failed');
-      }
-      
-      return data.devices || [];
-    } catch (error) {
-      console.error('Scan error:', error);
-      this.log(`REST proxy scan error: ${error.message}`, LOG_CLASSES.WARNING);
-      throw error;
-    }
-  }
+		// Response waiters (for waitForResponse)
+		this.waiters = [];
 
-  /**
-   * Connect to a BLE device via REST proxy
-   * @param {string} baseUrl - REST server base URL (e.g., "http://localhost:8765")
-   * @param {string} deviceAddress - Device MAC address or name filter
-   * @returns {Promise<void>}
-   */
-  async connect(baseUrl, deviceAddress = '') {
-    try {
-      this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
-      
-      // Prepare connect request
-      const requestBody = {};
-      if (deviceAddress.trim()) {
-        // If it looks like a MAC address, use address field, otherwise use name_filter
-        if (deviceAddress.match(/^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/i)) {
-          requestBody.address = deviceAddress.trim();
-        } else {
-          requestBody.name_filter = deviceAddress.trim();
-        }
-      }
-      
-      this.log(`Connecting via REST proxy: ${this.baseUrl}`, LOG_CLASSES.WARNING);
-      console.log('REST proxy connect request body:', requestBody);
-      
-      // Send connect request
-      const connectUrl = `${this.baseUrl}/ble/connect`;
-      console.log('Fetching:', connectUrl);
-      
-      let response;
-      try {
-        response = await fetch(connectUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        });
-        console.log('Response status:', response.status, response.statusText);
-      } catch (fetchError) {
-        console.error('Fetch failed:', fetchError);
-        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error(`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`);
-        }
-        throw new Error(`Network error: ${fetchError.message}`);
-      }
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-      }
+		// Keepalive
+		this.keepaliveInterval = null;
 
-      const data = await response.json();
-      console.log('Connect response data:', data);
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Connection failed');
-      }
+		// Bind methods
+		this.pollNotifications = this.pollNotifications.bind(this);
+	}
 
-      // Store session info
-      this.sessionId = data.session_id;
-      this.deviceAddress = data.address;
-      this.deviceName = data.name || 'Unknown';
-      this.mtuSize = data.mtu || null;
-      this.connected = true;
-      this.nextSequence = 0;
+	/**
+	 * Check if device is connected
+	 * @returns {boolean}
+	 */
+	isConnected() {
+		return this.connected && this.sessionId !== null;
+	}
 
-      // Update state
-      this.state.updateDevice({
-        name: this.deviceName,
-        connected: true,
-      });
+	/**
+	 * Get the MTU size
+	 * @returns {number|null} MTU size in bytes, or null if not available
+	 */
+	getMtuSize() {
+		return this.mtuSize;
+	}
 
-      this.log(`Connected via REST proxy: session=${this.sessionId}, address=${this.deviceAddress}, mtu=${this.mtuSize}`, LOG_CLASSES.WARNING);
+	/**
+	 * Scan for BLE devices via REST proxy
+	 * @param {string} baseUrl - REST server base URL
+	 * @param {string} nameFilter - Optional device name filter
+	 * @param {number} timeout - Scan timeout in seconds
+	 * @returns {Promise<Array>} - Array of discovered devices
+	 */
+	async scanDevices(baseUrl, nameFilter = "", timeout = 10) {
+		try {
+			this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash
 
-      // Start notification polling
-      this.startPolling();
-      
-      // Start keepalive
-      this.startKeepalive();
+			const params = new URLSearchParams();
+			if (nameFilter.trim()) {
+				params.append("name_filter", nameFilter.trim());
+			}
+			params.append("timeout", timeout.toString());
 
-      return true;
-    } catch (error) {
-      this.log(`REST proxy connect error: ${error.message}`, LOG_CLASSES.WARNING);
-      this.cleanup();
-      throw error;
-    }
-  }
+			const scanUrl = `${this.baseUrl}/ble/scan_devices?${params.toString()}`;
+			console.log("Scanning for devices:", scanUrl);
+			this.log(`Scanning for devices via REST proxy...`, LOG_CLASSES.WARNING);
 
-  /**
-   * Disconnect from device
-   * @returns {Promise<void>}
-   */
-  async disconnect() {
-    try {
-      // Stop polling and keepalive first
-      this.stopPolling();
-      this.stopKeepalive();
-      
-      if (this.sessionId) {
-        // Send disconnect request
-        const response = await fetch(`${this.baseUrl}/ble/disconnect`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            session_id: this.sessionId,
-          }),
-        });
+			let response;
+			try {
+				response = await fetch(scanUrl);
+				console.log("Fetch completed, status:", response.status);
+			} catch (fetchError) {
+				console.error("Fetch failed:", fetchError);
+				// Check for common network issues
+				if (
+					fetchError.message.includes("Failed to fetch") ||
+					fetchError.name === "TypeError"
+				) {
+					throw new Error(
+						`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`,
+					);
+				}
+				throw new Error(`Network error: ${fetchError.message}`);
+			}
 
-        if (response.ok) {
-          this.log('Disconnected from REST proxy', LOG_CLASSES.WARNING);
-        }
-      }
-    } catch (error) {
-      this.log(`REST proxy disconnect error: ${error.message}`, LOG_CLASSES.WARNING);
-    } finally {
-      this.cleanup();
-    }
-  }
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error("Scan error response:", errorText);
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
 
-  /**
-   * Send command bytes to device
-   * @param {Uint8Array} commandBytes - Command bytes to send
-   * @returns {Promise<void>}
-   */
-  async send(commandBytes) {
-    if (!this.isConnected()) {
-      this.log('Not connected to REST proxy', LOG_CLASSES.WARNING);
-      throw new Error('Device not connected');
-    }
+			const data = await response.json();
+			console.log("Scan response:", data);
 
-    const hex = bytesToHex(commandBytes);
-    this.log(`TX ${hex}`, LOG_CLASSES.TX);
+			if (!data.success) {
+				throw new Error(data.error || "Scan failed");
+			}
 
-    try {
-      const response = await fetch(`${this.baseUrl}/ble/send_command`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_id: this.sessionId,
-          command: hex,
-        }),
-      });
+			return data.devices || [];
+		} catch (error) {
+			console.error("Scan error:", error);
+			this.log(`REST proxy scan error: ${error.message}`, LOG_CLASSES.WARNING);
+			throw error;
+		}
+	}
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+	/**
+	 * Connect to a BLE device via REST proxy
+	 * @param {string} baseUrl - REST server base URL (e.g., "http://localhost:8765")
+	 * @param {string} deviceAddress - Device MAC address or name filter
+	 * @returns {Promise<void>}
+	 */
+	async connect(baseUrl, deviceAddress = "") {
+		try {
+			this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Send command failed');
-      }
-    } catch (error) {
-      this.log(`REST proxy send error: ${error.message}`, LOG_CLASSES.WARNING);
-      throw error;
-    }
-  }
+			// Prepare connect request
+			const requestBody = {};
+			if (deviceAddress.trim()) {
+				// If it looks like a MAC address, use address field, otherwise use name_filter
+				if (deviceAddress.match(/^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/i)) {
+					requestBody.address = deviceAddress.trim();
+				} else {
+					requestBody.name_filter = deviceAddress.trim();
+				}
+			}
 
-  /**
-   * Register a notification handler
-   * @param {Function} handler - Handler function (hex, bytes) => void
-   * @returns {Function} - Unsubscribe function
-   */
-  onNotification(handler) {
-    this.notificationHandlers.push(handler);
-    
-    // Return unsubscribe function
-    return () => {
-      const index = this.notificationHandlers.indexOf(handler);
-      if (index >= 0) {
-        this.notificationHandlers.splice(index, 1);
-      }
-    };
-  }
+			this.log(
+				`Connecting via REST proxy: ${this.baseUrl}`,
+				LOG_CLASSES.WARNING,
+			);
+			console.log("REST proxy connect request body:", requestBody);
 
-  /**
-   * Clear all notification handlers
-   */
-  clearNotificationHandlers() {
-    this.notificationHandlers = [];
-  }
+			// Send connect request
+			const connectUrl = `${this.baseUrl}/ble/connect`;
+			console.log("Fetching:", connectUrl);
 
-  /**
-   * Start long-polling for notifications
-   */
-  startPolling() {
-    if (this.pollingActive) return;
-    
-    this.pollingActive = true;
-    this.pollingErrorCount = 0; // Reset error count
-    this.pollNotifications();
-  }
+			let response;
+			try {
+				response = await fetch(connectUrl, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(requestBody),
+				});
+				console.log("Response status:", response.status, response.statusText);
+			} catch (fetchError) {
+				console.error("Fetch failed:", fetchError);
+				if (
+					fetchError.message.includes("Failed to fetch") ||
+					fetchError.name === "TypeError"
+				) {
+					throw new Error(
+						`Cannot connect to ${this.baseUrl}. Please check: 1) Server is running, 2) URL is correct, 3) Not a mixed content issue (HTTPS→HTTP blocked)`,
+					);
+				}
+				throw new Error(`Network error: ${fetchError.message}`);
+			}
 
-  /**
-   * Stop notification polling
-   */
-  stopPolling() {
-    this.pollingActive = false;
-    
-    if (this.pollingAbortController) {
-      this.pollingAbortController.abort();
-      this.pollingAbortController = null;
-    }
-  }
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error("Error response:", errorText);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText} - ${errorText}`,
+				);
+			}
 
-  /**
-   * Long-poll for notifications
-   */
-  async pollNotifications() {
-    console.log('REST proxy: Starting notification polling');
-    while (this.pollingActive && this.isConnected()) {
-      try {
-        // Create abort controller for this request
-        this.pollingAbortController = new AbortController();
-        
-        const url = `${this.baseUrl}/ble/notifications?session_id=${encodeURIComponent(this.sessionId)}&since=${this.nextSequence}&timeout=30`;
-        console.log(`REST proxy: Polling notifications, sequence=${this.nextSequence}`);
-        
-        const response = await fetch(url, {
-          signal: this.pollingAbortController.signal,
-        });
+			const data = await response.json();
+			console.log("Connect response data:", data);
 
-        if (!response.ok) {
-          // Check if session expired
-          if (response.status === 400) {
-            const data = await response.json();
-            if (data.error && data.error.includes('session')) {
-              this.log('REST proxy session expired', LOG_CLASSES.WARNING);
-              this.handleDisconnect();
-              return;
-            }
-          }
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+			if (!data.success) {
+				throw new Error(data.error || "Connection failed");
+			}
 
-        const data = await response.json();
-        console.log(`REST proxy: Poll response - notifications: ${data.notifications?.length || 0}, next_sequence: ${data.next_sequence}, has_more: ${data.has_more}`);
-        
-        // Reset error count on successful poll
-        this.pollingErrorCount = 0;
-        
-        // Update next sequence
-        if (data.next_sequence !== undefined) {
-          this.nextSequence = data.next_sequence;
-        }
+			// Store session info
+			this.sessionId = data.session_id;
+			this.deviceAddress = data.address;
+			this.deviceName = data.name || "Unknown";
+			this.mtuSize = data.mtu || null;
+			this.connected = true;
+			this.nextSequence = 0;
 
-        // Process notifications
-        if (data.notifications && data.notifications.length > 0) {
-          console.log(`REST proxy: Processing ${data.notifications.length} notification(s)`);
-          for (const notification of data.notifications) {
-            this.handleNotification(notification);
-          }
-        }
+			// Update state
+			this.state.updateDevice({
+				name: this.deviceName,
+				connected: true,
+			});
 
-        // If has_more is true, poll again immediately
-        if (data.has_more) {
-          continue;
-        }
+			this.log(
+				`Connected via REST proxy: session=${this.sessionId}, address=${this.deviceAddress}, mtu=${this.mtuSize}`,
+				LOG_CLASSES.WARNING,
+			);
 
-        // Small delay before next poll
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-      } catch (error) {
-        // Ignore abort errors (normal when stopping polling)
-        if (error.name === 'AbortError') {
-          break;
-        }
-        
-        this.pollingErrorCount++;
-        this.log(`REST proxy polling error: ${error.message} (${this.pollingErrorCount}/${this.maxPollingErrors})`, LOG_CLASSES.WARNING);
-        
-        // Give up after too many consecutive errors
-        if (this.pollingErrorCount >= this.maxPollingErrors) {
-          this.log('REST proxy: Too many polling errors, treating as disconnected', LOG_CLASSES.WARNING);
-          this.handleDisconnect();
-          return;
-        }
-        
-        // Back off on errors
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-  }
+			// Start notification polling
+			this.startPolling();
 
-  /**
-   * Handle incoming notification
-   * @param {Object} notification - Notification object from REST server
-   */
-  handleNotification(notification) {
-    try {
-      const hex = notification.data.replace(/\s+/g, ''); // Remove spaces
-      const bytes = hexToBytes(hex);
-      
-      console.log(`REST proxy: Received notification - hex: ${hex}, handlers: ${this.notificationHandlers.length}`);
-      this.log(`RX ${hex}`, LOG_CLASSES.RX);
+			// Start keepalive
+			this.startKeepalive();
 
-      // Handle any pending waiters first
-      this.handleWaiters(hex);
+			return true;
+		} catch (error) {
+			this.log(
+				`REST proxy connect error: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			this.cleanup();
+			throw error;
+		}
+	}
 
-      // Notify all registered handlers
-      for (const handler of this.notificationHandlers) {
-        try {
-          console.log('REST proxy: Calling notification handler');
-          handler(hex, bytes);
-        } catch (error) {
-          console.error('Error in notification handler:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error processing notification:', error);
-    }
-  }
+	/**
+	 * Disconnect from device
+	 * @returns {Promise<void>}
+	 */
+	async disconnect() {
+		try {
+			// Stop polling and keepalive first
+			this.stopPolling();
+			this.stopKeepalive();
 
-  /**
-   * Wait for a response with specific prefix
-   * @param {string} prefix - Response prefix to wait for
-   * @param {number} timeoutMs - Timeout in milliseconds
-   * @returns {Promise<string>} - Response hex string
-   */
-  waitForResponse(prefix, timeoutMs) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        // Remove waiter from list
-        const index = this.waiters.indexOf(waiter);
-        if (index >= 0) {
-          this.waiters.splice(index, 1);
-        }
-        reject(new Error(`Timeout waiting for ${prefix}`));
-      }, timeoutMs);
+			if (this.sessionId) {
+				// Send disconnect request
+				const response = await fetch(`${this.baseUrl}/ble/disconnect`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						session_id: this.sessionId,
+					}),
+				});
 
-      const waiter = {
-        prefix,
-        resolve,
-        reject,
-        timer,
-      };
+				if (response.ok) {
+					this.log("Disconnected from REST proxy", LOG_CLASSES.WARNING);
+				}
+			}
+		} catch (error) {
+			this.log(
+				`REST proxy disconnect error: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+		} finally {
+			this.cleanup();
+		}
+	}
 
-      this.waiters.push(waiter);
-    });
-  }
+	/**
+	 * Send command bytes to device
+	 * @param {Uint8Array} commandBytes - Command bytes to send
+	 * @returns {Promise<void>}
+	 */
+	async send(commandBytes) {
+		if (!this.isConnected()) {
+			this.log("Not connected to REST proxy", LOG_CLASSES.WARNING);
+			throw new Error("Device not connected");
+		}
 
-  /**
-   * Handle waiters by checking if any match the received response
-   * @param {string} hex - Received hex string
-   */
-  handleWaiters(hex) {
-    for (let i = this.waiters.length - 1; i >= 0; i--) {
-      const waiter = this.waiters[i];
-      if (hex.startsWith(waiter.prefix)) {
-        clearTimeout(waiter.timer);
-        waiter.resolve(hex);
-        this.waiters.splice(i, 1);
-      }
-    }
-  }
+		const hex = bytesToHex(commandBytes);
+		this.log(`TX ${hex}`, LOG_CLASSES.TX);
 
-  /**
-   * Start keepalive pings
-   */
-  startKeepalive() {
-    this.stopKeepalive(); // Clear any existing interval
-    
-    // Query status endpoint every 30 seconds
-    this.keepaliveInterval = setInterval(async () => {
-      if (!this.isConnected()) {
-        this.stopKeepalive();
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${this.baseUrl}/ble/sessions`);
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Verify our session still exists
-          const sessionExists = data.sessions?.some(s => s.session_id === this.sessionId);
-          
-          if (!sessionExists) {
-            this.log('REST proxy session lost', LOG_CLASSES.WARNING);
-            this.handleDisconnect();
-          }
-        }
-      } catch (error) {
-        this.log(`Keepalive error: ${error.message}`, LOG_CLASSES.WARNING);
-      }
-    }, 30000); // 30 seconds
-  }
+		try {
+			const response = await fetch(`${this.baseUrl}/ble/send_command`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					session_id: this.sessionId,
+					command: hex,
+				}),
+			});
 
-  /**
-   * Stop keepalive pings
-   */
-  stopKeepalive() {
-    if (this.keepaliveInterval) {
-      clearInterval(this.keepaliveInterval);
-      this.keepaliveInterval = null;
-    }
-  }
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
 
-  /**
-   * Handle disconnect event
-   */
-  handleDisconnect() {
-    this.log('REST proxy disconnected', LOG_CLASSES.WARNING);
-    this.cleanup();
-  }
+			const data = await response.json();
 
-  /**
-   * Cleanup connection state
-   */
-  cleanup() {
-    this.stopPolling();
-    this.stopKeepalive();
-    
-    this.sessionId = null;
-    this.connected = false;
-    this.deviceAddress = null;
-    this.deviceName = null;
-    this.mtuSize = null;
-    this.nextSequence = 0;
-    
-    // Update state
-    this.state.setConnected(false);
-    this.state.updateFilesMetadata({ activeFetch: false });
-    if (this.state.files.fetchTimer) {
-      clearTimeout(this.state.files.fetchTimer);
-    }
-  }
+			if (!data.success) {
+				throw new Error(data.error || "Send command failed");
+			}
+		} catch (error) {
+			this.log(`REST proxy send error: ${error.message}`, LOG_CLASSES.WARNING);
+			throw error;
+		}
+	}
 
-  /**
-   * Get device info
-   * @returns {Object|null} - Device info or null if not connected
-   */
-  getDeviceInfo() {
-    if (!this.isConnected()) return null;
-    
-    return {
-      name: this.deviceName || 'Unknown',
-      id: this.deviceAddress || 'unknown',
-      connected: this.connected,
-      restUrl: this.baseUrl,
-    };
-  }
+	/**
+	 * Register a notification handler
+	 * @param {Function} handler - Handler function (hex, bytes) => void
+	 * @returns {Function} - Unsubscribe function
+	 */
+	onNotification(handler) {
+		this.notificationHandlers.push(handler);
+
+		// Return unsubscribe function
+		return () => {
+			const index = this.notificationHandlers.indexOf(handler);
+			if (index >= 0) {
+				this.notificationHandlers.splice(index, 1);
+			}
+		};
+	}
+
+	/**
+	 * Clear all notification handlers
+	 */
+	clearNotificationHandlers() {
+		this.notificationHandlers = [];
+	}
+
+	/**
+	 * Start long-polling for notifications
+	 */
+	startPolling() {
+		if (this.pollingActive) return;
+
+		this.pollingActive = true;
+		this.pollingErrorCount = 0; // Reset error count
+		this.pollNotifications();
+	}
+
+	/**
+	 * Stop notification polling
+	 */
+	stopPolling() {
+		this.pollingActive = false;
+
+		if (this.pollingAbortController) {
+			this.pollingAbortController.abort();
+			this.pollingAbortController = null;
+		}
+	}
+
+	/**
+	 * Long-poll for notifications
+	 */
+	async pollNotifications() {
+		console.log("REST proxy: Starting notification polling");
+		while (this.pollingActive && this.isConnected()) {
+			try {
+				// Create abort controller for this request
+				this.pollingAbortController = new AbortController();
+
+				const url = `${this.baseUrl}/ble/notifications?session_id=${encodeURIComponent(this.sessionId)}&since=${this.nextSequence}&timeout=30`;
+				console.log(
+					`REST proxy: Polling notifications, sequence=${this.nextSequence}`,
+				);
+
+				const response = await fetch(url, {
+					signal: this.pollingAbortController.signal,
+				});
+
+				if (!response.ok) {
+					// Check if session expired
+					if (response.status === 400) {
+						const data = await response.json();
+						if (data.error?.includes("session")) {
+							this.log("REST proxy session expired", LOG_CLASSES.WARNING);
+							this.handleDisconnect();
+							return;
+						}
+					}
+					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				}
+
+				const data = await response.json();
+				console.log(
+					`REST proxy: Poll response - notifications: ${data.notifications?.length || 0}, next_sequence: ${data.next_sequence}, has_more: ${data.has_more}`,
+				);
+
+				// Reset error count on successful poll
+				this.pollingErrorCount = 0;
+
+				// Update next sequence
+				if (data.next_sequence !== undefined) {
+					this.nextSequence = data.next_sequence;
+				}
+
+				// Process notifications
+				if (data.notifications && data.notifications.length > 0) {
+					console.log(
+						`REST proxy: Processing ${data.notifications.length} notification(s)`,
+					);
+					for (const notification of data.notifications) {
+						this.handleNotification(notification);
+					}
+				}
+
+				// If has_more is true, poll again immediately
+				if (data.has_more) {
+					continue;
+				}
+
+				// Small delay before next poll
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			} catch (error) {
+				// Ignore abort errors (normal when stopping polling)
+				if (error.name === "AbortError") {
+					break;
+				}
+
+				this.pollingErrorCount++;
+				this.log(
+					`REST proxy polling error: ${error.message} (${this.pollingErrorCount}/${this.maxPollingErrors})`,
+					LOG_CLASSES.WARNING,
+				);
+
+				// Give up after too many consecutive errors
+				if (this.pollingErrorCount >= this.maxPollingErrors) {
+					this.log(
+						"REST proxy: Too many polling errors, treating as disconnected",
+						LOG_CLASSES.WARNING,
+					);
+					this.handleDisconnect();
+					return;
+				}
+
+				// Back off on errors
+				await new Promise((resolve) => setTimeout(resolve, 2000));
+			}
+		}
+	}
+
+	/**
+	 * Handle incoming notification
+	 * @param {Object} notification - Notification object from REST server
+	 */
+	handleNotification(notification) {
+		try {
+			const hex = notification.data.replace(/\s+/g, ""); // Remove spaces
+			const bytes = hexToBytes(hex);
+
+			console.log(
+				`REST proxy: Received notification - hex: ${hex}, handlers: ${this.notificationHandlers.length}`,
+			);
+			this.log(`RX ${hex}`, LOG_CLASSES.RX);
+
+			// Handle any pending waiters first
+			this.handleWaiters(hex);
+
+			// Notify all registered handlers
+			for (const handler of this.notificationHandlers) {
+				try {
+					console.log("REST proxy: Calling notification handler");
+					handler(hex, bytes);
+				} catch (error) {
+					console.error("Error in notification handler:", error);
+				}
+			}
+		} catch (error) {
+			console.error("Error processing notification:", error);
+		}
+	}
+
+	/**
+	 * Wait for a response with specific prefix
+	 * @param {string} prefix - Response prefix to wait for
+	 * @param {number} timeoutMs - Timeout in milliseconds
+	 * @returns {Promise<string>} - Response hex string
+	 */
+	waitForResponse(prefix, timeoutMs) {
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => {
+				// Remove waiter from list
+				const index = this.waiters.indexOf(waiter);
+				if (index >= 0) {
+					this.waiters.splice(index, 1);
+				}
+				reject(new Error(`Timeout waiting for ${prefix}`));
+			}, timeoutMs);
+
+			const waiter = {
+				prefix,
+				resolve,
+				reject,
+				timer,
+			};
+
+			this.waiters.push(waiter);
+		});
+	}
+
+	/**
+	 * Handle waiters by checking if any match the received response
+	 * @param {string} hex - Received hex string
+	 */
+	handleWaiters(hex) {
+		for (let i = this.waiters.length - 1; i >= 0; i--) {
+			const waiter = this.waiters[i];
+			if (hex.startsWith(waiter.prefix)) {
+				clearTimeout(waiter.timer);
+				waiter.resolve(hex);
+				this.waiters.splice(i, 1);
+			}
+		}
+	}
+
+	/**
+	 * Start keepalive pings
+	 */
+	startKeepalive() {
+		this.stopKeepalive(); // Clear any existing interval
+
+		// Query status endpoint every 30 seconds
+		this.keepaliveInterval = setInterval(async () => {
+			if (!this.isConnected()) {
+				this.stopKeepalive();
+				return;
+			}
+
+			try {
+				const response = await fetch(`${this.baseUrl}/ble/sessions`);
+				if (response.ok) {
+					const data = await response.json();
+
+					// Verify our session still exists
+					const sessionExists = data.sessions?.some(
+						(s) => s.session_id === this.sessionId,
+					);
+
+					if (!sessionExists) {
+						this.log("REST proxy session lost", LOG_CLASSES.WARNING);
+						this.handleDisconnect();
+					}
+				}
+			} catch (error) {
+				this.log(`Keepalive error: ${error.message}`, LOG_CLASSES.WARNING);
+			}
+		}, 30000); // 30 seconds
+	}
+
+	/**
+	 * Stop keepalive pings
+	 */
+	stopKeepalive() {
+		if (this.keepaliveInterval) {
+			clearInterval(this.keepaliveInterval);
+			this.keepaliveInterval = null;
+		}
+	}
+
+	/**
+	 * Handle disconnect event
+	 */
+	handleDisconnect() {
+		this.log("REST proxy disconnected", LOG_CLASSES.WARNING);
+		this.cleanup();
+	}
+
+	/**
+	 * Cleanup connection state
+	 */
+	cleanup() {
+		this.stopPolling();
+		this.stopKeepalive();
+
+		this.sessionId = null;
+		this.connected = false;
+		this.deviceAddress = null;
+		this.deviceName = null;
+		this.mtuSize = null;
+		this.nextSequence = 0;
+
+		// Update state
+		this.state.setConnected(false);
+		this.state.updateFilesMetadata({ activeFetch: false });
+		if (this.state.files.fetchTimer) {
+			clearTimeout(this.state.files.fetchTimer);
+		}
+	}
+
+	/**
+	 * Get device info
+	 * @returns {Object|null} - Device info or null if not connected
+	 */
+	getDeviceInfo() {
+		if (!this.isConnected()) return null;
+
+		return {
+			name: this.deviceName || "Unknown",
+			id: this.deviceAddress || "unknown",
+			connected: this.connected,
+			restUrl: this.baseUrl,
+		};
+	}
 }
 
   // ============================================================
@@ -1816,197 +1944,203 @@ class RestProxy {
  * Connection types
  */
 const ConnectionType = {
-  DIRECT_BLE: 'direct',
-  REST_PROXY: 'rest',
+	DIRECT_BLE: "direct",
+	REST_PROXY: "rest",
 };
 
 /**
  * Connection Manager - Unified interface for BLE and REST connections
  */
 class ConnectionManager {
-  constructor(stateManager, logger) {
-    this.state = stateManager;
-    this.log = logger;
-    
-    // Create both connection implementations
-    this.bleManager = new BLEManager(stateManager, logger);
-    this.restProxy = new RestProxy(stateManager, logger);
-    
-    // Active connection
-    this.activeConnection = null;
-    this.connectionType = null;
-    
-    // Store notification handlers to register with active connection
-    this.notificationHandlers = [];
-  }
+	constructor(stateManager, logger) {
+		this.state = stateManager;
+		this.log = logger;
 
-  /**
-   * Check if device is connected
-   * @returns {boolean}
-   */
-  isConnected() {
-    if (!this.activeConnection) return false;
-    return this.activeConnection.isConnected();
-  }
+		// Create both connection implementations
+		this.bleManager = new BLEManager(stateManager, logger);
+		this.restProxy = new RestProxy(stateManager, logger);
 
-  /**
-   * Get the MTU size
-   * @returns {number|null} MTU size in bytes, or null if not available
-   */
-  getMtuSize() {
-    if (!this.activeConnection) return null;
-    return this.activeConnection.getMtuSize();
-  }
+		// Active connection
+		this.activeConnection = null;
+		this.connectionType = null;
 
-  /**
-   * Connect to a device
-   * @param {Object} options - Connection options
-   * @param {string} options.type - Connection type ('direct' or 'rest')
-   * @param {string} options.nameFilter - Optional device name filter
-   * @param {string} options.restUrl - REST server URL (required if type is 'rest')
-   * @returns {Promise<void>}
-   */
-  async connect(options) {
-    const { type, nameFilter = '', restUrl = '' } = options;
-    
-    // Disconnect any existing connection
-    if (this.activeConnection) {
-      await this.disconnect();
-    }
+		// Store notification handlers to register with active connection
+		this.notificationHandlers = [];
+	}
 
-    if (type === ConnectionType.REST_PROXY) {
-      // Connect via REST proxy
-      if (!restUrl) {
-        throw new Error('REST server URL is required');
-      }
-      
-      this.activeConnection = this.restProxy;
-      this.connectionType = ConnectionType.REST_PROXY;
-      
-      await this.restProxy.connect(restUrl, nameFilter);
-      
-    } else if (type === ConnectionType.DIRECT_BLE) {
-      // Connect via direct BLE
-      this.activeConnection = this.bleManager;
-      this.connectionType = ConnectionType.DIRECT_BLE;
-      
-      await this.bleManager.connect(nameFilter);
-      
-    } else {
-      throw new Error(`Unknown connection type: ${type}`);
-    }
+	/**
+	 * Check if device is connected
+	 * @returns {boolean}
+	 */
+	isConnected() {
+		if (!this.activeConnection) return false;
+		return this.activeConnection.isConnected();
+	}
 
-    // Clear any existing handlers in the active connection to avoid duplicates
-    // then register all stored notification handlers
-    this.activeConnection.clearNotificationHandlers();
-    console.log(`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`);
-    for (const handler of this.notificationHandlers) {
-      this.activeConnection.onNotification(handler);
-    }
+	/**
+	 * Get the MTU size
+	 * @returns {number|null} MTU size in bytes, or null if not available
+	 */
+	getMtuSize() {
+		if (!this.activeConnection) return null;
+		return this.activeConnection.getMtuSize();
+	}
 
-    return true;
-  }
+	/**
+	 * Connect to a device
+	 * @param {Object} options - Connection options
+	 * @param {string} options.type - Connection type ('direct' or 'rest')
+	 * @param {string} options.nameFilter - Optional device name filter
+	 * @param {string} options.restUrl - REST server URL (required if type is 'rest')
+	 * @returns {Promise<void>}
+	 */
+	async connect(options) {
+		const { type, nameFilter = "", restUrl = "" } = options;
 
-  /**
-   * Disconnect from device
-   * @returns {Promise<void>}
-   */
-  async disconnect() {
-    if (this.activeConnection) {
-      await this.activeConnection.disconnect();
-      this.activeConnection = null;
-      this.connectionType = null;
-    }
-  }
+		// Disconnect any existing connection
+		if (this.activeConnection) {
+			await this.disconnect();
+		}
 
-  /**
-   * Send command bytes to device
-   * @param {Uint8Array} commandBytes - Command bytes to send
-   * @returns {Promise<void>}
-   */
-  async send(commandBytes) {
-    if (!this.activeConnection) {
-      throw new Error('No active connection');
-    }
-    
-    return this.activeConnection.send(commandBytes);
-  }
+		if (type === ConnectionType.REST_PROXY) {
+			// Connect via REST proxy
+			if (!restUrl) {
+				throw new Error("REST server URL is required");
+			}
 
-  /**
-   * Register a notification handler
-   * @param {Function} handler - Handler function (hex, bytes) => void
-   * @returns {Function} - Unsubscribe function
-   */
-  onNotification(handler) {
-    // Store handler for registration with active connection
-    this.notificationHandlers.push(handler);
-    console.log(`ConnectionManager: Registered handler, total handlers: ${this.notificationHandlers.length}`);
-    
-    // If already connected, register with active connection immediately
-    if (this.activeConnection) {
-      console.log('ConnectionManager: Registering handler with active connection');
-      this.activeConnection.onNotification(handler);
-    }
-    
-    // Return unsubscribe function
-    return () => {
-      const index = this.notificationHandlers.indexOf(handler);
-      if (index >= 0) {
-        this.notificationHandlers.splice(index, 1);
-      }
-    };
-  }
+			this.activeConnection = this.restProxy;
+			this.connectionType = ConnectionType.REST_PROXY;
 
-  /**
-   * Wait for a response with specific prefix
-   * @param {string} prefix - Response prefix to wait for
-   * @param {number} timeoutMs - Timeout in milliseconds
-   * @returns {Promise<string>} - Response hex string
-   */
-  waitForResponse(prefix, timeoutMs) {
-    if (!this.activeConnection) {
-      return Promise.reject(new Error('No active connection'));
-    }
-    
-    if (this.activeConnection.waitForResponse) {
-      return this.activeConnection.waitForResponse(prefix, timeoutMs);
-    }
-    
-    return Promise.reject(new Error('waitForResponse not supported by active connection'));
-  }
+			await this.restProxy.connect(restUrl, nameFilter);
+		} else if (type === ConnectionType.DIRECT_BLE) {
+			// Connect via direct BLE
+			this.activeConnection = this.bleManager;
+			this.connectionType = ConnectionType.DIRECT_BLE;
 
-  /**
-   * Get device info
-   * @returns {Object|null} - Device info or null if not connected
-   */
-  getDeviceInfo() {
-    if (!this.activeConnection) return null;
-    
-    const info = this.activeConnection.getDeviceInfo();
-    
-    // Add connection type to info
-    if (info) {
-      info.connectionType = this.connectionType;
-    }
-    
-    return info;
-  }
+			await this.bleManager.connect(nameFilter);
+		} else {
+			throw new Error(`Unknown connection type: ${type}`);
+		}
 
-  /**
-   * Get current connection type
-   * @returns {string|null} - Connection type or null if not connected
-   */
-  getConnectionType() {
-    return this.connectionType;
-  }
+		// Clear any existing handlers in the active connection to avoid duplicates
+		// then register all stored notification handlers
+		this.activeConnection.clearNotificationHandlers();
+		console.log(
+			`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`,
+		);
+		for (const handler of this.notificationHandlers) {
+			this.activeConnection.onNotification(handler);
+		}
 
-  /**
-   * Check if Web Bluetooth is available
-   * @returns {boolean}
-   */
-  static isWebBluetoothAvailable() {
-    return 'bluetooth' in navigator;
-  }
+		return true;
+	}
+
+	/**
+	 * Disconnect from device
+	 * @returns {Promise<void>}
+	 */
+	async disconnect() {
+		if (this.activeConnection) {
+			await this.activeConnection.disconnect();
+			this.activeConnection = null;
+			this.connectionType = null;
+		}
+	}
+
+	/**
+	 * Send command bytes to device
+	 * @param {Uint8Array} commandBytes - Command bytes to send
+	 * @returns {Promise<void>}
+	 */
+	async send(commandBytes) {
+		if (!this.activeConnection) {
+			throw new Error("No active connection");
+		}
+
+		return this.activeConnection.send(commandBytes);
+	}
+
+	/**
+	 * Register a notification handler
+	 * @param {Function} handler - Handler function (hex, bytes) => void
+	 * @returns {Function} - Unsubscribe function
+	 */
+	onNotification(handler) {
+		// Store handler for registration with active connection
+		this.notificationHandlers.push(handler);
+		console.log(
+			`ConnectionManager: Registered handler, total handlers: ${this.notificationHandlers.length}`,
+		);
+
+		// If already connected, register with active connection immediately
+		if (this.activeConnection) {
+			console.log(
+				"ConnectionManager: Registering handler with active connection",
+			);
+			this.activeConnection.onNotification(handler);
+		}
+
+		// Return unsubscribe function
+		return () => {
+			const index = this.notificationHandlers.indexOf(handler);
+			if (index >= 0) {
+				this.notificationHandlers.splice(index, 1);
+			}
+		};
+	}
+
+	/**
+	 * Wait for a response with specific prefix
+	 * @param {string} prefix - Response prefix to wait for
+	 * @param {number} timeoutMs - Timeout in milliseconds
+	 * @returns {Promise<string>} - Response hex string
+	 */
+	waitForResponse(prefix, timeoutMs) {
+		if (!this.activeConnection) {
+			return Promise.reject(new Error("No active connection"));
+		}
+
+		if (this.activeConnection.waitForResponse) {
+			return this.activeConnection.waitForResponse(prefix, timeoutMs);
+		}
+
+		return Promise.reject(
+			new Error("waitForResponse not supported by active connection"),
+		);
+	}
+
+	/**
+	 * Get device info
+	 * @returns {Object|null} - Device info or null if not connected
+	 */
+	getDeviceInfo() {
+		if (!this.activeConnection) return null;
+
+		const info = this.activeConnection.getDeviceInfo();
+
+		// Add connection type to info
+		if (info) {
+			info.connectionType = this.connectionType;
+		}
+
+		return info;
+	}
+
+	/**
+	 * Get current connection type
+	 * @returns {string|null} - Connection type or null if not connected
+	 */
+	getConnectionType() {
+		return this.connectionType;
+	}
+
+	/**
+	 * Check if Web Bluetooth is available
+	 * @returns {boolean}
+	 */
+	static isWebBluetoothAvailable() {
+		return "bluetooth" in navigator;
+	}
 }
 
   // ============================================================
@@ -2021,386 +2155,443 @@ class ConnectionManager {
  * File Transfer and Management
  */
 class FileManager {
-  constructor(bleManager, stateManager, logger, progressCallback = null) {
-    this.connection = bleManager;
-    this.state = stateManager;
-    this.log = logger;
-    this.onProgress = progressCallback;
-    
-    // File picker state
-    this.lastPickedFile = null;
-    this.lastOriginalBytes = null;
-    this.lastFileBytes = null;
-    this.lastFileName = '';
-  }
+	constructor(bleManager, stateManager, logger, progressCallback = null) {
+		this.connection = bleManager;
+		this.state = stateManager;
+		this.log = logger;
+		this.onProgress = progressCallback;
 
-  /**
-   * Start fetching file list from device
-   * @returns {Promise<void>}
-   */
-  async startFetchFiles() {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected — cannot refresh files.', LOG_CLASSES.WARNING);
-      return;
-    }
+		// File picker state
+		this.lastPickedFile = null;
+		this.lastOriginalBytes = null;
+		this.lastFileBytes = null;
+		this.lastFileName = "";
+	}
 
-    // Clear old list and start fresh
-    this.state.resetFiles();
-    this.state.updateFilesMetadata({ activeFetch: true });
+	/**
+	 * Start fetching file list from device
+	 * @returns {Promise<void>}
+	 */
+	async startFetchFiles() {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected — cannot refresh files.", LOG_CLASSES.WARNING);
+			return;
+		}
 
-    // Send query command for files
-    await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, '', 8));
+		// Clear old list and start fresh
+		this.state.resetFiles();
+		this.state.updateFilesMetadata({ activeFetch: true });
 
-    // Set timeout for no response
-    const timer = setTimeout(() => {
-      if (!this.state.files.expected && this.state.files.items.size === 0) {
-        this.state.updateFilesMetadata({ activeFetch: false });
-        this.log('No file info received (timeout).', LOG_CLASSES.WARNING);
-      }
-    }, TIMEOUTS.FILE_LIST);
+		// Send query command for files
+		await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
 
-    this.state.updateFilesMetadata({ fetchTimer: timer });
-  }
+		// Set timeout for no response
+		const timer = setTimeout(() => {
+			if (!this.state.files.expected && this.state.files.items.size === 0) {
+				this.state.updateFilesMetadata({ activeFetch: false });
+				this.log("No file info received (timeout).", LOG_CLASSES.WARNING);
+			}
+		}, TIMEOUTS.FILE_LIST);
 
-  /**
-   * Check if file list is complete and trigger follow-up queries
-   */
-  async finalizeFilesIfDone() {
-    if (!this.state.files.activeFetch || !this.state.files.expected) {
-      return;
-    }
+		this.state.updateFilesMetadata({ fetchTimer: timer });
+	}
 
-    if (this.state.isFileListComplete()) {
-      // Keep activeFetch true - will be cleared when order arrives
-      this.state.updateFilesMetadata({ lastRefresh: new Date() });
-      if (this.state.files.fetchTimer) {
-        clearTimeout(this.state.files.fetchTimer);
-      }
+	/**
+	 * Check if file list is complete and trigger follow-up queries
+	 */
+	async finalizeFilesIfDone() {
+		if (!this.state.files.activeFetch || !this.state.files.expected) {
+			return;
+		}
 
-      // Update the received file count
-      const filesReceived = this.state.files.items.size;
-      this.state.updateDevice({ filesReceived });
+		if (this.state.isFileListComplete()) {
+			// Keep activeFetch true - will be cleared when order arrives
+			this.state.updateFilesMetadata({ lastRefresh: new Date() });
+			if (this.state.files.fetchTimer) {
+				clearTimeout(this.state.files.fetchTimer);
+			}
 
-      this.log('File list complete ✔', LOG_CLASSES.WARNING);
-      
-      // Send follow-up queries - order response will trigger UI update
-      if (this.connection.isConnected()) {
-        await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, '', 8));
-        await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
-      } else {
-        this.log('Not connected - cannot send follow-up queries', LOG_CLASSES.WARNING);
-        this.state.updateFilesMetadata({ activeFetch: false });
-      }
-    }
-  }
+			// Update the received file count
+			const filesReceived = this.state.files.items.size;
+			this.state.updateDevice({ filesReceived });
 
-  /**
-   * Determine safe chunk size based on BLE MTU
-   * @param {number|null} override - Optional override chunk size from user
-   * @returns {number} Safe chunk size in bytes
-   */
-  getChunkSize(override = null) {
-    // If user has specified an override, use it
-    if (override !== null && typeof override === 'number' && override >= 50 && override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE) {
-      this.log(`Using override chunk size: ${override} bytes`, LOG_CLASSES.INFO);
-      return override;
-    }
-    
-    // Try to get MTU from the BLE manager
-    const mtu = this.connection.getMtuSize();
-    
-    if (mtu !== null && typeof mtu === 'number' && mtu > 0) {
-      // Calculate safe chunk size (MTU minus ATT overhead)
-      const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
-      // Cap at tested maximum
-      const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
-      this.log(`Using MTU-based chunk size: ${chunkSize} bytes (MTU=${mtu})`, LOG_CLASSES.INFO);
-      return chunkSize;
-    }
-    
-    // MTU not available, use conservative default
-    this.log(`Using default chunk size: ${TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE} bytes (MTU unknown)`, LOG_CLASSES.INFO);
-    return TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE;
-  }
+			this.log("File list complete ✔", LOG_CLASSES.WARNING);
 
-  /**
-   * Upload file to device
-   * @param {Uint8Array} fileBytes - File data
-   * @param {string} fileName - Target filename
-   * @param {number|null} chunkSizeOverride - Optional chunk size override
-   * @returns {Promise<void>}
-   */
-  async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected — cannot send file.', LOG_CLASSES.WARNING);
-      throw new Error('Device not connected');
-    }
+			// Send follow-up queries - order response will trigger UI update
+			if (this.connection.isConnected()) {
+				await this.connection.send(
+					buildCommand(COMMANDS.QUERY_CAPACITY, "", 8),
+				);
+				await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+			} else {
+				this.log(
+					"Not connected - cannot send follow-up queries",
+					LOG_CLASSES.WARNING,
+				);
+				this.state.updateFilesMetadata({ activeFetch: false });
+			}
+		}
+	}
 
-    this.state.startTransfer(fileName);
+	/**
+	 * Determine safe chunk size based on BLE MTU
+	 * @param {number|null} override - Optional override chunk size from user
+	 * @returns {number} Safe chunk size in bytes
+	 */
+	getChunkSize(override = null) {
+		// If user has specified an override, use it
+		if (
+			override !== null &&
+			typeof override === "number" &&
+			override >= 50 &&
+			override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE
+		) {
+			this.log(
+				`Using override chunk size: ${override} bytes`,
+				LOG_CLASSES.INFO,
+			);
+			return override;
+		}
 
-    try {
-      // === Phase 1: Start Transfer (C0) ===
-      const size = fileBytes.length;
-      const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
-      const maxPackets = Math.ceil(size / chunkSize);
-      const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
+		// Try to get MTU from the BLE manager
+		const mtu = this.connection.getMtuSize();
 
-      const c0Payload = intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-      await this.connection.send(buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8));
+		if (mtu !== null && typeof mtu === "number" && mtu > 0) {
+			// Calculate safe chunk size (MTU minus ATT overhead)
+			const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
+			// Cap at tested maximum
+			const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
+			this.log(
+				`Using MTU-based chunk size: ${chunkSize} bytes (MTU=${mtu})`,
+				LOG_CLASSES.INFO,
+			);
+			return chunkSize;
+		}
 
-      // Wait for start acknowledgment
-      const c0Response = await this.connection.waitForResponse(RESPONSES.TRANSFER_START, TIMEOUTS.ACK_LONG);
-      if (!c0Response) {
-        throw new Error('Timeout waiting for transfer start acknowledgment');
-      }
+		// MTU not available, use conservative default
+		this.log(
+			`Using default chunk size: ${TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE} bytes (MTU unknown)`,
+			LOG_CLASSES.INFO,
+		);
+		return TRANSFER_CONFIG.DEFAULT_CHUNK_SIZE;
+	}
 
-      const c0Failed = parseInt(c0Response.slice(4, 6), 16);
-      const c0Written = parseInt(c0Response.slice(6, 14), 16) || 0;
+	/**
+	 * Upload file to device
+	 * @param {Uint8Array} fileBytes - File data
+	 * @param {string} fileName - Target filename
+	 * @param {number|null} chunkSizeOverride - Optional chunk size override
+	 * @returns {Promise<void>}
+	 */
+	async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected — cannot send file.", LOG_CLASSES.WARNING);
+			throw new Error("Device not connected");
+		}
 
-      if (c0Failed !== 0) {
-        throw new Error('Device rejected transfer start');
-      }
+		this.state.startTransfer(fileName);
 
-      // Resume from last written position if applicable
-      let startIndex = Math.floor(c0Written / chunkSize);
-      if (startIndex > 0) {
-        this.log(`Resuming at chunk ${startIndex} (written=${c0Written})`, LOG_CLASSES.WARNING);
-      }
+		try {
+			// === Phase 1: Start Transfer (C0) ===
+			const size = fileBytes.length;
+			const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
+			const maxPackets = Math.ceil(size / chunkSize);
+			const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
-      // === Phase 2: Send Data Chunks (C1) ===
-      for (let index = startIndex; index < maxPackets; index++) {
-        if (!this.connection.isConnected()) {
-          throw new Error('Disconnected during transfer');
-        }
+			const c0Payload =
+				intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
+			await this.connection.send(
+				buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
+			);
 
-        if (this.state.transfer.cancel) {
-          throw new Error('Transfer cancelled');
-        }
+			// Wait for start acknowledgment
+			const c0Response = await this.connection.waitForResponse(
+				RESPONSES.TRANSFER_START,
+				TIMEOUTS.ACK_LONG,
+			);
+			if (!c0Response) {
+				throw new Error("Timeout waiting for transfer start acknowledgment");
+			}
 
-        // Handle resume request from device
-        if (this.state.transfer.resumeFrom !== null) {
-          index = this.state.transfer.resumeFrom;
-          this.state.setResumePoint(null);
-        }
+			const c0Failed = parseInt(c0Response.slice(4, 6), 16);
+			const c0Written = parseInt(c0Response.slice(6, 14), 16) || 0;
 
-        const offset = index * chunkSize;
-        const dataHex = chunkToHex(fileBytes, offset, chunkSize);
-        const payload = intToHex(index, 2) + dataHex;
+			if (c0Failed !== 0) {
+				throw new Error("Device rejected transfer start");
+			}
 
-        // Store chunk for potential resend
-        this.state.storeChunk(index, payload);
+			// Resume from last written position if applicable
+			const startIndex = Math.floor(c0Written / chunkSize);
+			if (startIndex > 0) {
+				this.log(
+					`Resuming at chunk ${startIndex} (written=${c0Written})`,
+					LOG_CLASSES.WARNING,
+				);
+			}
 
-        await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
-        
-        // Update progress
-        if (this.onProgress) {
-          this.onProgress(index + 1, maxPackets);
-        }
-        
-        await sleep(TRANSFER_CONFIG.CHUNK_DELAY_MS);
-      }
+			// === Phase 2: Send Data Chunks (C1) ===
+			for (let index = startIndex; index < maxPackets; index++) {
+				if (!this.connection.isConnected()) {
+					throw new Error("Disconnected during transfer");
+				}
 
-      // === Phase 3: End Transfer (C2) ===
-      await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, '', 8));
+				if (this.state.transfer.cancel) {
+					throw new Error("Transfer cancelled");
+				}
 
-      const c2Response = await this.connection.waitForResponse(
-        RESPONSES.TRANSFER_END,
-        TIMEOUTS.FILE_TRANSFER
-      );
+				// Handle resume request from device
+				if (this.state.transfer.resumeFrom !== null) {
+					index = this.state.transfer.resumeFrom;
+					this.state.setResumePoint(null);
+				}
 
-      if (!c2Response) {
-        throw new Error('Timeout waiting for transfer end acknowledgment');
-      }
+				const offset = index * chunkSize;
+				const dataHex = chunkToHex(fileBytes, offset, chunkSize);
+				const payload = intToHex(index, 2) + dataHex;
 
-      const c2Failed = parseInt(c2Response.slice(4, 6), 16);
-      if (c2Failed !== 0) {
-        // Device may request resume
-        const lastIndex = c2Response.length >= 10 ? parseInt(c2Response.slice(6, 10), 16) : 0;
-        this.state.setResumePoint(lastIndex);
+				// Store chunk for potential resend
+				this.state.storeChunk(index, payload);
 
-        // Resend tail chunks
-        let tailIndex = Math.min(maxPackets, Math.max(0, this.state.transfer.resumeFrom));
-        while (tailIndex < maxPackets) {
-          if (this.state.transfer.cancel) {
-            throw new Error('Transfer cancelled');
-          }
+				await this.connection.send(
+					buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
+				);
 
-          const payload = this.state.getChunk(tailIndex);
-          if (!payload) break;
+				// Update progress
+				if (this.onProgress) {
+					this.onProgress(index + 1, maxPackets);
+				}
 
-          await this.connection.send(buildCommand(COMMANDS.CHUNK_DATA, payload, 0));
-          tailIndex += 1;
-          await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
-        }
-      }
+				await sleep(TRANSFER_CONFIG.CHUNK_DELAY_MS);
+			}
 
-      // === Phase 4: Confirm Transfer (C3) ===
-      const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
-      await this.connection.send(buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8));
+			// === Phase 3: End Transfer (C2) ===
+			await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, "", 8));
 
-      const c3Response = await this.connection.waitForResponse(RESPONSES.CONFIRM_TRANSFER_ACK, TIMEOUTS.ACK);
-      if (!c3Response) {
-        throw new Error('Timeout waiting for confirm transfer acknowledgment');
-      }
+			const c2Response = await this.connection.waitForResponse(
+				RESPONSES.TRANSFER_END,
+				TIMEOUTS.FILE_TRANSFER,
+			);
 
-      const c3Failed = parseInt(c3Response.slice(4, 6), 16);
-      if (c3Failed !== 0) {
-        throw new Error('Device failed to confirm transfer');
-      }
+			if (!c2Response) {
+				throw new Error("Timeout waiting for transfer end acknowledgment");
+			}
 
-      this.log('File transfer complete ✔', LOG_CLASSES.WARNING);
+			const c2Failed = parseInt(c2Response.slice(4, 6), 16);
+			if (c2Failed !== 0) {
+				// Device may request resume
+				const lastIndex =
+					c2Response.length >= 10 ? parseInt(c2Response.slice(6, 10), 16) : 0;
+				this.state.setResumePoint(lastIndex);
 
-      // Refresh file list
-      this.startFetchFiles();
-    } catch (error) {
-      this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
-      throw error;
-    } finally {
-      this.state.endTransfer();
-    }
-  }
+				// Resend tail chunks
+				let tailIndex = Math.min(
+					maxPackets,
+					Math.max(0, this.state.transfer.resumeFrom),
+				);
+				while (tailIndex < maxPackets) {
+					if (this.state.transfer.cancel) {
+						throw new Error("Transfer cancelled");
+					}
 
-  /**
-   * Cancel ongoing transfer
-   * @returns {Promise<void>}
-   */
-  async cancelTransfer() {
-    if (!this.state.transfer.inProgress) {
-      return;
-    }
+					const payload = this.state.getChunk(tailIndex);
+					if (!payload) break;
 
-    this.state.cancelTransfer();
+					await this.connection.send(
+						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
+					);
+					tailIndex += 1;
+					await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
+				}
+			}
 
-    if (this.connection.isConnected()) {
-      try {
-        await this.connection.send(buildCommand(COMMANDS.CANCEL, '', 8));
-      } catch (error) {
-        this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
-      }
-    }
-  }
+			// === Phase 4: Confirm Transfer (C3) ===
+			const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
+			await this.connection.send(
+				buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8),
+			);
 
-  /**
-   * Play a file by serial number
-   * @param {number} serial - File serial number
-   * @returns {Promise<void>}
-   */
-  async playFile(serial) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
+			const c3Response = await this.connection.waitForResponse(
+				RESPONSES.CONFIRM_TRANSFER_ACK,
+				TIMEOUTS.ACK,
+			);
+			if (!c3Response) {
+				throw new Error("Timeout waiting for confirm transfer acknowledgment");
+			}
 
-    const payload = intToHex(serial, 2) + '01';
-    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
-  }
+			const c3Failed = parseInt(c3Response.slice(4, 6), 16);
+			if (c3Failed !== 0) {
+				throw new Error("Device failed to confirm transfer");
+			}
 
-  /**
-   * Delete a file
-   * @param {number} serial - File serial number
-   * @param {number} cluster - File cluster
-   * @returns {Promise<void>}
-   */
-  async deleteFile(serial, cluster) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
+			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-    const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-    await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
-    this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
-  }
+			// Refresh file list
+			this.startFetchFiles();
+		} catch (error) {
+			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
+			throw error;
+		} finally {
+			this.state.endTransfer();
+		}
+	}
 
-  /**
-   * Update file order on device by sending C9 commands for each enabled file
-   * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
-   */
-  async updateFileOrder(enabledSerials) {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
+	/**
+	 * Cancel ongoing transfer
+	 * @returns {Promise<void>}
+	 */
+	async cancelTransfer() {
+		if (!this.state.transfer.inProgress) {
+			return;
+		}
 
-    const enabledCount = enabledSerials.length;
-    this.log(`Updating file order with ${enabledCount} enabled files...`, LOG_CLASSES.INFO);
+		this.state.cancelTransfer();
 
-    // Validate all files first before sending any commands
-    for (const serial of enabledSerials) {
-      const file = this.state.getFile(serial);
-      
-      if (!file) {
-        this.log(`Error: File ${serial} not found in state`, LOG_CLASSES.WARNING);
-        return;
-      }
+		if (this.connection.isConnected()) {
+			try {
+				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+			} catch (error) {
+				this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
+			}
+		}
+	}
 
-      if (!file.name || !file.name.trim()) {
-        this.log(`Error: File ${serial} has no name, cannot update order`, LOG_CLASSES.WARNING);
-        return;
-      }
-    }
+	/**
+	 * Play a file by serial number
+	 * @param {number} serial - File serial number
+	 * @returns {Promise<void>}
+	 */
+	async playFile(serial) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
 
-    // All files validated, now send C9 commands
-    for (let i = 0; i < enabledSerials.length; i++) {
-      const serial = enabledSerials[i];
-      const file = this.state.getFile(serial);
-      const fileOrder = i + 1; // 1-indexed position
-      const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
-      
-      // AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
-      const payload = intToHex(enabledCount, 1) + 
-                      intToHex(fileOrder, 1) + 
-                      intToHex(serial, 2) + 
-                      filenamePart;
-      
-      await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
-      this.log(`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`, LOG_CLASSES.INFO);
-      
-      // Small delay between commands
-      await sleep(50);
-    }
+		const payload = `${intToHex(serial, 2)}01`;
+		await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
+	}
 
-    // Query the new order from device
-    this.log('Querying updated file order...', LOG_CLASSES.INFO);
-    await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, '', 8));
-  }
+	/**
+	 * Delete a file
+	 * @param {number} serial - File serial number
+	 * @param {number} cluster - File cluster
+	 * @returns {Promise<void>}
+	 */
+	async deleteFile(serial, cluster) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
 
-  /**
-   * Store file picker data
-   * @param {File} file - Selected file
-   * @param {Uint8Array} originalBytes - Original file bytes
-   * @param {Uint8Array} processedBytes - Processed file bytes (may be converted)
-   * @param {string} fileName - Final filename
-   */
-  storeFilePickerData(file, originalBytes, processedBytes, fileName) {
-    this.lastPickedFile = file;
-    this.lastOriginalBytes = originalBytes;
-    this.lastFileBytes = processedBytes;
-    this.lastFileName = fileName;
-  }
+		const payload = intToHex(serial, 2) + intToHex(cluster, 4);
+		await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
+		this.log(
+			`Delete request (C7) serial=${serial} cluster=${cluster}`,
+			LOG_CLASSES.WARNING,
+		);
+	}
 
-  /**
-   * Get stored file data
-   * @returns {Object} - {file, originalBytes, fileBytes, fileName}
-   */
-  getFilePickerData() {
-    return {
-      file: this.lastPickedFile,
-      originalBytes: this.lastOriginalBytes,
-      fileBytes: this.lastFileBytes,
-      fileName: this.lastFileName,
-    };
-  }
+	/**
+	 * Update file order on device by sending C9 commands for each enabled file
+	 * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
+	 */
+	async updateFileOrder(enabledSerials) {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
 
-  /**
-   * Clear file picker data
-   */
-  clearFilePickerData() {
-    this.lastPickedFile = null;
-    this.lastOriginalBytes = null;
-    this.lastFileBytes = null;
-    this.lastFileName = '';
-  }
+		const enabledCount = enabledSerials.length;
+		this.log(
+			`Updating file order with ${enabledCount} enabled files...`,
+			LOG_CLASSES.INFO,
+		);
+
+		// Validate all files first before sending any commands
+		for (const serial of enabledSerials) {
+			const file = this.state.getFile(serial);
+
+			if (!file) {
+				this.log(
+					`Error: File ${serial} not found in state`,
+					LOG_CLASSES.WARNING,
+				);
+				return;
+			}
+
+			if (!file.name?.trim()) {
+				this.log(
+					`Error: File ${serial} has no name, cannot update order`,
+					LOG_CLASSES.WARNING,
+				);
+				return;
+			}
+		}
+
+		// All files validated, now send C9 commands
+		for (let i = 0; i < enabledSerials.length; i++) {
+			const serial = enabledSerials[i];
+			const file = this.state.getFile(serial);
+			const fileOrder = i + 1; // 1-indexed position
+			const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
+
+			// AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
+			const payload =
+				intToHex(enabledCount, 1) +
+				intToHex(fileOrder, 1) +
+				intToHex(serial, 2) +
+				filenamePart;
+
+			await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+			this.log(
+				`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`,
+				LOG_CLASSES.INFO,
+			);
+
+			// Small delay between commands
+			await sleep(50);
+		}
+
+		// Query the new order from device
+		this.log("Querying updated file order...", LOG_CLASSES.INFO);
+		await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+	}
+
+	/**
+	 * Store file picker data
+	 * @param {File} file - Selected file
+	 * @param {Uint8Array} originalBytes - Original file bytes
+	 * @param {Uint8Array} processedBytes - Processed file bytes (may be converted)
+	 * @param {string} fileName - Final filename
+	 */
+	storeFilePickerData(file, originalBytes, processedBytes, fileName) {
+		this.lastPickedFile = file;
+		this.lastOriginalBytes = originalBytes;
+		this.lastFileBytes = processedBytes;
+		this.lastFileName = fileName;
+	}
+
+	/**
+	 * Get stored file data
+	 * @returns {Object} - {file, originalBytes, fileBytes, fileName}
+	 */
+	getFilePickerData() {
+		return {
+			file: this.lastPickedFile,
+			originalBytes: this.lastOriginalBytes,
+			fileBytes: this.lastFileBytes,
+			fileName: this.lastFileName,
+		};
+	}
+
+	/**
+	 * Clear file picker data
+	 */
+	clearFilePickerData() {
+		this.lastPickedFile = null;
+		this.lastOriginalBytes = null;
+		this.lastFileBytes = null;
+		this.lastFileName = "";
+	}
 }
 
 /**
@@ -2408,209 +2599,212 @@ class FileManager {
  * Handles audio file conversion to device-compatible format
  */
 class AudioConverter {
-  constructor(logger) {
-    this.log = logger;
-  }
+	constructor(logger) {
+		this.log = logger;
+	}
 
-  /**
-   * Get audio duration from file
-   * @param {File} file - Audio file
-   * @returns {Promise<number|null>} - Duration in seconds or null
-   */
-  async getAudioDuration(file) {
-    // Try HTML audio element first (fast)
-    try {
-      const duration = await this.getDurationViaAudioElement(file);
-      if (duration) return duration;
-    } catch (error) {
-      // Fall through to Web Audio API
-    }
+	/**
+	 * Get audio duration from file
+	 * @param {File} file - Audio file
+	 * @returns {Promise<number|null>} - Duration in seconds or null
+	 */
+	async getAudioDuration(file) {
+		// Try HTML audio element first (fast)
+		try {
+			const duration = await this.getDurationViaAudioElement(file);
+			if (duration) return duration;
+		} catch (_error) {
+			// Fall through to Web Audio API
+		}
 
-    // Fallback: decode with Web Audio API
-    try {
-      return await this.getDurationViaWebAudio(file);
-    } catch (error) {
-      this.log(`Failed to get audio duration: ${error.message}`, LOG_CLASSES.WARNING);
-      return null;
-    }
-  }
+		// Fallback: decode with Web Audio API
+		try {
+			return await this.getDurationViaWebAudio(file);
+		} catch (error) {
+			this.log(
+				`Failed to get audio duration: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			return null;
+		}
+	}
 
-  /**
-   * Get duration via HTML audio element
-   * @private
-   */
-  getDurationViaAudioElement(file) {
-    return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file);
-      const audio = new Audio();
-      audio.preload = 'metadata';
+	/**
+	 * Get duration via HTML audio element
+	 * @private
+	 */
+	getDurationViaAudioElement(file) {
+		return new Promise((resolve, reject) => {
+			const url = URL.createObjectURL(file);
+			const audio = new Audio();
+			audio.preload = "metadata";
 
-      audio.onloadedmetadata = () => {
-        const duration = audio.duration;
-        URL.revokeObjectURL(url);
-        if (isFinite(duration) && duration > 0) {
-          resolve(duration);
-        } else {
-          reject(new Error('Non-finite duration'));
-        }
-      };
+			audio.onloadedmetadata = () => {
+				const duration = audio.duration;
+				URL.revokeObjectURL(url);
+				if (Number.isFinite(duration) && duration > 0) {
+					resolve(duration);
+				} else {
+					reject(new Error("Non-finite duration"));
+				}
+			};
 
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Audio element failed'));
-      };
+			audio.onerror = () => {
+				URL.revokeObjectURL(url);
+				reject(new Error("Audio element failed"));
+			};
 
-      audio.src = url;
-    });
-  }
+			audio.src = url;
+		});
+	}
 
-  /**
-   * Get duration via Web Audio API
-   * @private
-   */
-  async getDurationViaWebAudio(file) {
-    const buffer = await file.arrayBuffer();
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) {
-      throw new Error('Web Audio API not supported');
-    }
+	/**
+	 * Get duration via Web Audio API
+	 * @private
+	 */
+	async getDurationViaWebAudio(file) {
+		const buffer = await file.arrayBuffer();
+		const AudioContext = window.AudioContext || window.webkitAudioContext;
+		if (!AudioContext) {
+			throw new Error("Web Audio API not supported");
+		}
 
-    const context = new AudioContext();
-    const audioBuffer = await context.decodeAudioData(buffer.slice(0));
-    context.close?.();
+		const context = new AudioContext();
+		const audioBuffer = await context.decodeAudioData(buffer.slice(0));
+		context.close?.();
 
-    return audioBuffer?.duration ?? null;
-  }
+		return audioBuffer?.duration ?? null;
+	}
 
-  /**
-   * Convert audio file to device-compatible MP3
-   * @param {File} file - Source audio file
-   * @param {number} kbps - Target bitrate
-   * @returns {Promise<{u8: Uint8Array, name: string}>}
-   */
-  async convertToDeviceMp3(file, kbps = AUDIO_CONFIG.DEFAULT_MP3_KBPS) {
-    if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
-      throw new Error('MP3 encoder library (lamejs) not loaded');
-    }
+	/**
+	 * Convert audio file to device-compatible MP3
+	 * @param {File} file - Source audio file
+	 * @param {number} kbps - Target bitrate
+	 * @returns {Promise<{u8: Uint8Array, name: string}>}
+	 */
+	async convertToDeviceMp3(file, kbps = AUDIO_CONFIG.DEFAULT_MP3_KBPS) {
+		if (typeof lamejs === "undefined" || !lamejs.Mp3Encoder) {
+			throw new Error("MP3 encoder library (lamejs) not loaded");
+		}
 
-    // Decode audio
-    const buffer = await file.arrayBuffer();
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) {
-      throw new Error('Web Audio API not supported');
-    }
+		// Decode audio
+		const buffer = await file.arrayBuffer();
+		const AudioContext = window.AudioContext || window.webkitAudioContext;
+		if (!AudioContext) {
+			throw new Error("Web Audio API not supported");
+		}
 
-    const context = new AudioContext();
-    const audioBuffer = await context.decodeAudioData(buffer.slice(0));
-    context.close?.();
+		const context = new AudioContext();
+		const audioBuffer = await context.decodeAudioData(buffer.slice(0));
+		context.close?.();
 
-    // Downmix to mono
-    const monoData = this.downmixToMono(audioBuffer);
+		// Downmix to mono
+		const monoData = this.downmixToMono(audioBuffer);
 
-    // Resample to target rate
-    const resampledData = this.resampleLinear(
-      monoData,
-      audioBuffer.sampleRate,
-      AUDIO_CONFIG.TARGET_SAMPLE_RATE
-    );
+		// Resample to target rate
+		const resampledData = this.resampleLinear(
+			monoData,
+			audioBuffer.sampleRate,
+			AUDIO_CONFIG.TARGET_SAMPLE_RATE,
+		);
 
-    // Convert to 16-bit PCM
-    const pcm16 = this.floatTo16BitPCM(resampledData);
+		// Convert to 16-bit PCM
+		const pcm16 = this.floatTo16BitPCM(resampledData);
 
-    // Encode to MP3
-    const encoder = new lamejs.Mp3Encoder(
-      AUDIO_CONFIG.TARGET_CHANNELS,
-      AUDIO_CONFIG.TARGET_SAMPLE_RATE,
-      kbps | 0 || AUDIO_CONFIG.DEFAULT_MP3_KBPS
-    );
+		// Encode to MP3
+		const encoder = new lamejs.Mp3Encoder(
+			AUDIO_CONFIG.TARGET_CHANNELS,
+			AUDIO_CONFIG.TARGET_SAMPLE_RATE,
+			kbps | 0 || AUDIO_CONFIG.DEFAULT_MP3_KBPS,
+		);
 
-    const blockSize = AUDIO_CONFIG.MP3_ENCODE_BLOCK_SIZE;
-    const mp3Parts = [];
+		const blockSize = AUDIO_CONFIG.MP3_ENCODE_BLOCK_SIZE;
+		const mp3Parts = [];
 
-    for (let i = 0; i < pcm16.length; i += blockSize) {
-      const chunk = pcm16.subarray(i, Math.min(i + blockSize, pcm16.length));
-      const mp3Data = encoder.encodeBuffer(chunk);
-      if (mp3Data?.length) {
-        mp3Parts.push(mp3Data);
-      }
-    }
+		for (let i = 0; i < pcm16.length; i += blockSize) {
+			const chunk = pcm16.subarray(i, Math.min(i + blockSize, pcm16.length));
+			const mp3Data = encoder.encodeBuffer(chunk);
+			if (mp3Data?.length) {
+				mp3Parts.push(mp3Data);
+			}
+		}
 
-    const endData = encoder.flush();
-    if (endData?.length) {
-      mp3Parts.push(endData);
-    }
+		const endData = encoder.flush();
+		if (endData?.length) {
+			mp3Parts.push(endData);
+		}
 
-    // Create output
-    const mp3Blob = new Blob(mp3Parts, { type: 'audio/mpeg' });
-    const u8 = new Uint8Array(await mp3Blob.arrayBuffer());
-    const outputName = (file.name || 'audio').replace(/\.\w+$/i, '') + '.mp3';
+		// Create output
+		const mp3Blob = new Blob(mp3Parts, { type: "audio/mpeg" });
+		const u8 = new Uint8Array(await mp3Blob.arrayBuffer());
+		const outputName = `${(file.name || "audio").replace(/\.\w+$/i, "")}.mp3`;
 
-    return { u8, name: outputName };
-  }
+		return { u8, name: outputName };
+	}
 
-  /**
-   * Downmix audio to mono
-   * @private
-   */
-  downmixToMono(audioBuffer) {
-    if (audioBuffer.numberOfChannels === 1) {
-      return new Float32Array(audioBuffer.getChannelData(0));
-    }
+	/**
+	 * Downmix audio to mono
+	 * @private
+	 */
+	downmixToMono(audioBuffer) {
+		if (audioBuffer.numberOfChannels === 1) {
+			return new Float32Array(audioBuffer.getChannelData(0));
+		}
 
-    const length = audioBuffer.length;
-    const output = new Float32Array(length);
-    const channelCount = audioBuffer.numberOfChannels;
+		const length = audioBuffer.length;
+		const output = new Float32Array(length);
+		const channelCount = audioBuffer.numberOfChannels;
 
-    for (let ch = 0; ch < channelCount; ch++) {
-      const channelData = audioBuffer.getChannelData(ch);
-      for (let i = 0; i < length; i++) {
-        output[i] += channelData[i];
-      }
-    }
+		for (let ch = 0; ch < channelCount; ch++) {
+			const channelData = audioBuffer.getChannelData(ch);
+			for (let i = 0; i < length; i++) {
+				output[i] += channelData[i];
+			}
+		}
 
-    for (let i = 0; i < length; i++) {
-      output[i] /= channelCount;
-    }
+		for (let i = 0; i < length; i++) {
+			output[i] /= channelCount;
+		}
 
-    return output;
-  }
+		return output;
+	}
 
-  /**
-   * Resample audio using linear interpolation
-   * @private
-   */
-  resampleLinear(sourceData, sourceRate, targetRate) {
-    if (sourceRate === targetRate) {
-      return sourceData;
-    }
+	/**
+	 * Resample audio using linear interpolation
+	 * @private
+	 */
+	resampleLinear(sourceData, sourceRate, targetRate) {
+		if (sourceRate === targetRate) {
+			return sourceData;
+		}
 
-    const ratio = sourceRate / targetRate;
-    const targetLength = Math.max(1, Math.round(sourceData.length / ratio));
-    const output = new Float32Array(targetLength);
+		const ratio = sourceRate / targetRate;
+		const targetLength = Math.max(1, Math.round(sourceData.length / ratio));
+		const output = new Float32Array(targetLength);
 
-    for (let i = 0; i < targetLength; i++) {
-      const position = i * ratio;
-      const i0 = Math.floor(position);
-      const i1 = Math.min(i0 + 1, sourceData.length - 1);
-      const t = position - i0;
-      output[i] = (1 - t) * sourceData[i0] + t * sourceData[i1];
-    }
+		for (let i = 0; i < targetLength; i++) {
+			const position = i * ratio;
+			const i0 = Math.floor(position);
+			const i1 = Math.min(i0 + 1, sourceData.length - 1);
+			const t = position - i0;
+			output[i] = (1 - t) * sourceData[i0] + t * sourceData[i1];
+		}
 
-    return output;
-  }
+		return output;
+	}
 
-  /**
-   * Convert float32 PCM to 16-bit PCM
-   * @private
-   */
-  floatTo16BitPCM(float32Array) {
-    const output = new Int16Array(float32Array.length);
-    for (let i = 0; i < float32Array.length; i++) {
-      const sample = Math.max(-1, Math.min(1, float32Array[i]));
-      output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-    }
-    return output;
-  }
+	/**
+	 * Convert float32 PCM to 16-bit PCM
+	 * @private
+	 */
+	floatTo16BitPCM(float32Array) {
+		const output = new Int16Array(float32Array.length);
+		for (let i = 0; i < float32Array.length; i++) {
+			const sample = Math.max(-1, Math.min(1, float32Array[i]));
+			output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+		}
+		return output;
+	}
 }
 
   // ============================================================
@@ -2625,416 +2819,428 @@ class AudioConverter {
  * Protocol Response Parser
  */
 class ProtocolParser {
-  constructor(stateManager, fileManager, logger, onPlayPauseCallback = null, onDeleteCallback = null) {
-    this.state = stateManager;
-    this.fileManager = fileManager;
-    this.log = logger;
-    this.onPlayPause = onPlayPauseCallback;
-    this.onDelete = onDeleteCallback;
-  }
+	constructor(
+		stateManager,
+		fileManager,
+		logger,
+		onPlayPauseCallback = null,
+		onDeleteCallback = null,
+	) {
+		this.state = stateManager;
+		this.fileManager = fileManager;
+		this.log = logger;
+		this.onPlayPause = onPlayPauseCallback;
+		this.onDelete = onDeleteCallback;
+	}
 
-  /**
-   * Parse incoming BLE notification
-   * @param {string} hex - Hex string
-   * @param {Uint8Array} bytes - Byte array
-   */
-  parse(hex, bytes) {
-    // Keepalive (FEDC)
-    if (hex.startsWith(RESPONSES.KEEPALIVE)) {
-      // Optionally log if advanced option is enabled
-      const advFEDC = document.querySelector('#advFEDC');
-      if (advFEDC?.checked) {
-        this.log('Keepalive (FEDC)', LOG_CLASSES.WARNING);
-      }
-      return;
-    }
+	/**
+	 * Parse incoming BLE notification
+	 * @param {string} hex - Hex string
+	 * @param {Uint8Array} bytes - Byte array
+	 */
+	parse(hex, _bytes) {
+		// Keepalive (FEDC)
+		if (hex.startsWith(RESPONSES.KEEPALIVE)) {
+			// Optionally log if advanced option is enabled
+			const advFEDC = document.querySelector("#advFEDC");
+			if (advFEDC?.checked) {
+				this.log("Keepalive (FEDC)", LOG_CLASSES.WARNING);
+			}
+			return;
+		}
 
-    // Device parameters (BBE0)
-    if (hex.startsWith(RESPONSES.DEVICE_PARAMS)) {
-      this.parseDeviceParams(hex);
-      return;
-    }
+		// Device parameters (BBE0)
+		if (hex.startsWith(RESPONSES.DEVICE_PARAMS)) {
+			this.parseDeviceParams(hex);
+			return;
+		}
 
-    // Live status (BBE1)
-    if (hex.startsWith(RESPONSES.LIVE_STATUS)) {
-      this.parseLiveStatus(hex);
-      return;
-    }
+		// Live status (BBE1)
+		if (hex.startsWith(RESPONSES.LIVE_STATUS)) {
+			this.parseLiveStatus(hex);
+			return;
+		}
 
-    // Volume (BBE5)
-    if (hex.startsWith(RESPONSES.VOLUME)) {
-      this.parseVolume(hex);
-      return;
-    }
+		// Volume (BBE5)
+		if (hex.startsWith(RESPONSES.VOLUME)) {
+			this.parseVolume(hex);
+			return;
+		}
 
-    // BT name (BBE6)
-    if (hex.startsWith(RESPONSES.BT_NAME)) {
-      this.parseBTName(hex);
-      return;
-    }
+		// BT name (BBE6)
+		if (hex.startsWith(RESPONSES.BT_NAME)) {
+			this.parseBTName(hex);
+			return;
+		}
 
-    // Capacity (BBD2)
-    if (hex.startsWith(RESPONSES.CAPACITY)) {
-      this.parseCapacity(hex);
-      return;
-    }
+		// Capacity (BBD2)
+		if (hex.startsWith(RESPONSES.CAPACITY)) {
+			this.parseCapacity(hex);
+			return;
+		}
 
-    // Play order (BBD1)
-    if (hex.startsWith(RESPONSES.ORDER)) {
-      this.parseOrder(hex);
-      return;
-    }
+		// Play order (BBD1)
+		if (hex.startsWith(RESPONSES.ORDER)) {
+			this.parseOrder(hex);
+			return;
+		}
 
-    // File info (BBD0)
-    if (hex.startsWith(RESPONSES.FILE_INFO)) {
-      this.parseFileInfo(hex);
-      return;
-    }
+		// File info (BBD0)
+		if (hex.startsWith(RESPONSES.FILE_INFO)) {
+			this.parseFileInfo(hex);
+			return;
+		}
 
-    // Enable Classic BT response (BBFD)
-    if (hex.startsWith(RESPONSES.ENABLE_CLASSIC_BT)) {
-      this.parseEnableClassicBT(hex);
-      return;
-    }
+		// Enable Classic BT response (BBFD)
+		if (hex.startsWith(RESPONSES.ENABLE_CLASSIC_BT)) {
+			this.parseEnableClassicBT(hex);
+			return;
+		}
 
-    // Transfer responses
-    if (hex.startsWith(RESPONSES.TRANSFER_START)) {
-      this.parseTransferStart(hex);
-      return;
-    }
+		// Transfer responses
+		if (hex.startsWith(RESPONSES.TRANSFER_START)) {
+			this.parseTransferStart(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.CHUNK_DROPPED)) {
-      this.parseChunkDropped(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.CHUNK_DROPPED)) {
+			this.parseChunkDropped(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.TRANSFER_END)) {
-      this.parseTransferEnd(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.TRANSFER_END)) {
+			this.parseTransferEnd(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.CONFIRM_TRANSFER_ACK)) {
-      this.parseConfirmTransferAck(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.CONFIRM_TRANSFER_ACK)) {
+			this.parseConfirmTransferAck(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.CANCEL_ACK)) {
-      this.parseCancelAck(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.CANCEL_ACK)) {
+			this.parseCancelAck(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.RESUME_ACK)) {
-      this.parseResumeAck(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.RESUME_ACK)) {
+			this.parseResumeAck(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.PLAY_ACK)) {
-      this.parsePlayAck(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.PLAY_ACK)) {
+			this.parsePlayAck(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.DELETE_ACK)) {
-      this.parseDeleteAck(hex);
-      return;
-    }
+		if (hex.startsWith(RESPONSES.DELETE_ACK)) {
+			this.parseDeleteAck(hex);
+			return;
+		}
 
-    if (hex.startsWith(RESPONSES.FORMAT_ACK)) {
-      this.parseFormatAck(hex);
-      return;
-    }
-  }
+		if (hex.startsWith(RESPONSES.FORMAT_ACK)) {
+			this.parseFormatAck(hex);
+			return;
+		}
+	}
 
-  /**
-   * Parse device parameters (BBE0)
-   */
-  parseDeviceParams(hex) {
-    const channels = [4, 6, 8, 10, 12, 14].map(i => parseInt(hex.slice(i, i + 2), 16));
-    const pin = getAsciiFromHex(hex.slice(16, 24));
-    const wifiPassword = getAsciiFromHex(hex.slice(24, 40));
-    const showMode = parseInt(hex.slice(40, 42), 16);
-    const nameLen = parseInt(hex.slice(56, 58), 16);
-    const name = getAsciiFromHex(hex.slice(58, 58 + nameLen * 2));
+	/**
+	 * Parse device parameters (BBE0)
+	 */
+	parseDeviceParams(hex) {
+		const channels = [4, 6, 8, 10, 12, 14].map((i) =>
+			parseInt(hex.slice(i, i + 2), 16),
+		);
+		const pin = getAsciiFromHex(hex.slice(16, 24));
+		const wifiPassword = getAsciiFromHex(hex.slice(24, 40));
+		const showMode = parseInt(hex.slice(40, 42), 16);
+		const nameLen = parseInt(hex.slice(56, 58), 16);
+		const name = getAsciiFromHex(hex.slice(58, 58 + nameLen * 2));
 
-    this.state.updateDevice({
-      channels,
-      showMode,
-      name: name || this.state.device.name,
-      pin,
-    });
+		this.state.updateDevice({
+			channels,
+			showMode,
+			name: name || this.state.device.name,
+			pin,
+		});
 
-    this.log(
-      `Parsed Params: channels=${channels} pin=${pin} wifi=${wifiPassword} showMode=${showMode} name=${name}`
-    );
-  }
+		this.log(
+			`Parsed Params: channels=${channels} pin=${pin} wifi=${wifiPassword} showMode=${showMode} name=${name}`,
+		);
+	}
 
-  /**
-   * Parse live status (BBE1)
-   */
-  parseLiveStatus(hex) {
-    const action = parseInt(hex.slice(4, 6), 16);
-    const lightData = hex.slice(6, 90);
-    const lights = [];
+	/**
+	 * Parse live status (BBE1)
+	 */
+	parseLiveStatus(hex) {
+		const action = parseInt(hex.slice(4, 6), 16);
+		const lightData = hex.slice(6, 90);
+		const lights = [];
 
-    for (let i = 0; i < 6; i++) {
-      const ch = lightData.slice(i * 14, (i + 1) * 14);
-      if (ch.length < 14) continue;
+		for (let i = 0; i < 6; i++) {
+			const ch = lightData.slice(i * 14, (i + 1) * 14);
+			if (ch.length < 14) continue;
 
-      const light = {
-        effectMode: parseInt(ch.slice(0, 2), 16),
-        brightness: parseInt(ch.slice(2, 4), 16),
-        r: parseInt(ch.slice(4, 6), 16),
-        g: parseInt(ch.slice(6, 8), 16),
-        b: parseInt(ch.slice(8, 10), 16),
-        colorCycle: parseInt(ch.slice(10, 12), 16),
-        effectSpeed: parseInt(ch.slice(12, 14), 16),
-      };
-      lights.push(light);
-    }
+			const light = {
+				effectMode: parseInt(ch.slice(0, 2), 16),
+				brightness: parseInt(ch.slice(2, 4), 16),
+				r: parseInt(ch.slice(4, 6), 16),
+				g: parseInt(ch.slice(6, 8), 16),
+				b: parseInt(ch.slice(8, 10), 16),
+				colorCycle: parseInt(ch.slice(10, 12), 16),
+				effectSpeed: parseInt(ch.slice(12, 14), 16),
+			};
+			lights.push(light);
+		}
 
-    const eyeIcon = parseInt(hex.slice(90, 92), 16);
+		const eyeIcon = parseInt(hex.slice(90, 92), 16);
 
-    this.state.updateLive({
-      action,
-      eye: eyeIcon,
-      lights,
-    });
+		this.state.updateLive({
+			action,
+			eye: eyeIcon,
+			lights,
+		});
 
-    this.log(`Parsed Live: action=${action} eyeIcon=${eyeIcon} lights=${JSON.stringify(lights)}`);
-  }
+		this.log(
+			`Parsed Live: action=${action} eyeIcon=${eyeIcon} lights=${JSON.stringify(lights)}`,
+		);
+	}
 
-  /**
-   * Parse volume (BBE5)
-   */
-  parseVolume(hex) {
-    const volume = parseInt(hex.slice(4, 6), 16);
-    this.state.updateDevice({ volume });
-    this.log(`Parsed Volume: ${volume}`);
-  }
+	/**
+	 * Parse volume (BBE5)
+	 */
+	parseVolume(hex) {
+		const volume = parseInt(hex.slice(4, 6), 16);
+		this.state.updateDevice({ volume });
+		this.log(`Parsed Volume: ${volume}`);
+	}
 
-  /**
-   * Parse BT name (BBE6)
-   */
-  parseBTName(hex) {
-    const len = parseInt(hex.slice(4, 6), 16);
-    const nameHex = hex.slice(6, 6 + len * 2);
-    const btName = getAsciiFromHex(nameHex);
-    this.state.updateDevice({ btName });
-    this.log(`Parsed Classic BT Name: ${btName}`);
-  }
+	/**
+	 * Parse BT name (BBE6)
+	 */
+	parseBTName(hex) {
+		const len = parseInt(hex.slice(4, 6), 16);
+		const nameHex = hex.slice(6, 6 + len * 2);
+		const btName = getAsciiFromHex(nameHex);
+		this.state.updateDevice({ btName });
+		this.log(`Parsed Classic BT Name: ${btName}`);
+	}
 
-  /**
-   * Parse capacity (BBD2)
-   */
-  parseCapacity(hex) {
-    const capacityKB = parseInt(hex.slice(4, 12), 16);
-    const count = parseInt(hex.slice(12, 14), 16);
-    const field4 = parseInt(hex.slice(14, 22), 16);
+	/**
+	 * Parse capacity (BBD2)
+	 */
+	parseCapacity(hex) {
+		const capacityKB = parseInt(hex.slice(4, 12), 16);
+		const count = parseInt(hex.slice(12, 14), 16);
+		const field4 = parseInt(hex.slice(14, 22), 16);
 
-    this.state.updateDevice({
-      capacity: capacityKB,
-      filesReported: count,
-    });
+		this.state.updateDevice({
+			capacity: capacityKB,
+			filesReported: count,
+		});
 
-    this.log(
-      `Capacity ${capacityKB}KB remaining, filesReported=${count}, extra=0x${field4.toString(16).toUpperCase()}`
-    );
-  }
+		this.log(
+			`Capacity ${capacityKB}KB remaining, filesReported=${count}, extra=0x${field4.toString(16).toUpperCase()}`,
+		);
+	}
 
-  /**
-   * Parse play order (BBD1)
-   */
-  parseOrder(hex) {
-    let count = parseInt(hex.slice(4, 6), 16);
-    const data = hex.slice(6);
-    if (data.length < count * 4) {
-      count = Math.floor(data.length / 4);
-    }
+	/**
+	 * Parse play order (BBD1)
+	 */
+	parseOrder(hex) {
+		let count = parseInt(hex.slice(4, 6), 16);
+		const data = hex.slice(6);
+		if (data.length < count * 4) {
+			count = Math.floor(data.length / 4);
+		}
 
-    const orders = Array.from({ length: count }, (_, i) =>
-      parseInt(data.slice(i * 4, i * 4 + 4), 16)
-    );
+		const orders = Array.from({ length: count }, (_, i) =>
+			parseInt(data.slice(i * 4, i * 4 + 4), 16),
+		);
 
-    const ordersAsString = JSON.stringify(orders);
-    
-    this.state.updateDevice({ order: ordersAsString });
-    this.log(`File Order: ${ordersAsString}`);
-    
-    // Order arrival completes the refresh - enable UI and trigger update
-    if (this.state.files.activeFetch) {
-      this.state.updateFilesMetadata({ activeFetch: false });
-      this.state.notify('files');
-    }
-  }
+		const ordersAsString = JSON.stringify(orders);
 
-  /**
-   * Parse file info (BBD0)
-   */
-  parseFileInfo(hex) {
-    const serial = parseInt(hex.slice(4, 8), 16);
-    const cluster = parseInt(hex.slice(8, 16), 16);
-    const total = parseInt(hex.slice(16, 20), 16);
-    const length = parseInt(hex.slice(20, 24), 16);
-    const action = parseInt(hex.slice(24, 26), 16);
-    
-    // Parse light data (6 channels, 7 bytes each = 84 hex chars)
-    const lightData = hex.slice(26, 110);
-    const lights = [];
-    for (let i = 0; i < 6; i++) {
-      const ch = lightData.slice(i * 14, (i + 1) * 14);
-      if (ch.length < 14) continue;
+		this.state.updateDevice({ order: ordersAsString });
+		this.log(`File Order: ${ordersAsString}`);
 
-      const light = {
-        effectMode: parseInt(ch.slice(0, 2), 16),
-        brightness: parseInt(ch.slice(2, 4), 16),
-        r: parseInt(ch.slice(4, 6), 16),
-        g: parseInt(ch.slice(6, 8), 16),
-        b: parseInt(ch.slice(8, 10), 16),
-        colorCycle: parseInt(ch.slice(10, 12), 16),
-        effectSpeed: parseInt(ch.slice(12, 14), 16),
-      };
-      lights.push(light);
-    }
-    
-    const eyeIcon = parseInt(hex.slice(110, 112), 16);
-    const dbPos = parseInt(hex.slice(112, 114), 16);
+		// Order arrival completes the refresh - enable UI and trigger update
+		if (this.state.files.activeFetch) {
+			this.state.updateFilesMetadata({ activeFetch: false });
+			this.state.notify("files");
+		}
+	}
 
-    // Extract filename after marker
-    let name = '';
-    const markerPos = hex.indexOf(PROTOCOL_MARKERS.FILENAME, 114);
-    if (markerPos >= 0) {
-      const nameHex = hex.slice(markerPos + 4, hex.length - 2);
-      try {
-        name = decodeUtf16le(hexToBytes(nameHex)).trim();
-      } catch (error) {
-        // Ignore decode errors
-      }
-    }
+	/**
+	 * Parse file info (BBD0)
+	 */
+	parseFileInfo(hex) {
+		const serial = parseInt(hex.slice(4, 8), 16);
+		const cluster = parseInt(hex.slice(8, 16), 16);
+		const total = parseInt(hex.slice(16, 20), 16);
+		const length = parseInt(hex.slice(20, 24), 16);
+		const action = parseInt(hex.slice(24, 26), 16);
 
-    // Update expected count
-    if (total && !this.state.files.expected) {
-      this.state.updateFilesMetadata({ expected: total });
-    }
+		// Parse light data (6 channels, 7 bytes each = 84 hex chars)
+		const lightData = hex.slice(26, 110);
+		const lights = [];
+		for (let i = 0; i < 6; i++) {
+			const ch = lightData.slice(i * 14, (i + 1) * 14);
+			if (ch.length < 14) continue;
 
-    // Add file to list
-    this.state.setFile(serial, {
-      serial,
-      cluster,
-      total,
-      length,
-      action,
-      lights,
-      eye: eyeIcon,
-      db: dbPos,
-      name,
-    });
+			const light = {
+				effectMode: parseInt(ch.slice(0, 2), 16),
+				brightness: parseInt(ch.slice(2, 4), 16),
+				r: parseInt(ch.slice(4, 6), 16),
+				g: parseInt(ch.slice(6, 8), 16),
+				b: parseInt(ch.slice(8, 10), 16),
+				colorCycle: parseInt(ch.slice(10, 12), 16),
+				effectSpeed: parseInt(ch.slice(12, 14), 16),
+			};
+			lights.push(light);
+		}
 
-    // Check if list is complete
-    this.fileManager.finalizeFilesIfDone();
-  }
+		const eyeIcon = parseInt(hex.slice(110, 112), 16);
+		const dbPos = parseInt(hex.slice(112, 114), 16);
 
-  /**
-   * Parse Enable Classic BT response (BBFD)
-   */
-  parseEnableClassicBT(hex) {
-    const status = hex.slice(4, 6);
-    this.log(`Parsed Enable Classic BT: ${status}`);
-  }
+		// Extract filename after marker
+		let name = "";
+		const markerPos = hex.indexOf(PROTOCOL_MARKERS.FILENAME, 114);
+		if (markerPos >= 0) {
+			const nameHex = hex.slice(markerPos + 4, hex.length - 2);
+			try {
+				name = decodeUtf16le(hexToBytes(nameHex)).trim();
+			} catch (_error) {
+				// Ignore decode errors
+			}
+		}
 
-  /**
-   * Parse transfer start (BBC0)
-   */
-  parseTransferStart(hex) {
-    const failed = parseInt(hex.slice(4, 6), 16);
-    const written = parseInt(hex.slice(6, 14), 16);
-    this.log(`Start Transfer: failed=${failed} written=${written}`);
-  }
+		// Update expected count
+		if (total && !this.state.files.expected) {
+			this.state.updateFilesMetadata({ expected: total });
+		}
 
-  /**
-   * Parse chunk dropped (BBC1)
-   */
-  parseChunkDropped(hex) {
-    const dropped = parseInt(hex.slice(4, 6), 16);
-    const index = parseInt(hex.slice(6, 10), 16);
-    this.log(`Chunk Dropped: ${dropped} @${index}`);
+		// Add file to list
+		this.state.setFile(serial, {
+			serial,
+			cluster,
+			total,
+			length,
+			action,
+			lights,
+			eye: eyeIcon,
+			db: dbPos,
+			name,
+		});
 
-    // Resend chunk if we have it stored
-    if (this.state.transfer.inProgress) {
-      const payload = this.state.getChunk(index);
-      if (payload) {
-        this.log(`Resending chunk ${index}`, LOG_CLASSES.WARNING);
-        // The BLE manager will handle the resend via the stored chunk
-        this.state.setResumePoint(index);
-      }
-    }
-  }
+		// Check if list is complete
+		this.fileManager.finalizeFilesIfDone();
+	}
 
-  /**
-   * Parse transfer end (BBC2)
-   */
-  parseTransferEnd(hex) {
-    const failed = parseInt(hex.slice(4, 6), 16);
-    this.log(`End Transfer: failed=${failed}`);
-  }
+	/**
+	 * Parse Enable Classic BT response (BBFD)
+	 */
+	parseEnableClassicBT(hex) {
+		const status = hex.slice(4, 6);
+		this.log(`Parsed Enable Classic BT: ${status}`);
+	}
 
-  /**
-   * Parse confirm transfer ACK (BBC3)
-   */
-  parseConfirmTransferAck(hex) {
-    const failed = parseInt(hex.slice(4, 6), 16);
-    this.log(`Confirm Transfer: failed=${failed}`);
-  }
+	/**
+	 * Parse transfer start (BBC0)
+	 */
+	parseTransferStart(hex) {
+		const failed = parseInt(hex.slice(4, 6), 16);
+		const written = parseInt(hex.slice(6, 14), 16);
+		this.log(`Start Transfer: failed=${failed} written=${written}`);
+	}
 
-  /**
-   * Parse cancel ACK (BBC4)
-   */
-  parseCancelAck(hex) {
-    const failed = parseInt(hex.slice(4, 6), 16);
-    this.log(`Cancel: failed=${failed}`);
-  }
+	/**
+	 * Parse chunk dropped (BBC1)
+	 */
+	parseChunkDropped(hex) {
+		const dropped = parseInt(hex.slice(4, 6), 16);
+		const index = parseInt(hex.slice(6, 10), 16);
+		this.log(`Chunk Dropped: ${dropped} @${index}`);
 
-  /**
-   * Parse resume ACK (BBC5)
-   */
-  parseResumeAck(hex) {
-    const written = parseInt(hex.slice(4, 12), 16);
-    this.log(`Resume written=${written}`);
-  }
+		// Resend chunk if we have it stored
+		if (this.state.transfer.inProgress) {
+			const payload = this.state.getChunk(index);
+			if (payload) {
+				this.log(`Resending chunk ${index}`, LOG_CLASSES.WARNING);
+				// The BLE manager will handle the resend via the stored chunk
+				this.state.setResumePoint(index);
+			}
+		}
+	}
 
-  /**
-   * Parse play/pause ACK (BBC6)
-   */
-  parsePlayAck(hex) {
-    const serial = parseInt(hex.slice(4, 8), 16);
-    const playing = !!parseInt(hex.slice(8, 10), 16);
-    const duration = parseInt(hex.slice(10, 14), 16);
-    this.log(`Play/Pause serial=${serial} playing=${playing} duration=${duration}`);
-    
-    // Notify callback if provided
-    if (this.onPlayPause) {
-      this.onPlayPause(serial, playing, duration);
-    }
-  }
+	/**
+	 * Parse transfer end (BBC2)
+	 */
+	parseTransferEnd(hex) {
+		const failed = parseInt(hex.slice(4, 6), 16);
+		this.log(`End Transfer: failed=${failed}`);
+	}
 
-  /**
-   * Parse delete ACK (BBC7)
-   */
-  parseDeleteAck(hex) {
-    const ok = parseInt(hex.slice(4, 6), 16) === 0;
-    this.log(`Delete ${ok ? 'OK' : 'FAIL'}`);
-    
-    // Notify callback if provided
-    if (this.onDelete) {
-      this.onDelete(ok);
-    }
-  }
+	/**
+	 * Parse confirm transfer ACK (BBC3)
+	 */
+	parseConfirmTransferAck(hex) {
+		const failed = parseInt(hex.slice(4, 6), 16);
+		this.log(`Confirm Transfer: failed=${failed}`);
+	}
 
-  /**
-   * Parse format ACK (BBC8)
-   */
-  parseFormatAck(hex) {
-    const ok = parseInt(hex.slice(4, 6), 16);
-    this.log(`Format ok=${ok}`);
-  }
+	/**
+	 * Parse cancel ACK (BBC4)
+	 */
+	parseCancelAck(hex) {
+		const failed = parseInt(hex.slice(4, 6), 16);
+		this.log(`Cancel: failed=${failed}`);
+	}
+
+	/**
+	 * Parse resume ACK (BBC5)
+	 */
+	parseResumeAck(hex) {
+		const written = parseInt(hex.slice(4, 12), 16);
+		this.log(`Resume written=${written}`);
+	}
+
+	/**
+	 * Parse play/pause ACK (BBC6)
+	 */
+	parsePlayAck(hex) {
+		const serial = parseInt(hex.slice(4, 8), 16);
+		const playing = !!parseInt(hex.slice(8, 10), 16);
+		const duration = parseInt(hex.slice(10, 14), 16);
+		this.log(
+			`Play/Pause serial=${serial} playing=${playing} duration=${duration}`,
+		);
+
+		// Notify callback if provided
+		if (this.onPlayPause) {
+			this.onPlayPause(serial, playing, duration);
+		}
+	}
+
+	/**
+	 * Parse delete ACK (BBC7)
+	 */
+	parseDeleteAck(hex) {
+		const ok = parseInt(hex.slice(4, 6), 16) === 0;
+		this.log(`Delete ${ok ? "OK" : "FAIL"}`);
+
+		// Notify callback if provided
+		if (this.onDelete) {
+			this.onDelete(ok);
+		}
+	}
+
+	/**
+	 * Parse format ACK (BBC8)
+	 */
+	parseFormatAck(hex) {
+		const ok = parseInt(hex.slice(4, 6), 16);
+		this.log(`Format ok=${ok}`);
+	}
 }
 
   // ============================================================
@@ -3054,779 +3260,926 @@ const $ = (selector) => document.querySelector(selector);
  * Edit Modal Manager Class
  */
 class EditModalManager {
-  constructor(bleManager, stateManager, fileManager, audioConverter, logger) {
-    this.connection = bleManager;
-    this.state = stateManager;
-    this.fileManager = fileManager;
-    this.audioConverter = audioConverter;
-    this.mainLogger = logger;
-
-    // Current edit state
-    this.currentFile = {
-      serial: null,
-      cluster: 0,
-      name: '',
-      eye: 1,
-    };
-
-    // Delete state
-    this.deletePending = false;
-    this.deleteResolve = null;
-
-    this.initializeModal();
-  }
-
-  /**
-   * Initialize the edit modal and all its handlers
-   */
-  initializeModal() {
-    // Get modal elements
-    this.modal = $('#editModal');
-    this.eyeGrid = $('#eyeGrid');
-    this.logElement = $('#edLog');
-    this.progText = $('#edProgText');
-    this.progPct = $('#edProgPct');
-    this.progBar = $('#edProgBar');
-
-    if (!this.modal) {
-      console.warn('Edit modal not found in DOM');
-      return;
-    }
-
-    // Initialize all handlers
-    this.initializeLightingControls();
-    this.initializeMovementControls();
-    this.initializeColorControls();
-    this.initializeEyeGrid();
-    this.initializeFileControls();
-    this.initializeActionButtons();
-  }
-
-  /**
-   * Update edit modal progress bar
-   */
-  setProgress(current, total) {
-    const pct = total ? Math.round((current / total) * 100) : 0;
-    if (this.progText) this.progText.textContent = `${current} / ${total}`;
-    if (this.progPct) this.progPct.textContent = `${pct}%`;
-    if (this.progBar) this.progBar.style.width = `${pct}%`;
-  }
-
-  /**
-   * Log to both main log and edit modal log
-   */
-  log(message, className = 'normal') {
-    // Log to main page
-    this.mainLogger(message, className);
-    
-    // Also log to edit modal if open
-    if (this.logElement) {
-      const div = document.createElement('div');
-      div.className = `line ${className}`;
-      const time = new Date().toLocaleTimeString();
-      div.textContent = `[${time}] ${message}`;
-      this.logElement.appendChild(div);
-      
-      // Auto-scroll to bottom
-      this.logElement.scrollTop = this.logElement.scrollHeight;
-    }
-  }
-
-  /**
-   * Initialize lighting type and speed controls
-   */
-  initializeLightingControls() {
-    // Head light brightness controls
-    const edHeadBrightnessRange = $('#edHeadBrightnessRange');
-    const edHeadBrightnessNum = $('#edHeadBrightness');
-
-    // Sync head brightness inputs
-    if (edHeadBrightnessRange && edHeadBrightnessNum) {
-      edHeadBrightnessRange.addEventListener('input', (e) => (edHeadBrightnessNum.value = e.target.value));
-      edHeadBrightnessNum.addEventListener('input', (e) => (edHeadBrightnessRange.value = clamp(e.target.value, 0, 255)));
-    }
-
-    // Head light effect controls
-    const edHeadEffectMode = $('#edHeadEffectMode');
-    const edHeadEffectSpeedBlock = $('#edHeadEffectSpeedBlock');
-    const edHeadEffectSpeedRange = $('#edHeadEffectSpeedRange');
-    const edHeadEffectSpeedNum = $('#edHeadEffectSpeed');
-
-    // Toggle head speed UI for Static vs Strobe/Pulsing
-    edHeadEffectMode?.addEventListener('change', () => {
-      const v = parseInt(edHeadEffectMode.value, 10);
-      edHeadEffectSpeedBlock?.classList.toggle('hidden', v === 1); // hide when Static
-    });
-
-    // Sync head speed inputs
-    if (edHeadEffectSpeedRange && edHeadEffectSpeedNum) {
-      edHeadEffectSpeedRange.addEventListener('input', (e) => (edHeadEffectSpeedNum.value = e.target.value));
-      edHeadEffectSpeedNum.addEventListener('input', (e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 254)));
-    }
-
-    // Torso light brightness controls
-    const edTorsoBrightnessRange = $('#edTorsoBrightnessRange');
-    const edTorsoBrightnessNum = $('#edTorsoBrightness');
-
-    // Sync torso brightness inputs
-    if (edTorsoBrightnessRange && edTorsoBrightnessNum) {
-      edTorsoBrightnessRange.addEventListener('input', (e) => (edTorsoBrightnessNum.value = e.target.value));
-      edTorsoBrightnessNum.addEventListener('input', (e) => (edTorsoBrightnessRange.value = clamp(e.target.value, 0, 255)));
-    }
-
-    // Torso light effect controls
-    const edTorsoEffectMode = $('#edTorsoEffectMode');
-    const edTorsoEffectSpeedBlock = $('#edTorsoEffectSpeedBlock');
-    const edTorsoEffectSpeedRange = $('#edTorsoEffectSpeedRange');
-    const edTorsoEffectSpeedNum = $('#edTorsoEffectSpeed');
-
-    // Toggle torso speed UI for Static vs Strobe/Pulsing
-    edTorsoEffectMode?.addEventListener('change', () => {
-      const v = parseInt(edTorsoEffectMode.value, 10);
-      edTorsoEffectSpeedBlock?.classList.toggle('hidden', v === 1); // hide when Static
-    });
-
-    // Sync torso speed inputs
-    if (edTorsoEffectSpeedRange && edTorsoEffectSpeedNum) {
-      edTorsoEffectSpeedRange.addEventListener('input', (e) => (edTorsoEffectSpeedNum.value = e.target.value));
-      edTorsoEffectSpeedNum.addEventListener('input', (e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 254)));
-    }
-  }
-
-  /**
-   * Initialize movement controls
-   */
-  initializeMovementControls() {
-    const edMoveGrid = $('#edMove');
-    if (!edMoveGrid) return;
-
-    const allBtn = edMoveGrid.querySelector('[data-part="all"]');
-    const partBtns = edMoveGrid.querySelectorAll('[data-part]:not([data-part="all"])');
-    
-    // "All" button handler
-    allBtn?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      allBtn.classList.toggle('selected');
-      if (allBtn.classList.contains('selected')) {
-        partBtns.forEach((btn) => btn.classList.remove('selected'));
-      }
-    });
-    
-    // Part button handlers
-    partBtns.forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        btn.classList.toggle('selected');
-        allBtn?.classList.remove('selected');
-      });
-    });
-  }
-
-  /**
-   * Initialize color/RGB controls
-   */
-  initializeColorControls() {
-    // Head color sync
-    const edHeadColorPick = $('#edHeadColorPick');
-    const edHeadR = $('#edHeadR');
-    const edHeadG = $('#edHeadG');
-    const edHeadB = $('#edHeadB');
-
-    // Sync Head RGB inputs to color picker
-    [edHeadR, edHeadG, edHeadB].forEach((inp) => {
-      inp?.addEventListener('input', () => {
-        const r = clamp(edHeadR.value, 0, 255);
-        const g = clamp(edHeadG.value, 0, 255);
-        const b = clamp(edHeadB.value, 0, 255);
-        const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-        if (edHeadColorPick && edHeadColorPick.value !== hex) {
-          edHeadColorPick.value = hex;
-        }
-      });
-    });
-
-    // Sync Head color picker to RGB inputs
-    edHeadColorPick?.addEventListener('input', () => {
-      const v = edHeadColorPick.value.replace('#', '');
-      if (v.length === 6) {
-        edHeadR.value = parseInt(v.slice(0, 2), 16);
-        edHeadG.value = parseInt(v.slice(2, 4), 16);
-        edHeadB.value = parseInt(v.slice(4, 6), 16);
-      }
-    });
-
-    // Head color cycle button (toggle visual state only)
-    $('#edHeadColorCycle')?.addEventListener('click', (e) => {
-      e.currentTarget.classList.toggle('selected');
-    });
-
-    // Torso color sync
-    const edTorsoColorPick = $('#edTorsoColorPick');
-    const edTorsoR = $('#edTorsoR');
-    const edTorsoG = $('#edTorsoG');
-    const edTorsoB = $('#edTorsoB');
-
-    // Sync Torso RGB inputs to color picker
-    [edTorsoR, edTorsoG, edTorsoB].forEach((inp) => {
-      inp?.addEventListener('input', () => {
-        const r = clamp(edTorsoR.value, 0, 255);
-        const g = clamp(edTorsoG.value, 0, 255);
-        const b = clamp(edTorsoB.value, 0, 255);
-        const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-        if (edTorsoColorPick && edTorsoColorPick.value !== hex) {
-          edTorsoColorPick.value = hex;
-        }
-      });
-    });
-
-    // Sync Torso color picker to RGB inputs
-    edTorsoColorPick?.addEventListener('input', () => {
-      const v = edTorsoColorPick.value.replace('#', '');
-      if (v.length === 6) {
-        edTorsoR.value = parseInt(v.slice(0, 2), 16);
-        edTorsoG.value = parseInt(v.slice(2, 4), 16);
-        edTorsoB.value = parseInt(v.slice(4, 6), 16);
-      }
-    });
-
-    // Torso color cycle button (toggle visual state only)
-    $('#edTorsoColorCycle')?.addEventListener('click', (e) => {
-      e.currentTarget.classList.toggle('selected');
-    });
-
-    // Note: Individual apply buttons removed - use "Apply All Settings" button instead
-  }
-
-  /**
-   * Initialize eye icon grid
-   */
-  initializeEyeGrid() {
-    if (!this.eyeGrid) return;
-
-    // Build eye grid on initialization
-    this.buildEyeGrid();
-
-    // Eye selection handler
-    this.eyeGrid.addEventListener('click', (e) => {
-      const cell = e.target.closest('.eye-opt');
-      if (!cell) return;
-
-      this.currentFile.eye = parseInt(cell.dataset.eye, 10);
-      this.eyeGrid.querySelectorAll('.eye-opt').forEach((el) => el.classList.remove('selected'));
-      cell.classList.add('selected');
-    });
-  }
-
-  /**
-   * Build the eye icon grid
-   */
-  buildEyeGrid() {
-    if (!this.eyeGrid) return;
-
-    this.eyeGrid.innerHTML = '';
-
-    // Create eye options for images 1-18
-    for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
-      const eyeNum = imgIdx;
-      const div = document.createElement('div');
-      div.className = 'eye-opt';
-      div.dataset.eye = String(eyeNum);
-      div.title = `Eye ${eyeNum}`;
-
-      // Create image element
-      const img = document.createElement('img');
-      img.className = 'eye-thumb';
-      img.src = `images/skelly/eye_icon_${imgIdx}.png`;
-      img.alt = `eye ${eyeNum}`;
-
-      div.appendChild(img);
-      this.eyeGrid.appendChild(div);
-    }
-  }
-
-  /**
-   * Initialize file-related controls
-   */
-  initializeFileControls() {
-    // Filename conflict checking
-    $('#edName')?.addEventListener('input', () => {
-      const name = $('#edName')?.value || '';
-      this.checkFileNameConflict(name);
-    });
-
-    // File upload for replacement
-    const edUploadFile = $('#edUploadFile');
-    const edUploadBtn = $('#edUploadBtn');
-
-    if (edUploadBtn) {
-      edUploadBtn.addEventListener('click', async () => {
-        await this.handleFileUpload();
-      });
-    }
-
-    // Convert checkbox toggle
-    $('#edChkConvert')?.addEventListener('change', (e) => {
-      $('#edConvertOpts')?.classList.toggle('hidden', !e.target.checked);
-    });
-  }
-
-  /**
-   * Initialize action buttons
-   */
-  initializeActionButtons() {
-    // Close button
-    $('#edClose')?.addEventListener('click', () => this.close());
-
-    // Escape key to close modal
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.modal && !this.modal.classList.contains('hidden')) {
-        this.close();
-      }
-    });
-
-    // Delete button (C7)
-    $('#edDelete')?.addEventListener('click', async () => {
-      if (!this.connection.isConnected()) {
-        this.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const delName = $('#edName')?.value || `serial #${$('#edSerial')?.value}`;
-      if (!confirm(`Delete "${delName}" from device? This cannot be undone.`)) return;
-
-      const serial = Math.max(0, parseInt($('#edSerial')?.value || '0', 10));
-      const serialHex = serial.toString(16).padStart(4, '0').toUpperCase();
-      const cluster = Math.max(0, parseInt($('#edCluster')?.value || '0', 10));
-      const clusterHex = cluster.toString(16).padStart(8, '0').toUpperCase();
-
-      // Disable delete button and show waiting state
-      const deleteBtn = $('#edDelete');
-      if (deleteBtn) {
-        deleteBtn.disabled = true;
-        deleteBtn.textContent = 'Deleting...';
-      }
-
-      // Set up promise to wait for delete confirmation
-      this.deletePending = true;
-      const deletePromise = new Promise((resolve) => {
-        this.deleteResolve = resolve;
-      });
-
-      // Send delete command
-      await this.connection.send(buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8));
-      this.log(`Delete request (C7) serial=${serial} cluster=${cluster}`, LOG_CLASSES.WARNING);
-      
-      // Wait for BBC7 response (with timeout)
-      const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => resolve(false), 5000); // 5 second timeout
-      });
-
-      this.log('Waiting for delete confirmation...', LOG_CLASSES.INFO);
-      const success = await Promise.race([deletePromise, timeoutPromise]);
-
-      // Reset button state
-      if (deleteBtn) {
-        deleteBtn.disabled = false;
-        deleteBtn.textContent = 'Delete';
-      }
-
-      if (success) {
-        this.log('Delete confirmed, refreshing file list...', LOG_CLASSES.WARNING);
-        // Refresh the file list
-        await this.fileManager.startFetchFiles();
-        this.close();
-      } else {
-        this.log('Delete confirmation timeout or failed', LOG_CLASSES.WARNING);
-      }
-
-      this.deletePending = false;
-      this.deleteResolve = null;
-    });
-
-    // Apply All button - sends all settings to device
-    $('#edApplyAll')?.addEventListener('click', async () => {
-      if (!this.connection.isConnected()) {
-        this.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const cluster = Math.max(0, parseInt($('#edCluster')?.value || '0', 10));
-      const clusterHex = cluster.toString(16).padStart(8, '0').toUpperCase();
-      const name = ($('#edName')?.value || '').trim();
-      
-      // Helper to build payload with filename
-      const buildPayload = (dataHex) => {
-        const { fullPayload: filenamePart } = buildFilenamePayload(name);
-        return dataHex + clusterHex + filenamePart;
-      };
-
-      this.log('Applying all settings to device...', LOG_CLASSES.INFO);
-
-      // 1. Set Animation (CA) - Movement
-      const grid = $('#edMove');
-      if (grid) {
-        const toggles = grid.querySelectorAll('.iconToggle.selected');
-        
-        let actionBits = 0;
-        toggles.forEach((btn) => {
-          if (btn.getAttribute('data-part') === 'all') {
-            actionBits = 255;
-          } else if (actionBits !== 255) {
-            actionBits |= parseInt(btn.dataset.bit || '0', 10);
-          }
-        });
-        
-        const actionHex = actionBits.toString(16).padStart(2, '0').toUpperCase();
-        const payload = buildPayload(actionHex + '00');
-        await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, payload, 8));
-        this.log(`✓ Set Movement (CA) action=${actionBits}`);
-      }
-
-      // 2. Set Eye (F9)
-      const eyeHex = this.currentFile.eye.toString(16).padStart(2, '0').toUpperCase();
-      const eyePayload = buildPayload(eyeHex + '00');
-      await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
-      this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
-
-      // 3. Set Head Light Brightness (F3)
-      const headBrightness = clamp($('#edHeadBrightness')?.value || 200, 0, 255);
-      const headBrightnessHex = headBrightness.toString(16).padStart(2, '0').toUpperCase();
-      const headBrightnessPayload = buildPayload('01' + headBrightnessHex);
-      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8));
-      this.log(`✓ Set Head Brightness (F3) brightness=${headBrightness}`);
-
-      // 4. Set Head Light Effect Mode (F2)
-      const headMode = parseInt($('#edHeadEffectMode')?.value || '1', 10);
-      const headModeHex = headMode.toString(16).padStart(2, '0').toUpperCase();
-      const headModePayload = buildPayload('01' + headModeHex);
-      await this.connection.send(buildCommand(COMMANDS.SET_MODE, headModePayload, 8));
-      this.log(`✓ Set Head Effect Mode (F2) mode=${headMode}`);
-
-      // 5. Set Head Light Effect Speed (F6) - if not Static mode
-      if (headMode !== 1) {
-        const uiSpeed = clamp($('#edHeadEffectSpeed')?.value || 0, 0, 254);
-        const deviceSpeed = uiSpeedToDevice(uiSpeed);
-        const headSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
-        const headSpeedPayload = buildPayload('01' + headSpeedHex);
-        await this.connection.send(buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8));
-        this.log(`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
-      }
-
-      // 6. Set Torso Light Brightness (F3)
-      const torsoBrightness = clamp($('#edTorsoBrightness')?.value || 200, 0, 255);
-      const torsoBrightnessHex = torsoBrightness.toString(16).padStart(2, '0').toUpperCase();
-      const torsoBrightnessPayload = buildPayload('00' + torsoBrightnessHex);
-      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8));
-      this.log(`✓ Set Torso Brightness (F3) brightness=${torsoBrightness}`);
-
-      // 7. Set Torso Light Effect Mode (F2)
-      const torsoMode = parseInt($('#edTorsoEffectMode')?.value || '1', 10);
-      const torsoModeHex = torsoMode.toString(16).padStart(2, '0').toUpperCase();
-      const torsoModePayload = buildPayload('00' + torsoModeHex);
-      await this.connection.send(buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8));
-      this.log(`✓ Set Torso Effect Mode (F2) mode=${torsoMode}`);
-
-      // 8. Set Torso Light Effect Speed (F6) - if not Static mode
-      if (torsoMode !== 1) {
-        const uiSpeed = clamp($('#edTorsoEffectSpeed')?.value || 0, 0, 254);
-        const deviceSpeed = uiSpeedToDevice(uiSpeed);
-        const torsoSpeedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
-        const torsoSpeedPayload = buildPayload('00' + torsoSpeedHex);
-        await this.connection.send(buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8));
-        this.log(`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`);
-      }
-
-      // 9. Set Head Light Color (F4)
-      const headR = clamp($('#edHeadR')?.value || 255, 0, 255);
-      const headG = clamp($('#edHeadG')?.value || 0, 0, 255);
-      const headB = clamp($('#edHeadB')?.value || 0, 0, 255);
-      const headColorCycle = $('#edHeadColorCycle')?.classList.contains('selected') ? '01' : '00';
-      const headRHex = headR.toString(16).padStart(2, '0').toUpperCase();
-      const headGHex = headG.toString(16).padStart(2, '0').toUpperCase();
-      const headBHex = headB.toString(16).padStart(2, '0').toUpperCase();
-      const headPayload = buildPayload('01' + headRHex + headGHex + headBHex + headColorCycle);
-      await this.connection.send(buildCommand(COMMANDS.SET_RGB, headPayload, 8));
-      this.log(`✓ Set Head Color (F4) rgb=${headR},${headG},${headB} cycle=${headColorCycle}`);
-
-      // 10. Set Torso Light Color (F4)
-      const torsoR = clamp($('#edTorsoR')?.value || 0, 0, 255);
-      const torsoG = clamp($('#edTorsoG')?.value || 0, 0, 255);
-      const torsoB = clamp($('#edTorsoB')?.value || 255, 0, 255);
-      const torsoColorCycle = $('#edTorsoColorCycle')?.classList.contains('selected') ? '01' : '00';
-      const torsoRHex = torsoR.toString(16).padStart(2, '0').toUpperCase();
-      const torsoGHex = torsoG.toString(16).padStart(2, '0').toUpperCase();
-      const torsoBHex = torsoB.toString(16).padStart(2, '0').toUpperCase();
-      const torsoPayload = buildPayload('00' + torsoRHex + torsoGHex + torsoBHex + torsoColorCycle);
-      await this.connection.send(buildCommand(COMMANDS.SET_RGB, torsoPayload, 8));
-      this.log(`✓ Set Torso Color (F4) rgb=${torsoR},${torsoG},${torsoB} cycle=${torsoColorCycle}`);
-
-      this.log(`All settings applied successfully for file "${name || '(no name)'}"`, LOG_CLASSES.SUCCESS);
-      
-      // Refresh the file list to show updated data
-      this.log('Refreshing file list from device...');
-      await this.fileManager.startFetchFiles();
-    });
-  }
-
-  /**
-   * Check for filename conflicts
-   */
-  checkFileNameConflict(name) {
-    const conflict = this.state.hasFileName(name);
-    const inputEl = $('#edName');
-    if (inputEl) {
-      inputEl.classList.toggle('warn-border', !!conflict);
-    }
-    if (conflict) {
-      this.log(`Warning: A file named "${conflict.name}" already exists on the device.`, LOG_CLASSES.WARNING);
-    }
-  }
-
-  /**
-   * Handle file upload/replacement
-   */
-  async handleFileUpload() {
-    if (!this.connection.isConnected()) {
-      this.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    const edUploadFile = $('#edUploadFile');
-    const file = edUploadFile?.files?.[0];
-    
-    if (!file) {
-      this.log('No file selected', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    const fileName = ($('#edName')?.value || '').trim();
-    if (!fileName) {
-      this.log('File name is required', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    // Confirm overwrite
-    if (!confirm(`Replace "${fileName}" with the selected file? This cannot be undone.`)) {
-      return;
-    }
-    
-    try {
-      let bytes;
-
-      // Convert if checkbox is checked
-      const shouldConvert = $('#edChkConvert')?.checked;
-      if (shouldConvert) {
-        const kbps = parseInt($('#edMp3Kbps')?.value || '32', 10);
-        this.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
-        
-        const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
-        bytes = result.u8;
-        
-        this.log(`Converted to ${(bytes.length / 1024).toFixed(1)} KB MP3`);
-      } else {
-        // Read file as bytes
-        const arrayBuffer = await file.arrayBuffer();
-        bytes = new Uint8Array(arrayBuffer);
-      }
-
-      // Temporarily override FileManager's progress callback to use edit modal's progress bar
-      const originalProgressCallback = this.fileManager.onProgress;
-      this.fileManager.onProgress = (current, total) => this.setProgress(current, total);
-      
-      try {
-        // Upload via FileManager - MUST use exact same filename as before
-        this.log(`Uploading ${fileName} (${(bytes.length / 1024).toFixed(1)} KB)...`);
-        this.setProgress(0, 0); // Reset progress bar
-        
-        await this.fileManager.uploadFile(bytes, fileName);
-        
-        this.log(`File "${fileName}" uploaded successfully ✓`, LOG_CLASSES.SUCCESS);
-        
-      } finally {
-        // Restore original progress callback
-        this.fileManager.onProgress = originalProgressCallback;
-      }
-      
-      // Clear the file input
-      if (edUploadFile) edUploadFile.value = '';
-      
-      // Refresh file list
-      setTimeout(() => {
-        this.fileManager.startFetchFiles();
-      }, 500);
-      
-    } catch (error) {
-      this.log(`Upload failed: ${error.message}`, LOG_CLASSES.WARNING);
-    }
-  }
-
-  /**
-   * Open the edit modal for a specific file
-   */
-  open(file) {
-    if (!file) return;
-
-    // Store current file data
-    this.currentFile.serial = file.serial;
-    this.currentFile.cluster = file.cluster;
-    this.currentFile.name = file.name || '';
-    this.currentFile.eye = file.eye || 1;
-
-    // Populate form fields
-    if ($('#edSerial')) $('#edSerial').value = file.serial;
-    if ($('#edCluster')) $('#edCluster').value = file.cluster;
-    if ($('#edName')) $('#edName').value = file.name || '';
-
-    // Populate lighting data from file if available
-    const headLight = file.lights?.[1];
-    const torsoLight = file.lights?.[0];
-
-    if (headLight) {
-      // Head brightness
-      if ($('#edHeadBrightness')) $('#edHeadBrightness').value = headLight.brightness || 200;
-      if ($('#edHeadBrightnessRange')) $('#edHeadBrightnessRange').value = headLight.brightness || 200;
-
-      // Head effect mode
-      if ($('#edHeadEffectMode')) $('#edHeadEffectMode').value = headLight.effectMode || 1;
-      
-      // Head effect speed
-      const headUISpeed = deviceSpeedToUI(headLight.effectSpeed || 0);
-      if ($('#edHeadEffectSpeed')) $('#edHeadEffectSpeed').value = headUISpeed;
-      if ($('#edHeadEffectSpeedRange')) $('#edHeadEffectSpeedRange').value = headUISpeed;
-      $('#edHeadEffectSpeedBlock')?.classList.toggle('hidden', headLight.effectMode === 1);
-
-      // Head color
-      if ($('#edHeadR')) $('#edHeadR').value = headLight.r;
-      if ($('#edHeadG')) $('#edHeadG').value = headLight.g;
-      if ($('#edHeadB')) $('#edHeadB').value = headLight.b;
-      const headHex = `#${headLight.r.toString(16).padStart(2, '0')}${headLight.g.toString(16).padStart(2, '0')}${headLight.b.toString(16).padStart(2, '0')}`;
-      if ($('#edHeadColorPick')) $('#edHeadColorPick').value = headHex;
-      
-      // Head color cycle
-      const edHeadColorCycle = $('#edHeadColorCycle');
-      if (edHeadColorCycle) {
-        if (headLight.colorCycle === 1) {
-          edHeadColorCycle.classList.add('selected');
-        } else {
-          edHeadColorCycle.classList.remove('selected');
-        }
-      }
-    } else {
-      // Defaults for head
-      if ($('#edHeadBrightness')) $('#edHeadBrightness').value = 200;
-      if ($('#edHeadBrightnessRange')) $('#edHeadBrightnessRange').value = 200;
-      if ($('#edHeadEffectMode')) $('#edHeadEffectMode').value = '1';
-      if ($('#edHeadEffectSpeed')) $('#edHeadEffectSpeed').value = 0;
-      if ($('#edHeadEffectSpeedRange')) $('#edHeadEffectSpeedRange').value = 0;
-      $('#edHeadEffectSpeedBlock')?.classList.add('hidden');
-      
-      if ($('#edHeadR')) $('#edHeadR').value = 255;
-      if ($('#edHeadG')) $('#edHeadG').value = 0;
-      if ($('#edHeadB')) $('#edHeadB').value = 0;
-      if ($('#edHeadColorPick')) $('#edHeadColorPick').value = '#ff0000';
-      $('#edHeadColorCycle')?.classList.remove('selected');
-    }
-
-    if (torsoLight) {
-      // Torso brightness
-      if ($('#edTorsoBrightness')) $('#edTorsoBrightness').value = torsoLight.brightness || 200;
-      if ($('#edTorsoBrightnessRange')) $('#edTorsoBrightnessRange').value = torsoLight.brightness || 200;
-
-      // Torso effect mode
-      if ($('#edTorsoEffectMode')) $('#edTorsoEffectMode').value = torsoLight.effectMode || 1;
-      
-      // Torso effect speed
-      const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed || 0);
-      if ($('#edTorsoEffectSpeed')) $('#edTorsoEffectSpeed').value = torsoUISpeed;
-      if ($('#edTorsoEffectSpeedRange')) $('#edTorsoEffectSpeedRange').value = torsoUISpeed;
-      $('#edTorsoEffectSpeedBlock')?.classList.toggle('hidden', torsoLight.effectMode === 1);
-
-      // Torso color
-      if ($('#edTorsoR')) $('#edTorsoR').value = torsoLight.r;
-      if ($('#edTorsoG')) $('#edTorsoG').value = torsoLight.g;
-      if ($('#edTorsoB')) $('#edTorsoB').value = torsoLight.b;
-      const torsoHex = `#${torsoLight.r.toString(16).padStart(2, '0')}${torsoLight.g.toString(16).padStart(2, '0')}${torsoLight.b.toString(16).padStart(2, '0')}`;
-      if ($('#edTorsoColorPick')) $('#edTorsoColorPick').value = torsoHex;
-      
-      // Torso color cycle
-      const edTorsoColorCycle = $('#edTorsoColorCycle');
-      if (edTorsoColorCycle) {
-        if (torsoLight.colorCycle === 1) {
-          edTorsoColorCycle.classList.add('selected');
-        } else {
-          edTorsoColorCycle.classList.remove('selected');
-        }
-      }
-    } else {
-      // Defaults for torso
-      if ($('#edTorsoBrightness')) $('#edTorsoBrightness').value = 200;
-      if ($('#edTorsoBrightnessRange')) $('#edTorsoBrightnessRange').value = 200;
-      if ($('#edTorsoEffectMode')) $('#edTorsoEffectMode').value = '1';
-      if ($('#edTorsoEffectSpeed')) $('#edTorsoEffectSpeed').value = 0;
-      if ($('#edTorsoEffectSpeedRange')) $('#edTorsoEffectSpeedRange').value = 0;
-      $('#edTorsoEffectSpeedBlock')?.classList.add('hidden');
-      
-      if ($('#edTorsoR')) $('#edTorsoR').value = 0;
-      if ($('#edTorsoG')) $('#edTorsoG').value = 0;
-      if ($('#edTorsoB')) $('#edTorsoB').value = 255;
-      if ($('#edTorsoColorPick')) $('#edTorsoColorPick').value = '#0000ff';
-      $('#edTorsoColorCycle')?.classList.remove('selected');
-    }
-
-    // Populate movement from action field (bitfield: 0x01=head, 0x02=arm, 0x04=torso, 0xFF=all)
-    const actionBits = file.action || 0;
-    const edMoveGrid = $('#edMove');
-    edMoveGrid?.querySelectorAll('.iconToggle').forEach((btn) => btn.classList.remove('selected'));
-    
-    if (edMoveGrid) {
-      if (actionBits === 255) {
-        edMoveGrid.querySelector('[data-part="all"]')?.classList.add('selected');
-      } else {
-        edMoveGrid.querySelectorAll('[data-part]:not([data-part="all"])').forEach((btn) => {
-          const bit = parseInt(btn.dataset.bit || '0', 10);
-          if (bit && (actionBits & bit)) btn.classList.add('selected');
-        });
-      }
-    }
-
-    // Update eye grid selection
-    if (this.eyeGrid) {
-      this.eyeGrid.querySelectorAll('.eye-opt').forEach((el) => {
-        const eyeNum = parseInt(el.dataset.eye, 10);
-        el.classList.toggle('selected', eyeNum === this.currentFile.eye);
-      });
-    }
-
-    // Clear the log when opening
-    if (this.logElement) {
-      this.logElement.innerHTML = '';
-    }
-
-    // Reset progress bar
-    this.setProgress(0, 0);
-
-    // Show modal
-    this.modal?.classList.remove('hidden');
-  }
-
-  /**
-   * Handle delete confirmation from protocol parser
-   * @param {boolean} success - Whether delete was successful
-   */
-  handleDeleteConfirmation(success) {
-    if (this.deletePending && this.deleteResolve) {
-      this.deleteResolve(success);
-    }
-  }
-
-  /**
-   * Close the edit modal
-   */
-  close() {
-    this.modal?.classList.add('hidden');
-  }
+	constructor(bleManager, stateManager, fileManager, audioConverter, logger) {
+		this.connection = bleManager;
+		this.state = stateManager;
+		this.fileManager = fileManager;
+		this.audioConverter = audioConverter;
+		this.mainLogger = logger;
+
+		// Current edit state
+		this.currentFile = {
+			serial: null,
+			cluster: 0,
+			name: "",
+			eye: 1,
+		};
+
+		// Delete state
+		this.deletePending = false;
+		this.deleteResolve = null;
+
+		this.initializeModal();
+	}
+
+	/**
+	 * Initialize the edit modal and all its handlers
+	 */
+	initializeModal() {
+		// Get modal elements
+		this.modal = $("#editModal");
+		this.eyeGrid = $("#eyeGrid");
+		this.logElement = $("#edLog");
+		this.progText = $("#edProgText");
+		this.progPct = $("#edProgPct");
+		this.progBar = $("#edProgBar");
+
+		if (!this.modal) {
+			console.warn("Edit modal not found in DOM");
+			return;
+		}
+
+		// Initialize all handlers
+		this.initializeLightingControls();
+		this.initializeMovementControls();
+		this.initializeColorControls();
+		this.initializeEyeGrid();
+		this.initializeFileControls();
+		this.initializeActionButtons();
+	}
+
+	/**
+	 * Update edit modal progress bar
+	 */
+	setProgress(current, total) {
+		const pct = total ? Math.round((current / total) * 100) : 0;
+		if (this.progText) this.progText.textContent = `${current} / ${total}`;
+		if (this.progPct) this.progPct.textContent = `${pct}%`;
+		if (this.progBar) this.progBar.style.width = `${pct}%`;
+	}
+
+	/**
+	 * Log to both main log and edit modal log
+	 */
+	log(message, className = "normal") {
+		// Log to main page
+		this.mainLogger(message, className);
+
+		// Also log to edit modal if open
+		if (this.logElement) {
+			const div = document.createElement("div");
+			div.className = `line ${className}`;
+			const time = new Date().toLocaleTimeString();
+			div.textContent = `[${time}] ${message}`;
+			this.logElement.appendChild(div);
+
+			// Auto-scroll to bottom
+			this.logElement.scrollTop = this.logElement.scrollHeight;
+		}
+	}
+
+	/**
+	 * Initialize lighting type and speed controls
+	 */
+	initializeLightingControls() {
+		// Head light brightness controls
+		const edHeadBrightnessRange = $("#edHeadBrightnessRange");
+		const edHeadBrightnessNum = $("#edHeadBrightness");
+
+		// Sync head brightness inputs
+		if (edHeadBrightnessRange && edHeadBrightnessNum) {
+			edHeadBrightnessRange.addEventListener(
+				"input",
+				(e) => (edHeadBrightnessNum.value = e.target.value),
+			);
+			edHeadBrightnessNum.addEventListener(
+				"input",
+				(e) => (edHeadBrightnessRange.value = clamp(e.target.value, 0, 255)),
+			);
+		}
+
+		// Head light effect controls
+		const edHeadEffectMode = $("#edHeadEffectMode");
+		const edHeadEffectSpeedBlock = $("#edHeadEffectSpeedBlock");
+		const edHeadEffectSpeedRange = $("#edHeadEffectSpeedRange");
+		const edHeadEffectSpeedNum = $("#edHeadEffectSpeed");
+
+		// Toggle head speed UI for Static vs Strobe/Pulsing
+		edHeadEffectMode?.addEventListener("change", () => {
+			const v = parseInt(edHeadEffectMode.value, 10);
+			edHeadEffectSpeedBlock?.classList.toggle("hidden", v === 1); // hide when Static
+		});
+
+		// Sync head speed inputs
+		if (edHeadEffectSpeedRange && edHeadEffectSpeedNum) {
+			edHeadEffectSpeedRange.addEventListener(
+				"input",
+				(e) => (edHeadEffectSpeedNum.value = e.target.value),
+			);
+			edHeadEffectSpeedNum.addEventListener(
+				"input",
+				(e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+			);
+		}
+
+		// Torso light brightness controls
+		const edTorsoBrightnessRange = $("#edTorsoBrightnessRange");
+		const edTorsoBrightnessNum = $("#edTorsoBrightness");
+
+		// Sync torso brightness inputs
+		if (edTorsoBrightnessRange && edTorsoBrightnessNum) {
+			edTorsoBrightnessRange.addEventListener(
+				"input",
+				(e) => (edTorsoBrightnessNum.value = e.target.value),
+			);
+			edTorsoBrightnessNum.addEventListener(
+				"input",
+				(e) => (edTorsoBrightnessRange.value = clamp(e.target.value, 0, 255)),
+			);
+		}
+
+		// Torso light effect controls
+		const edTorsoEffectMode = $("#edTorsoEffectMode");
+		const edTorsoEffectSpeedBlock = $("#edTorsoEffectSpeedBlock");
+		const edTorsoEffectSpeedRange = $("#edTorsoEffectSpeedRange");
+		const edTorsoEffectSpeedNum = $("#edTorsoEffectSpeed");
+
+		// Toggle torso speed UI for Static vs Strobe/Pulsing
+		edTorsoEffectMode?.addEventListener("change", () => {
+			const v = parseInt(edTorsoEffectMode.value, 10);
+			edTorsoEffectSpeedBlock?.classList.toggle("hidden", v === 1); // hide when Static
+		});
+
+		// Sync torso speed inputs
+		if (edTorsoEffectSpeedRange && edTorsoEffectSpeedNum) {
+			edTorsoEffectSpeedRange.addEventListener(
+				"input",
+				(e) => (edTorsoEffectSpeedNum.value = e.target.value),
+			);
+			edTorsoEffectSpeedNum.addEventListener(
+				"input",
+				(e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+			);
+		}
+	}
+
+	/**
+	 * Initialize movement controls
+	 */
+	initializeMovementControls() {
+		const edMoveGrid = $("#edMove");
+		if (!edMoveGrid) return;
+
+		const allBtn = edMoveGrid.querySelector('[data-part="all"]');
+		const partBtns = edMoveGrid.querySelectorAll(
+			'[data-part]:not([data-part="all"])',
+		);
+
+		// "All" button handler
+		allBtn?.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			allBtn.classList.toggle("selected");
+			if (allBtn.classList.contains("selected")) {
+				partBtns.forEach((btn) => {
+					btn.classList.remove("selected");
+				});
+			}
+		});
+
+		// Part button handlers
+		partBtns.forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				btn.classList.toggle("selected");
+				allBtn?.classList.remove("selected");
+			});
+		});
+	}
+
+	/**
+	 * Initialize color/RGB controls
+	 */
+	initializeColorControls() {
+		// Head color sync
+		const edHeadColorPick = $("#edHeadColorPick");
+		const edHeadR = $("#edHeadR");
+		const edHeadG = $("#edHeadG");
+		const edHeadB = $("#edHeadB");
+
+		// Sync Head RGB inputs to color picker
+		[edHeadR, edHeadG, edHeadB].forEach((inp) => {
+			inp?.addEventListener("input", () => {
+				const r = clamp(edHeadR.value, 0, 255);
+				const g = clamp(edHeadG.value, 0, 255);
+				const b = clamp(edHeadB.value, 0, 255);
+				const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+				if (edHeadColorPick && edHeadColorPick.value !== hex) {
+					edHeadColorPick.value = hex;
+				}
+			});
+		});
+
+		// Sync Head color picker to RGB inputs
+		edHeadColorPick?.addEventListener("input", () => {
+			const v = edHeadColorPick.value.replace("#", "");
+			if (v.length === 6) {
+				edHeadR.value = parseInt(v.slice(0, 2), 16);
+				edHeadG.value = parseInt(v.slice(2, 4), 16);
+				edHeadB.value = parseInt(v.slice(4, 6), 16);
+			}
+		});
+
+		// Head color cycle button (toggle visual state only)
+		$("#edHeadColorCycle")?.addEventListener("click", (e) => {
+			e.currentTarget.classList.toggle("selected");
+		});
+
+		// Torso color sync
+		const edTorsoColorPick = $("#edTorsoColorPick");
+		const edTorsoR = $("#edTorsoR");
+		const edTorsoG = $("#edTorsoG");
+		const edTorsoB = $("#edTorsoB");
+
+		// Sync Torso RGB inputs to color picker
+		[edTorsoR, edTorsoG, edTorsoB].forEach((inp) => {
+			inp?.addEventListener("input", () => {
+				const r = clamp(edTorsoR.value, 0, 255);
+				const g = clamp(edTorsoG.value, 0, 255);
+				const b = clamp(edTorsoB.value, 0, 255);
+				const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+				if (edTorsoColorPick && edTorsoColorPick.value !== hex) {
+					edTorsoColorPick.value = hex;
+				}
+			});
+		});
+
+		// Sync Torso color picker to RGB inputs
+		edTorsoColorPick?.addEventListener("input", () => {
+			const v = edTorsoColorPick.value.replace("#", "");
+			if (v.length === 6) {
+				edTorsoR.value = parseInt(v.slice(0, 2), 16);
+				edTorsoG.value = parseInt(v.slice(2, 4), 16);
+				edTorsoB.value = parseInt(v.slice(4, 6), 16);
+			}
+		});
+
+		// Torso color cycle button (toggle visual state only)
+		$("#edTorsoColorCycle")?.addEventListener("click", (e) => {
+			e.currentTarget.classList.toggle("selected");
+		});
+
+		// Note: Individual apply buttons removed - use "Apply All Settings" button instead
+	}
+
+	/**
+	 * Initialize eye icon grid
+	 */
+	initializeEyeGrid() {
+		if (!this.eyeGrid) return;
+
+		// Build eye grid on initialization
+		this.buildEyeGrid();
+
+		// Eye selection handler
+		this.eyeGrid.addEventListener("click", (e) => {
+			const cell = e.target.closest(".eye-opt");
+			if (!cell) return;
+
+			this.currentFile.eye = parseInt(cell.dataset.eye, 10);
+			this.eyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
+				el.classList.remove("selected");
+			});
+			cell.classList.add("selected");
+		});
+	}
+
+	/**
+	 * Build the eye icon grid
+	 */
+	buildEyeGrid() {
+		if (!this.eyeGrid) return;
+
+		this.eyeGrid.innerHTML = "";
+
+		// Create eye options for images 1-18
+		for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
+			const eyeNum = imgIdx;
+			const div = document.createElement("div");
+			div.className = "eye-opt";
+			div.dataset.eye = String(eyeNum);
+			div.title = `Eye ${eyeNum}`;
+
+			// Create image element
+			const img = document.createElement("img");
+			img.className = "eye-thumb";
+			img.src = `images/skelly/eye_icon_${imgIdx}.png`;
+			img.alt = `eye ${eyeNum}`;
+
+			div.appendChild(img);
+			this.eyeGrid.appendChild(div);
+		}
+	}
+
+	/**
+	 * Initialize file-related controls
+	 */
+	initializeFileControls() {
+		// Filename conflict checking
+		$("#edName")?.addEventListener("input", () => {
+			const name = $("#edName")?.value || "";
+			this.checkFileNameConflict(name);
+		});
+
+		// File upload for replacement
+		const _edUploadFile = $("#edUploadFile");
+		const edUploadBtn = $("#edUploadBtn");
+
+		if (edUploadBtn) {
+			edUploadBtn.addEventListener("click", async () => {
+				await this.handleFileUpload();
+			});
+		}
+
+		// Convert checkbox toggle
+		$("#edChkConvert")?.addEventListener("change", (e) => {
+			$("#edConvertOpts")?.classList.toggle("hidden", !e.target.checked);
+		});
+	}
+
+	/**
+	 * Initialize action buttons
+	 */
+	initializeActionButtons() {
+		// Close button
+		$("#edClose")?.addEventListener("click", () => this.close());
+
+		// Escape key to close modal
+		document.addEventListener("keydown", (e) => {
+			if (
+				e.key === "Escape" &&
+				this.modal &&
+				!this.modal.classList.contains("hidden")
+			) {
+				this.close();
+			}
+		});
+
+		// Delete button (C7)
+		$("#edDelete")?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const delName = $("#edName")?.value || `serial #${$("#edSerial")?.value}`;
+			if (!confirm(`Delete "${delName}" from device? This cannot be undone.`))
+				return;
+
+			const serial = Math.max(0, parseInt($("#edSerial")?.value || "0", 10));
+			const serialHex = serial.toString(16).padStart(4, "0").toUpperCase();
+			const cluster = Math.max(0, parseInt($("#edCluster")?.value || "0", 10));
+			const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
+
+			// Disable delete button and show waiting state
+			const deleteBtn = $("#edDelete");
+			if (deleteBtn) {
+				deleteBtn.disabled = true;
+				deleteBtn.textContent = "Deleting...";
+			}
+
+			// Set up promise to wait for delete confirmation
+			this.deletePending = true;
+			const deletePromise = new Promise((resolve) => {
+				this.deleteResolve = resolve;
+			});
+
+			// Send delete command
+			await this.connection.send(
+				buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8),
+			);
+			this.log(
+				`Delete request (C7) serial=${serial} cluster=${cluster}`,
+				LOG_CLASSES.WARNING,
+			);
+
+			// Wait for BBC7 response (with timeout)
+			const timeoutPromise = new Promise((resolve) => {
+				setTimeout(() => resolve(false), 5000); // 5 second timeout
+			});
+
+			this.log("Waiting for delete confirmation...", LOG_CLASSES.INFO);
+			const success = await Promise.race([deletePromise, timeoutPromise]);
+
+			// Reset button state
+			if (deleteBtn) {
+				deleteBtn.disabled = false;
+				deleteBtn.textContent = "Delete";
+			}
+
+			if (success) {
+				this.log(
+					"Delete confirmed, refreshing file list...",
+					LOG_CLASSES.WARNING,
+				);
+				// Refresh the file list
+				await this.fileManager.startFetchFiles();
+				this.close();
+			} else {
+				this.log("Delete confirmation timeout or failed", LOG_CLASSES.WARNING);
+			}
+
+			this.deletePending = false;
+			this.deleteResolve = null;
+		});
+
+		// Apply All button - sends all settings to device
+		$("#edApplyAll")?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const cluster = Math.max(0, parseInt($("#edCluster")?.value || "0", 10));
+			const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
+			const name = ($("#edName")?.value || "").trim();
+
+			// Helper to build payload with filename
+			const buildPayload = (dataHex) => {
+				const { fullPayload: filenamePart } = buildFilenamePayload(name);
+				return dataHex + clusterHex + filenamePart;
+			};
+
+			this.log("Applying all settings to device...", LOG_CLASSES.INFO);
+
+			// 1. Set Animation (CA) - Movement
+			const grid = $("#edMove");
+			if (grid) {
+				const toggles = grid.querySelectorAll(".iconToggle.selected");
+
+				let actionBits = 0;
+				toggles.forEach((btn) => {
+					if (btn.getAttribute("data-part") === "all") {
+						actionBits = 255;
+					} else if (actionBits !== 255) {
+						actionBits |= parseInt(btn.dataset.bit || "0", 10);
+					}
+				});
+
+				const actionHex = actionBits
+					.toString(16)
+					.padStart(2, "0")
+					.toUpperCase();
+				const payload = buildPayload(`${actionHex}00`);
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_MOVEMENT, payload, 8),
+				);
+				this.log(`✓ Set Movement (CA) action=${actionBits}`);
+			}
+
+			// 2. Set Eye (F9)
+			const eyeHex = this.currentFile.eye
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const eyePayload = buildPayload(`${eyeHex}00`);
+			await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
+			this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
+
+			// 3. Set Head Light Brightness (F3)
+			const headBrightness = clamp(
+				$("#edHeadBrightness")?.value || 200,
+				0,
+				255,
+			);
+			const headBrightnessHex = headBrightness
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const headBrightnessPayload = buildPayload(`01${headBrightnessHex}`);
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8),
+			);
+			this.log(`✓ Set Head Brightness (F3) brightness=${headBrightness}`);
+
+			// 4. Set Head Light Effect Mode (F2)
+			const headMode = parseInt($("#edHeadEffectMode")?.value || "1", 10);
+			const headModeHex = headMode.toString(16).padStart(2, "0").toUpperCase();
+			const headModePayload = buildPayload(`01${headModeHex}`);
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_MODE, headModePayload, 8),
+			);
+			this.log(`✓ Set Head Effect Mode (F2) mode=${headMode}`);
+
+			// 5. Set Head Light Effect Speed (F6) - if not Static mode
+			if (headMode !== 1) {
+				const uiSpeed = clamp($("#edHeadEffectSpeed")?.value || 0, 0, 254);
+				const deviceSpeed = uiSpeedToDevice(uiSpeed);
+				const headSpeedHex = deviceSpeed
+					.toString(16)
+					.padStart(2, "0")
+					.toUpperCase();
+				const headSpeedPayload = buildPayload(`01${headSpeedHex}`);
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8),
+				);
+				this.log(
+					`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
+				);
+			}
+
+			// 6. Set Torso Light Brightness (F3)
+			const torsoBrightness = clamp(
+				$("#edTorsoBrightness")?.value || 200,
+				0,
+				255,
+			);
+			const torsoBrightnessHex = torsoBrightness
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const torsoBrightnessPayload = buildPayload(`00${torsoBrightnessHex}`);
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8),
+			);
+			this.log(`✓ Set Torso Brightness (F3) brightness=${torsoBrightness}`);
+
+			// 7. Set Torso Light Effect Mode (F2)
+			const torsoMode = parseInt($("#edTorsoEffectMode")?.value || "1", 10);
+			const torsoModeHex = torsoMode
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const torsoModePayload = buildPayload(`00${torsoModeHex}`);
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8),
+			);
+			this.log(`✓ Set Torso Effect Mode (F2) mode=${torsoMode}`);
+
+			// 8. Set Torso Light Effect Speed (F6) - if not Static mode
+			if (torsoMode !== 1) {
+				const uiSpeed = clamp($("#edTorsoEffectSpeed")?.value || 0, 0, 254);
+				const deviceSpeed = uiSpeedToDevice(uiSpeed);
+				const torsoSpeedHex = deviceSpeed
+					.toString(16)
+					.padStart(2, "0")
+					.toUpperCase();
+				const torsoSpeedPayload = buildPayload(`00${torsoSpeedHex}`);
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8),
+				);
+				this.log(
+					`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
+				);
+			}
+
+			// 9. Set Head Light Color (F4)
+			const headR = clamp($("#edHeadR")?.value || 255, 0, 255);
+			const headG = clamp($("#edHeadG")?.value || 0, 0, 255);
+			const headB = clamp($("#edHeadB")?.value || 0, 0, 255);
+			const headColorCycle = $("#edHeadColorCycle")?.classList.contains(
+				"selected",
+			)
+				? "01"
+				: "00";
+			const headRHex = headR.toString(16).padStart(2, "0").toUpperCase();
+			const headGHex = headG.toString(16).padStart(2, "0").toUpperCase();
+			const headBHex = headB.toString(16).padStart(2, "0").toUpperCase();
+			const headPayload = buildPayload(
+				`01${headRHex}${headGHex}${headBHex}${headColorCycle}`,
+			);
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_RGB, headPayload, 8),
+			);
+			this.log(
+				`✓ Set Head Color (F4) rgb=${headR},${headG},${headB} cycle=${headColorCycle}`,
+			);
+
+			// 10. Set Torso Light Color (F4)
+			const torsoR = clamp($("#edTorsoR")?.value || 0, 0, 255);
+			const torsoG = clamp($("#edTorsoG")?.value || 0, 0, 255);
+			const torsoB = clamp($("#edTorsoB")?.value || 255, 0, 255);
+			const torsoColorCycle = $("#edTorsoColorCycle")?.classList.contains(
+				"selected",
+			)
+				? "01"
+				: "00";
+			const torsoRHex = torsoR.toString(16).padStart(2, "0").toUpperCase();
+			const torsoGHex = torsoG.toString(16).padStart(2, "0").toUpperCase();
+			const torsoBHex = torsoB.toString(16).padStart(2, "0").toUpperCase();
+			const torsoPayload = buildPayload(
+				`00${torsoRHex}${torsoGHex}${torsoBHex}${torsoColorCycle}`,
+			);
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_RGB, torsoPayload, 8),
+			);
+			this.log(
+				`✓ Set Torso Color (F4) rgb=${torsoR},${torsoG},${torsoB} cycle=${torsoColorCycle}`,
+			);
+
+			this.log(
+				`All settings applied successfully for file "${name || "(no name)"}"`,
+				LOG_CLASSES.SUCCESS,
+			);
+
+			// Refresh the file list to show updated data
+			this.log("Refreshing file list from device...");
+			await this.fileManager.startFetchFiles();
+		});
+	}
+
+	/**
+	 * Check for filename conflicts
+	 */
+	checkFileNameConflict(name) {
+		const conflict = this.state.hasFileName(name);
+		const inputEl = $("#edName");
+		if (inputEl) {
+			inputEl.classList.toggle("warn-border", !!conflict);
+		}
+		if (conflict) {
+			this.log(
+				`Warning: A file named "${conflict.name}" already exists on the device.`,
+				LOG_CLASSES.WARNING,
+			);
+		}
+	}
+
+	/**
+	 * Handle file upload/replacement
+	 */
+	async handleFileUpload() {
+		if (!this.connection.isConnected()) {
+			this.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		const edUploadFile = $("#edUploadFile");
+		const file = edUploadFile?.files?.[0];
+
+		if (!file) {
+			this.log("No file selected", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		const fileName = ($("#edName")?.value || "").trim();
+		if (!fileName) {
+			this.log("File name is required", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		// Confirm overwrite
+		if (
+			!confirm(
+				`Replace "${fileName}" with the selected file? This cannot be undone.`,
+			)
+		) {
+			return;
+		}
+
+		try {
+			let bytes;
+
+			// Convert if checkbox is checked
+			const shouldConvert = $("#edChkConvert")?.checked;
+			if (shouldConvert) {
+				const kbps = parseInt($("#edMp3Kbps")?.value || "32", 10);
+				this.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
+
+				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
+				bytes = result.u8;
+
+				this.log(`Converted to ${(bytes.length / 1024).toFixed(1)} KB MP3`);
+			} else {
+				// Read file as bytes
+				const arrayBuffer = await file.arrayBuffer();
+				bytes = new Uint8Array(arrayBuffer);
+			}
+
+			// Temporarily override FileManager's progress callback to use edit modal's progress bar
+			const originalProgressCallback = this.fileManager.onProgress;
+			this.fileManager.onProgress = (current, total) =>
+				this.setProgress(current, total);
+
+			try {
+				// Upload via FileManager - MUST use exact same filename as before
+				this.log(
+					`Uploading ${fileName} (${(bytes.length / 1024).toFixed(1)} KB)...`,
+				);
+				this.setProgress(0, 0); // Reset progress bar
+
+				await this.fileManager.uploadFile(bytes, fileName);
+
+				this.log(
+					`File "${fileName}" uploaded successfully ✓`,
+					LOG_CLASSES.SUCCESS,
+				);
+			} finally {
+				// Restore original progress callback
+				this.fileManager.onProgress = originalProgressCallback;
+			}
+
+			// Clear the file input
+			if (edUploadFile) edUploadFile.value = "";
+
+			// Refresh file list
+			setTimeout(() => {
+				this.fileManager.startFetchFiles();
+			}, 500);
+		} catch (error) {
+			this.log(`Upload failed: ${error.message}`, LOG_CLASSES.WARNING);
+		}
+	}
+
+	/**
+	 * Open the edit modal for a specific file
+	 */
+	open(file) {
+		if (!file) return;
+
+		// Store current file data
+		this.currentFile.serial = file.serial;
+		this.currentFile.cluster = file.cluster;
+		this.currentFile.name = file.name || "";
+		this.currentFile.eye = file.eye || 1;
+
+		// Populate form fields
+		if ($("#edSerial")) $("#edSerial").value = file.serial;
+		if ($("#edCluster")) $("#edCluster").value = file.cluster;
+		if ($("#edName")) $("#edName").value = file.name || "";
+
+		// Populate lighting data from file if available
+		const headLight = file.lights?.[1];
+		const torsoLight = file.lights?.[0];
+
+		if (headLight) {
+			// Head brightness
+			if ($("#edHeadBrightness"))
+				$("#edHeadBrightness").value = headLight.brightness || 200;
+			if ($("#edHeadBrightnessRange"))
+				$("#edHeadBrightnessRange").value = headLight.brightness || 200;
+
+			// Head effect mode
+			if ($("#edHeadEffectMode"))
+				$("#edHeadEffectMode").value = headLight.effectMode || 1;
+
+			// Head effect speed
+			const headUISpeed = deviceSpeedToUI(headLight.effectSpeed || 0);
+			if ($("#edHeadEffectSpeed")) $("#edHeadEffectSpeed").value = headUISpeed;
+			if ($("#edHeadEffectSpeedRange"))
+				$("#edHeadEffectSpeedRange").value = headUISpeed;
+			$("#edHeadEffectSpeedBlock")?.classList.toggle(
+				"hidden",
+				headLight.effectMode === 1,
+			);
+
+			// Head color
+			if ($("#edHeadR")) $("#edHeadR").value = headLight.r;
+			if ($("#edHeadG")) $("#edHeadG").value = headLight.g;
+			if ($("#edHeadB")) $("#edHeadB").value = headLight.b;
+			const headHex = `#${headLight.r.toString(16).padStart(2, "0")}${headLight.g.toString(16).padStart(2, "0")}${headLight.b.toString(16).padStart(2, "0")}`;
+			if ($("#edHeadColorPick")) $("#edHeadColorPick").value = headHex;
+
+			// Head color cycle
+			const edHeadColorCycle = $("#edHeadColorCycle");
+			if (edHeadColorCycle) {
+				if (headLight.colorCycle === 1) {
+					edHeadColorCycle.classList.add("selected");
+				} else {
+					edHeadColorCycle.classList.remove("selected");
+				}
+			}
+		} else {
+			// Defaults for head
+			if ($("#edHeadBrightness")) $("#edHeadBrightness").value = 200;
+			if ($("#edHeadBrightnessRange")) $("#edHeadBrightnessRange").value = 200;
+			if ($("#edHeadEffectMode")) $("#edHeadEffectMode").value = "1";
+			if ($("#edHeadEffectSpeed")) $("#edHeadEffectSpeed").value = 0;
+			if ($("#edHeadEffectSpeedRange")) $("#edHeadEffectSpeedRange").value = 0;
+			$("#edHeadEffectSpeedBlock")?.classList.add("hidden");
+
+			if ($("#edHeadR")) $("#edHeadR").value = 255;
+			if ($("#edHeadG")) $("#edHeadG").value = 0;
+			if ($("#edHeadB")) $("#edHeadB").value = 0;
+			if ($("#edHeadColorPick")) $("#edHeadColorPick").value = "#ff0000";
+			$("#edHeadColorCycle")?.classList.remove("selected");
+		}
+
+		if (torsoLight) {
+			// Torso brightness
+			if ($("#edTorsoBrightness"))
+				$("#edTorsoBrightness").value = torsoLight.brightness || 200;
+			if ($("#edTorsoBrightnessRange"))
+				$("#edTorsoBrightnessRange").value = torsoLight.brightness || 200;
+
+			// Torso effect mode
+			if ($("#edTorsoEffectMode"))
+				$("#edTorsoEffectMode").value = torsoLight.effectMode || 1;
+
+			// Torso effect speed
+			const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed || 0);
+			if ($("#edTorsoEffectSpeed"))
+				$("#edTorsoEffectSpeed").value = torsoUISpeed;
+			if ($("#edTorsoEffectSpeedRange"))
+				$("#edTorsoEffectSpeedRange").value = torsoUISpeed;
+			$("#edTorsoEffectSpeedBlock")?.classList.toggle(
+				"hidden",
+				torsoLight.effectMode === 1,
+			);
+
+			// Torso color
+			if ($("#edTorsoR")) $("#edTorsoR").value = torsoLight.r;
+			if ($("#edTorsoG")) $("#edTorsoG").value = torsoLight.g;
+			if ($("#edTorsoB")) $("#edTorsoB").value = torsoLight.b;
+			const torsoHex = `#${torsoLight.r.toString(16).padStart(2, "0")}${torsoLight.g.toString(16).padStart(2, "0")}${torsoLight.b.toString(16).padStart(2, "0")}`;
+			if ($("#edTorsoColorPick")) $("#edTorsoColorPick").value = torsoHex;
+
+			// Torso color cycle
+			const edTorsoColorCycle = $("#edTorsoColorCycle");
+			if (edTorsoColorCycle) {
+				if (torsoLight.colorCycle === 1) {
+					edTorsoColorCycle.classList.add("selected");
+				} else {
+					edTorsoColorCycle.classList.remove("selected");
+				}
+			}
+		} else {
+			// Defaults for torso
+			if ($("#edTorsoBrightness")) $("#edTorsoBrightness").value = 200;
+			if ($("#edTorsoBrightnessRange"))
+				$("#edTorsoBrightnessRange").value = 200;
+			if ($("#edTorsoEffectMode")) $("#edTorsoEffectMode").value = "1";
+			if ($("#edTorsoEffectSpeed")) $("#edTorsoEffectSpeed").value = 0;
+			if ($("#edTorsoEffectSpeedRange"))
+				$("#edTorsoEffectSpeedRange").value = 0;
+			$("#edTorsoEffectSpeedBlock")?.classList.add("hidden");
+
+			if ($("#edTorsoR")) $("#edTorsoR").value = 0;
+			if ($("#edTorsoG")) $("#edTorsoG").value = 0;
+			if ($("#edTorsoB")) $("#edTorsoB").value = 255;
+			if ($("#edTorsoColorPick")) $("#edTorsoColorPick").value = "#0000ff";
+			$("#edTorsoColorCycle")?.classList.remove("selected");
+		}
+
+		// Populate movement from action field (bitfield: 0x01=head, 0x02=arm, 0x04=torso, 0xFF=all)
+		const actionBits = file.action || 0;
+		const edMoveGrid = $("#edMove");
+		edMoveGrid?.querySelectorAll(".iconToggle").forEach((btn) => {
+			btn.classList.remove("selected");
+		});
+
+		if (edMoveGrid) {
+			if (actionBits === 255) {
+				edMoveGrid
+					.querySelector('[data-part="all"]')
+					?.classList.add("selected");
+			} else {
+				edMoveGrid
+					.querySelectorAll('[data-part]:not([data-part="all"])')
+					.forEach((btn) => {
+						const bit = parseInt(btn.dataset.bit || "0", 10);
+						if (bit && actionBits & bit) btn.classList.add("selected");
+					});
+			}
+		}
+
+		// Update eye grid selection
+		if (this.eyeGrid) {
+			this.eyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
+				const eyeNum = parseInt(el.dataset.eye, 10);
+				el.classList.toggle("selected", eyeNum === this.currentFile.eye);
+			});
+		}
+
+		// Clear the log when opening
+		if (this.logElement) {
+			this.logElement.innerHTML = "";
+		}
+
+		// Reset progress bar
+		this.setProgress(0, 0);
+
+		// Show modal
+		this.modal?.classList.remove("hidden");
+	}
+
+	/**
+	 * Handle delete confirmation from protocol parser
+	 * @param {boolean} success - Whether delete was successful
+	 */
+	handleDeleteConfirmation(success) {
+		if (this.deletePending && this.deleteResolve) {
+			this.deleteResolve(success);
+		}
+	}
+
+	/**
+	 * Close the edit modal
+	 */
+	close() {
+		this.modal?.classList.add("hidden");
+	}
 }
 
   // ============================================================
@@ -3835,7 +4188,7 @@ class EditModalManager {
 /**
  * Main Application Entry Point
  * Orchestrates all modules and initializes the application
- * 
+ *
  * This is a SIMPLIFIED version showing the modular architecture.
  * The full UI controller implementation would be much larger.
  */
@@ -3844,34 +4197,34 @@ class EditModalManager {
  * Simple Logger
  */
 class Logger {
-  constructor(logElement, autoscrollElement) {
-    this.logElement = logElement;
-    this.autoscrollElement = autoscrollElement;
-    this.filterCallback = null;
-  }
+	constructor(logElement, autoscrollElement) {
+		this.logElement = logElement;
+		this.autoscrollElement = autoscrollElement;
+		this.filterCallback = null;
+	}
 
-  setFilterCallback(callback) {
-    this.filterCallback = callback;
-  }
+	setFilterCallback(callback) {
+		this.filterCallback = callback;
+	}
 
-  log(message, className = LOG_CLASSES.NORMAL) {
-    if (!this.logElement) return;
-    const div = document.createElement('div');
-    div.className = `line ${className}`;
-    const time = new Date().toLocaleTimeString();
-    div.textContent = `[${time}] ${message}`;
-    this.logElement.appendChild(div);
+	log(message, className = LOG_CLASSES.NORMAL) {
+		if (!this.logElement) return;
+		const div = document.createElement("div");
+		div.className = `line ${className}`;
+		const time = new Date().toLocaleTimeString();
+		div.textContent = `[${time}] ${message}`;
+		this.logElement.appendChild(div);
 
-    // Apply filter to the new line
-    if (this.filterCallback) {
-      this.filterCallback();
-    }
+		// Apply filter to the new line
+		if (this.filterCallback) {
+			this.filterCallback();
+		}
 
-    // Auto-scroll if enabled
-    if (!this.autoscrollElement || this.autoscrollElement.checked) {
-      this.logElement.scrollTop = this.logElement.scrollHeight;
-    }
-  }
+		// Auto-scroll if enabled
+		if (!this.autoscrollElement || this.autoscrollElement.checked) {
+			this.logElement.scrollTop = this.logElement.scrollHeight;
+		}
+	}
 }
 
 // $ helper already defined above
@@ -3880,2623 +4233,2896 @@ class Logger {
  * Set progress display
  */
 function setProgress(idx, total) {
-  const pct = total ? Math.round((idx / total) * 100) : 0;
-  const progText = $('#progText');
-  const progPct = $('#progPct');
-  const progBar = $('#progBar');
-  if (progText) progText.textContent = `${idx} / ${total}`;
-  if (progPct) progPct.textContent = `${pct}%`;
-  if (progBar) progBar.style.width = `${pct}%`;
+	const pct = total ? Math.round((idx / total) * 100) : 0;
+	const progText = $("#progText");
+	const progPct = $("#progPct");
+	const progBar = $("#progBar");
+	if (progText) progText.textContent = `${idx} / ${total}`;
+	if (progPct) progPct.textContent = `${pct}%`;
+	if (progBar) progBar.style.width = `${pct}%`;
 }
 
 /**
  * Main Application
  */
 class SkellyApp {
-  constructor() {
-    try {
-      console.log('SkellyApp initializing...');
-      
-      // Initialize logger
-      this.logger = new Logger($('#log'), $('#chkAutoscroll'));
-      this.logger.setFilterCallback(() => this.applyLogFilter());
-      console.log('Logger created');
+	constructor() {
+		try {
+			console.log("SkellyApp initializing...");
 
-      // Initialize state manager
-      this.state = new StateManager();
-      console.log('State manager created');
-      
-      // Initialize play state tracking
-      this.playState = {
-        serial: null,
-        playing: false,
-        duration: 0,
-        startTime: null,
-        timerInterval: null
-      };
+			// Initialize logger
+			this.logger = new Logger($("#log"), $("#chkAutoscroll"));
+			this.logger.setFilterCallback(() => this.applyLogFilter());
+			console.log("Logger created");
 
-      // Initialize connection manager (wraps both BLE and REST proxy)
-      this.connection = new ConnectionManager(this.state, this.logger.log.bind(this.logger));
-      console.log('Connection manager created');
+			// Initialize state manager
+			this.state = new StateManager();
+			console.log("State manager created");
 
-      // Initialize file manager with progress callback
-      this.fileManager = new FileManager(
-        this.connection, 
-        this.state, 
-        this.logger.log.bind(this.logger),
-        (current, total) => setProgress(current, total)
-      );
-      console.log('File manager created');
+			// Initialize play state tracking
+			this.playState = {
+				serial: null,
+				playing: false,
+				duration: 0,
+				startTime: null,
+				timerInterval: null,
+			};
 
-      // Initialize audio converter
-      this.audioConverter = new AudioConverter(this.logger.log.bind(this.logger));
-      console.log('Audio converter created');
+			// Initialize connection manager (wraps both BLE and REST proxy)
+			this.connection = new ConnectionManager(
+				this.state,
+				this.logger.log.bind(this.logger),
+			);
+			console.log("Connection manager created");
 
-      // Initialize edit modal manager (before parser so we can pass callback)
-      this.editModal = new EditModalManager(
-        this.connection,
-        this.state,
-        this.fileManager,
-        this.audioConverter,
-        this.logger.log.bind(this.logger)
-      );
-      console.log('Edit modal manager created');
+			// Initialize file manager with progress callback
+			this.fileManager = new FileManager(
+				this.connection,
+				this.state,
+				this.logger.log.bind(this.logger),
+				(current, total) => setProgress(current, total),
+			);
+			console.log("File manager created");
 
-      // Initialize protocol parser with callbacks
-      this.parser = new ProtocolParser(
-        this.state, 
-        this.fileManager, 
-        this.logger.log.bind(this.logger),
-        this.handlePlayPauseMessage.bind(this),
-        this.editModal.handleDeleteConfirmation.bind(this.editModal)
-      );
-      console.log('Protocol parser created');
+			// Initialize audio converter
+			this.audioConverter = new AudioConverter(
+				this.logger.log.bind(this.logger),
+			);
+			console.log("Audio converter created");
 
-      // Register protocol parser with connection manager
-      this.connection.onNotification((hex, bytes) => {
-        this.parser.parse(hex, bytes);
-      });
-      console.log('Notification handler registered');
+			// Initialize edit modal manager (before parser so we can pass callback)
+			this.editModal = new EditModalManager(
+				this.connection,
+				this.state,
+				this.fileManager,
+				this.audioConverter,
+				this.logger.log.bind(this.logger),
+			);
+			console.log("Edit modal manager created");
 
-      // Subscribe to state changes
-      this.subscribeToStateChanges();
-      console.log('State subscriptions registered');
+			// Initialize protocol parser with callbacks
+			this.parser = new ProtocolParser(
+				this.state,
+				this.fileManager,
+				this.logger.log.bind(this.logger),
+				this.handlePlayPauseMessage.bind(this),
+				this.editModal.handleDeleteConfirmation.bind(this.editModal),
+			);
+			console.log("Protocol parser created");
 
-      // Initialize UI
-      this.initializeUI();
-      console.log('UI initialized');
+			// Register protocol parser with connection manager
+			this.connection.onNotification((hex, bytes) => {
+				this.parser.parse(hex, bytes);
+			});
+			console.log("Notification handler registered");
 
-      // Set initial UI state
-      this.updateDeviceUI(this.state.device);
-      this.updateFilesTable();
-      this.updateTransferUI(this.state.transfer);
-      console.log('Initial UI state set');
+			// Subscribe to state changes
+			this.subscribeToStateChanges();
+			console.log("State subscriptions registered");
 
-      console.log('Application initialized successfully');
-      this.logger.log('Application initialized', LOG_CLASSES.WARNING);
-    } catch (error) {
-      console.error('Failed to initialize application:', error);
-      console.error('Error stack:', error.stack);
-      alert('Failed to initialize application. Check console for details.');
-      throw error;
-    }
-  }
+			// Initialize UI
+			this.initializeUI();
+			console.log("UI initialized");
 
-  /**
-   * Subscribe to state changes
-   */
-  subscribeToStateChanges() {
-    // Device state changes
-    this.state.subscribe('device', (device) => {
-      this.updateDeviceUI(device);
-    });
+			// Set initial UI state
+			this.updateDeviceUI(this.state.device);
+			this.updateFilesTable();
+			this.updateTransferUI(this.state.transfer);
+			console.log("Initial UI state set");
 
-    // Live status changes
-    this.state.subscribe('live', (live) => {
-      this.updateLiveUI(live);
-    });
+			console.log("Application initialized successfully");
+			this.logger.log("Application initialized", LOG_CLASSES.WARNING);
+		} catch (error) {
+			console.error("Failed to initialize application:", error);
+			console.error("Error stack:", error.stack);
+			alert("Failed to initialize application. Check console for details.");
+			throw error;
+		}
+	}
 
-    // File list changes
-    this.state.subscribe('files', () => {
-      this.updateFilesTable();
-    });
+	/**
+	 * Subscribe to state changes
+	 */
+	subscribeToStateChanges() {
+		// Device state changes
+		this.state.subscribe("device", (device) => {
+			this.updateDeviceUI(device);
+		});
 
-    // Transfer state changes
-    this.state.subscribe('transfer', (transfer) => {
-      this.updateTransferUI(transfer);
-    });
-  }
+		// Live status changes
+		this.state.subscribe("live", (live) => {
+			this.updateLiveUI(live);
+		});
 
-  /**
-   * Initialize UI and event handlers
-   */
-  initializeUI() {
-    console.log('Initializing UI...');
-    
-    // Initial disconnected state
-    document.body.classList.add('disconnected');
+		// File list changes
+		this.state.subscribe("files", () => {
+			this.updateFilesTable();
+		});
 
-    // Connection controls
-    const btnConnect = $('#btnConnect');
-    const btnDisconnect = $('#btnDisconnect');
-    
-    if (btnConnect) {
-      console.log('Binding connect button');
-      btnConnect.addEventListener('click', () => {
-        console.log('Connect button clicked');
-        this.handleConnect();
-      });
-    } else {
-      console.error('Connect button not found!');
-    }
-    
-    if (btnDisconnect) {
-      btnDisconnect.addEventListener('click', () => this.handleDisconnect());
-    } else {
-      console.error('Disconnect button not found!');
-    }
+		// Transfer state changes
+		this.state.subscribe("transfer", (transfer) => {
+			this.updateTransferUI(transfer);
+		});
+	}
 
-    // Log controls
-    const btnClearLog = $('#btnClearLog');
-    if (btnClearLog) {
-      btnClearLog.addEventListener('click', () => {
-        const logEl = $('#log');
-        if (logEl) logEl.innerHTML = '';
-      });
-    }
+	/**
+	 * Initialize UI and event handlers
+	 */
+	initializeUI() {
+		console.log("Initializing UI...");
 
-    const btnSaveLog = $('#btnSaveLog');
-    if (btnSaveLog) {
-      btnSaveLog.addEventListener('click', () => {
-        this.saveLog();
-      });
-    }
+		// Initial disconnected state
+		document.body.classList.add("disconnected");
 
-    this.initializeWarningModal();
-    this.initializeConnectionModal();
-    this.initializeDeviceTypeControl();
-    this.initializeAdvancedMenu();
-    this.initializeLogFilter();
-    this.initializeQueryButtons();
-    this.initializeMediaControls();
-    this.initializeFileControls();
-    this.initializeLiveControls();
+		// Connection controls
+		const btnConnect = $("#btnConnect");
+		const btnDisconnect = $("#btnDisconnect");
 
-    // Check for Web Bluetooth support
-    if (!ConnectionManager.isWebBluetoothAvailable()) {
-      console.error('Web Bluetooth not supported');
-      this.logger.log(
-        'Web Bluetooth not supported. For direct BLE, use Chrome/Edge. For other browsers, use the REST Server Proxy: https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv',
-        LOG_CLASSES.WARNING
-      );
-      // Don't show blocking alert - REST proxy is available as alternative
-      console.log('REST Server Proxy can be used as an alternative');
-    } else {
-      console.log('Web Bluetooth API is available');
-      
-      // Check for secure context (HTTPS or localhost)
-      if (!window.isSecureContext) {
-        console.error('Not in secure context - Web Bluetooth requires HTTPS or localhost');
-        this.logger.log(
-          'Web Bluetooth requires HTTPS or localhost for direct BLE. Use HTTPS or the REST Server Proxy.',
-          LOG_CLASSES.WARNING
-        );
-      } else {
-        console.log('Running in secure context');
-      }
-    }
-    
-    console.log('UI initialization complete');
+		if (btnConnect) {
+			console.log("Binding connect button");
+			btnConnect.addEventListener("click", () => {
+				console.log("Connect button clicked");
+				this.handleConnect();
+			});
+		} else {
+			console.error("Connect button not found!");
+		}
 
-    // Apply persisted device profile on startup
-    const startupDeviceType = localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
-    this.state.setDeviceType(startupDeviceType);
-    this.applyDeviceProfile(startupDeviceType);
-  }
+		if (btnDisconnect) {
+			btnDisconnect.addEventListener("click", () => this.handleDisconnect());
+		} else {
+			console.error("Disconnect button not found!");
+		}
 
-  /**
-   * Initialize device type dropdown (post-connect override)
-   */
-  initializeDeviceTypeControl() {
-    const deviceTypeSelect = $('#deviceTypeSelect');
-    if (!deviceTypeSelect) return;
+		// Log controls
+		const btnClearLog = $("#btnClearLog");
+		if (btnClearLog) {
+			btnClearLog.addEventListener("click", () => {
+				const logEl = $("#log");
+				if (logEl) logEl.innerHTML = "";
+			});
+		}
 
-    // Sync with persisted value
-    const saved = localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
-    deviceTypeSelect.value = saved;
+		const btnSaveLog = $("#btnSaveLog");
+		if (btnSaveLog) {
+			btnSaveLog.addEventListener("click", () => {
+				this.saveLog();
+			});
+		}
 
-    deviceTypeSelect.addEventListener('change', () => {
-      const deviceType = deviceTypeSelect.value;
-      localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
-      this.state.setDeviceType(deviceType);
-      this.applyDeviceProfile(deviceType);
-    });
-  }
+		this.initializeWarningModal();
+		this.initializeConnectionModal();
+		this.initializeDeviceTypeControl();
+		this.initializeAdvancedMenu();
+		this.initializeLogFilter();
+		this.initializeQueryButtons();
+		this.initializeMediaControls();
+		this.initializeFileControls();
+		this.initializeLiveControls();
 
-  /**
-   * Apply a device profile — rebuilds the movement grids and reconfigures all
-   * profile-driven UI elements (lights, eye section, file table columns, etc.)
-   * @param {string} deviceType - one of DEVICE_TYPES
-   */
-  applyDeviceProfile(deviceType) {
-    const profile = DEVICE_PROFILES[deviceType];
-    if (!profile) return;
+		// Check for Web Bluetooth support
+		if (!ConnectionManager.isWebBluetoothAvailable()) {
+			console.error("Web Bluetooth not supported");
+			this.logger.log(
+				"Web Bluetooth not supported. For direct BLE, use Chrome/Edge. For other browsers, use the REST Server Proxy: https://github.com/martinecker/SkellyUltra/tree/main/custom_components/skelly_ultra/skelly_ultra_srv",
+				LOG_CLASSES.WARNING,
+			);
+			// Don't show blocking alert - REST proxy is available as alternative
+			console.log("REST Server Proxy can be used as an alternative");
+		} else {
+			console.log("Web Bluetooth API is available");
 
-    // Sync the post-connect dropdown
-    const deviceTypeSelect = $('#deviceTypeSelect');
-    if (deviceTypeSelect) deviceTypeSelect.value = deviceType;
+			// Check for secure context (HTTPS or localhost)
+			if (!window.isSecureContext) {
+				console.error(
+					"Not in secure context - Web Bluetooth requires HTTPS or localhost",
+				);
+				this.logger.log(
+					"Web Bluetooth requires HTTPS or localhost for direct BLE. Use HTTPS or the REST Server Proxy.",
+					LOG_CLASSES.WARNING,
+				);
+			} else {
+				console.log("Running in secure context");
+			}
+		}
 
-    // Rebuild movement grids
-    for (const gridId of ['liveMove', 'edMove']) {
-      const grid = $(`#${gridId}`);
-      if (!grid) continue;
-      grid.innerHTML = '';
-      profile.movements.forEach(({ part, label, icon, bit }) => {
-        const btn = document.createElement('button');
-        btn.className = 'iconToggle';
-        btn.dataset.part = part;
-        btn.dataset.bit = String(bit);
-        btn.title = label;
-        const img = document.createElement('img');
-        img.src = icon;
-        img.alt = label;
-        img.style.width = '36px';
-        img.style.height = '36px';
-        btn.appendChild(img);
-        grid.appendChild(btn);
-      });
-    }
-    // Re-bind live movement grid handlers
-    this.bindMovementGrid('liveMove');
-    // Re-bind edit modal movement handlers
-    this.editModal?.initializeMovementControls();
+		console.log("UI initialization complete");
 
-    // Show/hide eye sections
-    const hasEyes = profile.hasEyes;
-    for (const id of ['liveEyeSection', 'editEyeSection']) {
-      const el = $(`#${id}`);
-      if (el) el.style.display = hasEyes ? '' : 'none';
-    }
+		// Apply persisted device profile on startup
+		const startupDeviceType =
+			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+		this.state.setDeviceType(startupDeviceType);
+		this.applyDeviceProfile(startupDeviceType);
+	}
 
-    // Show/hide head light groups
-    const hasHead = profile.lights.some(l => l.id === 'head');
-    for (const id of ['liveHeadLightGroup', 'editHeadLightGroup']) {
-      const el = $(`#${id}`);
-      if (el) el.style.display = hasHead ? '' : 'none';
-    }
+	/**
+	 * Initialize device type dropdown (post-connect override)
+	 */
+	initializeDeviceTypeControl() {
+		const deviceTypeSelect = $("#deviceTypeSelect");
+		if (!deviceTypeSelect) return;
 
-    // Update torso light zone label
-    const torsoLight = profile.lights.find(l => l.id === 'torso');
-    const torsoLabel = torsoLight ? torsoLight.label : 'Torso Light';
-    for (const id of ['liveTorsoLightLabel', 'editTorsoLightLabel']) {
-      const el = $(`#${id}`);
-      if (el) el.textContent = torsoLabel;
-    }
+		// Sync with persisted value
+		const saved =
+			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+		deviceTypeSelect.value = saved;
 
-    // Repopulate effect mode selects
-    const modeSelects = ['headEffectMode', 'torsoEffectMode', 'edHeadEffectMode', 'edTorsoEffectMode'];
-    for (const selectId of modeSelects) {
-      const sel = $(`#${selectId}`);
-      if (!sel) continue;
-      const current = sel.value;
-      sel.innerHTML = '';
-      profile.lightModes.forEach(({ value, label }) => {
-        const opt = document.createElement('option');
-        opt.value = String(value);
-        opt.textContent = label;
-        sel.appendChild(opt);
-      });
-      // Try to restore previously selected value; fall back to first option
-      sel.value = current;
-      if (!sel.value) sel.value = String(profile.lightModes[0].value);
-    }
+		deviceTypeSelect.addEventListener("change", () => {
+			const deviceType = deviceTypeSelect.value;
+			localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
+			this.state.setDeviceType(deviceType);
+			this.applyDeviceProfile(deviceType);
+		});
+	}
 
-    // Update files table column visibility and labels
-    const filesHeadCol = $('#filesHeadLightCol');
-    if (filesHeadCol) filesHeadCol.style.display = hasHead ? '' : 'none';
+	/**
+	 * Apply a device profile — rebuilds the movement grids and reconfigures all
+	 * profile-driven UI elements (lights, eye section, file table columns, etc.)
+	 * @param {string} deviceType - one of DEVICE_TYPES
+	 */
+	applyDeviceProfile(deviceType) {
+		const profile = DEVICE_PROFILES[deviceType];
+		if (!profile) return;
 
-    const filesEyeCol = $('#filesEyeCol');
-    if (filesEyeCol) filesEyeCol.style.display = hasEyes ? '' : 'none';
+		// Sync the post-connect dropdown
+		const deviceTypeSelect = $("#deviceTypeSelect");
+		if (deviceTypeSelect) deviceTypeSelect.value = deviceType;
 
-    const filesTorsoCol = $('#filesTorsoLightCol');
-    if (filesTorsoCol) filesTorsoCol.textContent = torsoLabel;
+		// Rebuild movement grids
+		for (const gridId of ["liveMove", "edMove"]) {
+			const grid = $(`#${gridId}`);
+			if (!grid) continue;
+			grid.innerHTML = "";
+			profile.movements.forEach(({ part, label, icon, bit }) => {
+				const btn = document.createElement("button");
+				btn.className = "iconToggle";
+				btn.dataset.part = part;
+				btn.dataset.bit = String(bit);
+				btn.title = label;
+				const img = document.createElement("img");
+				img.src = icon;
+				img.alt = label;
+				img.style.width = "36px";
+				img.style.height = "36px";
+				btn.appendChild(img);
+				grid.appendChild(btn);
+			});
+		}
+		// Re-bind live movement grid handlers
+		this.bindMovementGrid("liveMove");
+		// Re-bind edit modal movement handlers
+		this.editModal?.initializeMovementControls();
 
-    // Keep body cell classes in sync — add/remove display style via dynamic <style>
-    let dynStyle = document.getElementById('_profileColStyle');
-    if (!dynStyle) {
-      dynStyle = document.createElement('style');
-      dynStyle.id = '_profileColStyle';
-      document.head.appendChild(dynStyle);
-    }
-    const rules = [];
-    if (!hasHead) rules.push('td.col-head-light { display: none; }');
-    if (!hasEyes) rules.push('td.col-eye { display: none; }');
-    dynStyle.textContent = rules.join('\n');
-  }
+		// Show/hide eye sections
+		const hasEyes = profile.hasEyes;
+		for (const id of ["liveEyeSection", "editEyeSection"]) {
+			const el = $(`#${id}`);
+			if (el) el.style.display = hasEyes ? "" : "none";
+		}
 
-  /**
-   * Bind click handlers for a live movement grid.
-   * Buttons must already be in the DOM with data-part and data-bit attributes.
-   * @param {string} gridId
-   */
-  bindMovementGrid(gridId) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
+		// Show/hide head light groups
+		const hasHead = profile.lights.some((l) => l.id === "head");
+		for (const id of ["liveHeadLightGroup", "editHeadLightGroup"]) {
+			const el = $(`#${id}`);
+			if (el) el.style.display = hasHead ? "" : "none";
+		}
 
-    const allBtn = grid.querySelector('[data-part="all"]');
-    const partBtns = Array.from(grid.querySelectorAll('[data-part]:not([data-part="all"])'));
+		// Update torso light zone label
+		const torsoLight = profile.lights.find((l) => l.id === "torso");
+		const torsoLabel = torsoLight ? torsoLight.label : "Torso Light";
+		for (const id of ["liveTorsoLightLabel", "editTorsoLightLabel"]) {
+			const el = $(`#${id}`);
+			if (el) el.textContent = torsoLabel;
+		}
 
-    const sendMovementCommand = async () => {
-      if (!this.connection.isConnected()) return;
-      if (allBtn?.classList.contains('selected')) {
-        await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
-        this.logger.log('Applied movement: all');
-      } else {
-        let bitfield = 0;
-        partBtns.forEach((btn) => {
-          if (btn.classList.contains('selected')) {
-            bitfield |= parseInt(btn.dataset.bit || '0', 10);
-          }
-        });
-        if (bitfield > 0) {
-          const bitfieldHex = bitfield.toString(16).padStart(2, '0').toUpperCase();
-          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, bitfieldHex + '00000000', 8));
-          const parts = partBtns.filter(b => b.classList.contains('selected')).map(b => b.dataset.part);
-          this.logger.log(`Applied movement: ${parts.join(', ')}`);
-        } else {
-          await this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, '0000000000', 8));
-          this.logger.log('Disabled movement');
-        }
-      }
-    };
+		// Repopulate effect mode selects
+		const modeSelects = [
+			"headEffectMode",
+			"torsoEffectMode",
+			"edHeadEffectMode",
+			"edTorsoEffectMode",
+		];
+		for (const selectId of modeSelects) {
+			const sel = $(`#${selectId}`);
+			if (!sel) continue;
+			const current = sel.value;
+			sel.innerHTML = "";
+			profile.lightModes.forEach(({ value, label }) => {
+				const opt = document.createElement("option");
+				opt.value = String(value);
+				opt.textContent = label;
+				sel.appendChild(opt);
+			});
+			// Try to restore previously selected value; fall back to first option
+			sel.value = current;
+			if (!sel.value) sel.value = String(profile.lightModes[0].value);
+		}
 
-    allBtn?.addEventListener('click', () => {
-      allBtn.classList.toggle('selected');
-      if (allBtn.classList.contains('selected')) {
-        partBtns.forEach(btn => btn.classList.remove('selected'));
-      }
-      sendMovementCommand();
-    });
+		// Update files table column visibility and labels
+		const filesHeadCol = $("#filesHeadLightCol");
+		if (filesHeadCol) filesHeadCol.style.display = hasHead ? "" : "none";
 
-    partBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.classList.toggle('selected');
-        allBtn?.classList.remove('selected');
-        sendMovementCommand();
-      });
-    });
-  }
+		const filesEyeCol = $("#filesEyeCol");
+		if (filesEyeCol) filesEyeCol.style.display = hasEyes ? "" : "none";
 
-  /**
-   * Initialize warning modal
-   */
-  initializeWarningModal() {
-    const riskModal = $('#riskModal');
-    const showRisk = () => riskModal?.classList.remove('hidden');
-    const hideRisk = () => riskModal?.classList.add('hidden');
+		const filesTorsoCol = $("#filesTorsoLightCol");
+		if (filesTorsoCol) filesTorsoCol.textContent = torsoLabel;
 
-    window.addEventListener('load', () => {
-      if (!localStorage.getItem(STORAGE_KEYS.RISK_ACK)) {
-        showRisk();
-      }
-    });
+		// Keep body cell classes in sync — add/remove display style via dynamic <style>
+		let dynStyle = document.getElementById("_profileColStyle");
+		if (!dynStyle) {
+			dynStyle = document.createElement("style");
+			dynStyle.id = "_profileColStyle";
+			document.head.appendChild(dynStyle);
+		}
+		const rules = [];
+		if (!hasHead) rules.push("td.col-head-light { display: none; }");
+		if (!hasEyes) rules.push("td.col-eye { display: none; }");
+		dynStyle.textContent = rules.join("\n");
+	}
 
-    $('#riskAccept')?.addEventListener('click', () => {
-      localStorage.setItem(STORAGE_KEYS.RISK_ACK, '1');
-      hideRisk();
-    });
+	/**
+	 * Bind click handlers for a live movement grid.
+	 * Buttons must already be in the DOM with data-part and data-bit attributes.
+	 * @param {string} gridId
+	 */
+	bindMovementGrid(gridId) {
+		const grid = document.getElementById(gridId);
+		if (!grid) return;
 
-    $('#riskCancel')?.addEventListener('click', () => {
-      window.location.href = 'about:blank';
-    });
-  }
+		const allBtn = grid.querySelector('[data-part="all"]');
+		const partBtns = Array.from(
+			grid.querySelectorAll('[data-part]:not([data-part="all"])'),
+		);
 
-  /**
-   * Initialize connection modal
-   */
-  initializeConnectionModal() {
-    const connectModal = $('#connectModal');
-    const connectNameFilter = $('#connectNameFilter');
-    const connectFilterDefault = $('#connectFilterDefault');
-    const connectDefaultDevice = $('#connectDefaultDevice');
-    const connectFilterByName = $('#connectFilterByName');
-    const connectAllDevices = $('#connectAllDevices');
-    const connectionTypeDirect = $('#connectionTypeDirect');
-    const connectionTypeRest = $('#connectionTypeRest');
-    const restUrlContainer = $('#restUrlContainer');
-    const restServerUrl = $('#restServerUrl');
-    const webBluetoothWarning = $('#webBluetoothWarning');
-    const connectionTypeDirectLabel = $('#connectionTypeDirectLabel');
-    
-    // Check Web Bluetooth availability
-    const isWebBluetoothAvailable = ConnectionManager.isWebBluetoothAvailable();
-    
-    // Load saved preferences
-    const savedConnectionType = localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || 'direct';
-    const savedRestUrl = localStorage.getItem(STORAGE_KEYS.REST_URL) || 'http://localhost:8765';
-    const savedDeviceType = localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+		const sendMovementCommand = async () => {
+			if (!this.connection.isConnected()) return;
+			if (allBtn?.classList.contains("selected")) {
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_MOVEMENT, "FF00000000", 8),
+				);
+				this.logger.log("Applied movement: all");
+			} else {
+				let bitfield = 0;
+				partBtns.forEach((btn) => {
+					if (btn.classList.contains("selected")) {
+						bitfield |= parseInt(btn.dataset.bit || "0", 10);
+					}
+				});
+				if (bitfield > 0) {
+					const bitfieldHex = bitfield
+						.toString(16)
+						.padStart(2, "0")
+						.toUpperCase();
+					await this.connection.send(
+						buildCommand(COMMANDS.SET_MOVEMENT, `${bitfieldHex}00000000`, 8),
+					);
+					const parts = partBtns
+						.filter((b) => b.classList.contains("selected"))
+						.map((b) => b.dataset.part);
+					this.logger.log(`Applied movement: ${parts.join(", ")}`);
+				} else {
+					await this.connection.send(
+						buildCommand(COMMANDS.SET_MOVEMENT, "0000000000", 8),
+					);
+					this.logger.log("Disabled movement");
+				}
+			}
+		};
 
-    // Restore saved device type in dropdown
-    if (connectDefaultDevice) {
-      connectDefaultDevice.value = savedDeviceType;
-    }
-    
-    // Handle Web Bluetooth unavailability
-    if (!isWebBluetoothAvailable) {
-      if (webBluetoothWarning) webBluetoothWarning.style.display = 'block';
-      if (connectionTypeDirect) connectionTypeDirect.disabled = true;
-      if (connectionTypeDirectLabel) {
-        connectionTypeDirectLabel.style.opacity = '0.5';
-        connectionTypeDirectLabel.style.cursor = 'not-allowed';
-      }
-      if (connectionTypeRest) connectionTypeRest.checked = true;
-    } else {
-      if (savedConnectionType === 'rest' && connectionTypeRest) {
-        connectionTypeRest.checked = true;
-      } else if (connectionTypeDirect) {
-        connectionTypeDirect.checked = true;
-      }
-    }
-    
-    if (restServerUrl) {
-      restServerUrl.value = savedRestUrl;
-    }
-    
-    // Show/hide REST URL input based on connection type
-    const updateConnectionTypeUI = () => {
-      if (restUrlContainer) {
-        restUrlContainer.style.display = connectionTypeRest?.checked ? 'block' : 'none';
-      }
-    };
-    
-    connectionTypeDirect?.addEventListener('change', updateConnectionTypeUI);
-    connectionTypeRest?.addEventListener('change', updateConnectionTypeUI);
-    
-    // Enable/disable filter inputs based on radio selection
-    const updateFilterState = () => {
-      const isDefault = connectFilterDefault?.checked;
-      const isCustom = connectFilterByName?.checked;
-      if (connectDefaultDevice) connectDefaultDevice.disabled = !isDefault;
-      if (connectNameFilter) connectNameFilter.disabled = !isCustom;
-    };
-    
-    connectFilterDefault?.addEventListener('change', updateFilterState);
-    connectFilterByName?.addEventListener('change', updateFilterState);
-    connectAllDevices?.addEventListener('change', updateFilterState);
-    
-    // Initialize state
-    updateConnectionTypeUI();
-    updateFilterState();
-    
-    // Close modal function
-    const closeModal = () => {
-      connectModal?.classList.add('hidden');
-    };
-    
-    // Cancel button
-    $('#connectCancel')?.addEventListener('click', closeModal);
-    
-    // Escape key to close modal
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !connectModal?.classList.contains('hidden')) {
-        closeModal();
-      }
-    });
-    
-    // Connect button
-    $('#connectOk')?.addEventListener('click', async () => {
-      connectModal?.classList.add('hidden');
-      
-      // Determine connection type
-      const connectionType = connectionTypeRest?.checked ? ConnectionType.REST_PROXY : ConnectionType.DIRECT_BLE;
-      
-      // Get REST URL if needed
-      const restUrl = restServerUrl?.value || 'http://localhost:8765';
-      
-      // Determine filter value and device type
-      let nameFilter = '';
-      let deviceType = savedDeviceType;
+		allBtn?.addEventListener("click", () => {
+			allBtn.classList.toggle("selected");
+			if (allBtn.classList.contains("selected")) {
+				partBtns.forEach((btn) => {
+					btn.classList.remove("selected");
+				});
+			}
+			sendMovementCommand();
+		});
 
-      if (connectFilterDefault?.checked) {
-        // Default name filter — device type comes directly from the dropdown
-        const selectedOption = connectDefaultDevice?.value || DEVICE_TYPES.SKELLY;
-        deviceType = selectedOption;
-        nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || '';
-      } else if (connectFilterByName?.checked) {
-        // Custom name — try to auto-detect device type from the name
-        nameFilter = connectNameFilter?.value || '';
-        const nameLower = nameFilter.toLowerCase();
-        if (nameLower.includes('lily')) {
-          deviceType = DEVICE_TYPES.LILY;
-        } else if (nameLower.includes('skelly')) {
-          deviceType = DEVICE_TYPES.SKELLY;
-        }
-        // else keep last persisted deviceType
-      }
-      // All devices: nameFilter stays '', deviceType stays last persisted
-      
-      // Persist preferences
-      localStorage.setItem(STORAGE_KEYS.CONNECTION_TYPE, connectionType);
-      localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
-      if (connectionType === ConnectionType.REST_PROXY) {
-        localStorage.setItem(STORAGE_KEYS.REST_URL, restUrl);
-      }
+		partBtns.forEach((btn) => {
+			btn.addEventListener("click", () => {
+				btn.classList.toggle("selected");
+				allBtn?.classList.remove("selected");
+				sendMovementCommand();
+			});
+		});
+	}
 
-      // Apply device profile immediately so the UI is correct before connection completes
-      this.state.setDeviceType(deviceType);
-      this.applyDeviceProfile(deviceType);
-      
-      // For REST proxy, show device selection modal
-      if (connectionType === ConnectionType.REST_PROXY) {
-        await this.showDeviceSelectionModal(restUrl, nameFilter);
-      } else {
-        await this.performConnection({ connectionType, restUrl, nameFilter });
-      }
-    });
-  }
+	/**
+	 * Initialize warning modal
+	 */
+	initializeWarningModal() {
+		const riskModal = $("#riskModal");
+		const showRisk = () => riskModal?.classList.remove("hidden");
+		const hideRisk = () => riskModal?.classList.add("hidden");
 
-  /**
-   * Show device selection modal for REST proxy
-   */
-  async showDeviceSelectionModal(restUrl, nameFilter) {
-    const deviceSelectModal = $('#deviceSelectModal');
-    const deviceList = $('#deviceList');
-    const deviceSelectStatus = $('#deviceSelectStatus');
-    const deviceSelectCancel = $('#deviceSelectCancel');
-    const deviceSelectRescan = $('#deviceSelectRescan');
-    
-    if (!deviceSelectModal || !deviceList) return;
-    
-    // Show modal
-    deviceSelectModal.classList.remove('hidden');
-    
-    // Scan function
-    const scanForDevices = async () => {
-      try {
-        deviceList.innerHTML = '';
-        deviceSelectStatus.textContent = 'Scanning for devices...';
-        
-        // Use connection.restProxy to scan
-        const devices = await this.connection.restProxy.scanDevices(restUrl, nameFilter, 10);
-        
-        if (devices.length === 0) {
-          deviceSelectStatus.textContent = 'No devices found';
-          deviceList.innerHTML = '<p style="padding: 20px; text-align: center; color: #6b7280;">No devices discovered. Try rescanning or check if devices are powered on.</p>';
-          return;
-        }
-        
-        deviceSelectStatus.textContent = `Found ${devices.length} device${devices.length > 1 ? 's' : ''}:`;
-        
-        // Create device list
-        devices.forEach(device => {
-          const deviceItem = document.createElement('div');
-          deviceItem.style.cssText = 'padding: 12px; margin: 8px 0; background: #1f2937; border: 1px solid #374151; border-radius: 8px; cursor: pointer; transition: all 0.2s;';
-          deviceItem.innerHTML = `
-            <div style="font-weight: 500;">${escapeHtml(device.name || 'Unknown Device')}</div>
+		window.addEventListener("load", () => {
+			if (!localStorage.getItem(STORAGE_KEYS.RISK_ACK)) {
+				showRisk();
+			}
+		});
+
+		$("#riskAccept")?.addEventListener("click", () => {
+			localStorage.setItem(STORAGE_KEYS.RISK_ACK, "1");
+			hideRisk();
+		});
+
+		$("#riskCancel")?.addEventListener("click", () => {
+			window.location.href = "about:blank";
+		});
+	}
+
+	/**
+	 * Initialize connection modal
+	 */
+	initializeConnectionModal() {
+		const connectModal = $("#connectModal");
+		const connectNameFilter = $("#connectNameFilter");
+		const connectFilterDefault = $("#connectFilterDefault");
+		const connectDefaultDevice = $("#connectDefaultDevice");
+		const connectFilterByName = $("#connectFilterByName");
+		const connectAllDevices = $("#connectAllDevices");
+		const connectionTypeDirect = $("#connectionTypeDirect");
+		const connectionTypeRest = $("#connectionTypeRest");
+		const restUrlContainer = $("#restUrlContainer");
+		const restServerUrl = $("#restServerUrl");
+		const webBluetoothWarning = $("#webBluetoothWarning");
+		const connectionTypeDirectLabel = $("#connectionTypeDirectLabel");
+
+		// Check Web Bluetooth availability
+		const isWebBluetoothAvailable = ConnectionManager.isWebBluetoothAvailable();
+
+		// Load saved preferences
+		const savedConnectionType =
+			localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || "direct";
+		const savedRestUrl =
+			localStorage.getItem(STORAGE_KEYS.REST_URL) || "http://localhost:8765";
+		const savedDeviceType =
+			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+
+		// Restore saved device type in dropdown
+		if (connectDefaultDevice) {
+			connectDefaultDevice.value = savedDeviceType;
+		}
+
+		// Handle Web Bluetooth unavailability
+		if (!isWebBluetoothAvailable) {
+			if (webBluetoothWarning) webBluetoothWarning.style.display = "block";
+			if (connectionTypeDirect) connectionTypeDirect.disabled = true;
+			if (connectionTypeDirectLabel) {
+				connectionTypeDirectLabel.style.opacity = "0.5";
+				connectionTypeDirectLabel.style.cursor = "not-allowed";
+			}
+			if (connectionTypeRest) connectionTypeRest.checked = true;
+		} else {
+			if (savedConnectionType === "rest" && connectionTypeRest) {
+				connectionTypeRest.checked = true;
+			} else if (connectionTypeDirect) {
+				connectionTypeDirect.checked = true;
+			}
+		}
+
+		if (restServerUrl) {
+			restServerUrl.value = savedRestUrl;
+		}
+
+		// Show/hide REST URL input based on connection type
+		const updateConnectionTypeUI = () => {
+			if (restUrlContainer) {
+				restUrlContainer.style.display = connectionTypeRest?.checked
+					? "block"
+					: "none";
+			}
+		};
+
+		connectionTypeDirect?.addEventListener("change", updateConnectionTypeUI);
+		connectionTypeRest?.addEventListener("change", updateConnectionTypeUI);
+
+		// Enable/disable filter inputs based on radio selection
+		const updateFilterState = () => {
+			const isDefault = connectFilterDefault?.checked;
+			const isCustom = connectFilterByName?.checked;
+			if (connectDefaultDevice) connectDefaultDevice.disabled = !isDefault;
+			if (connectNameFilter) connectNameFilter.disabled = !isCustom;
+		};
+
+		connectFilterDefault?.addEventListener("change", updateFilterState);
+		connectFilterByName?.addEventListener("change", updateFilterState);
+		connectAllDevices?.addEventListener("change", updateFilterState);
+
+		// Initialize state
+		updateConnectionTypeUI();
+		updateFilterState();
+
+		// Close modal function
+		const closeModal = () => {
+			connectModal?.classList.add("hidden");
+		};
+
+		// Cancel button
+		$("#connectCancel")?.addEventListener("click", closeModal);
+
+		// Escape key to close modal
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape" && !connectModal?.classList.contains("hidden")) {
+				closeModal();
+			}
+		});
+
+		// Connect button
+		$("#connectOk")?.addEventListener("click", async () => {
+			connectModal?.classList.add("hidden");
+
+			// Determine connection type
+			const connectionType = connectionTypeRest?.checked
+				? ConnectionType.REST_PROXY
+				: ConnectionType.DIRECT_BLE;
+
+			// Get REST URL if needed
+			const restUrl = restServerUrl?.value || "http://localhost:8765";
+
+			// Determine filter value and device type
+			let nameFilter = "";
+			let deviceType = savedDeviceType;
+
+			if (connectFilterDefault?.checked) {
+				// Default name filter — device type comes directly from the dropdown
+				const selectedOption =
+					connectDefaultDevice?.value || DEVICE_TYPES.SKELLY;
+				deviceType = selectedOption;
+				nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
+			} else if (connectFilterByName?.checked) {
+				// Custom name — try to auto-detect device type from the name
+				nameFilter = connectNameFilter?.value || "";
+				const nameLower = nameFilter.toLowerCase();
+				if (nameLower.includes("lily")) {
+					deviceType = DEVICE_TYPES.LILY;
+				} else if (nameLower.includes("skelly")) {
+					deviceType = DEVICE_TYPES.SKELLY;
+				}
+				// else keep last persisted deviceType
+			}
+			// All devices: nameFilter stays '', deviceType stays last persisted
+
+			// Persist preferences
+			localStorage.setItem(STORAGE_KEYS.CONNECTION_TYPE, connectionType);
+			localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
+			if (connectionType === ConnectionType.REST_PROXY) {
+				localStorage.setItem(STORAGE_KEYS.REST_URL, restUrl);
+			}
+
+			// Apply device profile immediately so the UI is correct before connection completes
+			this.state.setDeviceType(deviceType);
+			this.applyDeviceProfile(deviceType);
+
+			// For REST proxy, show device selection modal
+			if (connectionType === ConnectionType.REST_PROXY) {
+				await this.showDeviceSelectionModal(restUrl, nameFilter);
+			} else {
+				await this.performConnection({ connectionType, restUrl, nameFilter });
+			}
+		});
+	}
+
+	/**
+	 * Show device selection modal for REST proxy
+	 */
+	async showDeviceSelectionModal(restUrl, nameFilter) {
+		const deviceSelectModal = $("#deviceSelectModal");
+		const deviceList = $("#deviceList");
+		const deviceSelectStatus = $("#deviceSelectStatus");
+		const deviceSelectCancel = $("#deviceSelectCancel");
+		const deviceSelectRescan = $("#deviceSelectRescan");
+
+		if (!deviceSelectModal || !deviceList) return;
+
+		// Show modal
+		deviceSelectModal.classList.remove("hidden");
+
+		// Scan function
+		const scanForDevices = async () => {
+			try {
+				deviceList.innerHTML = "";
+				deviceSelectStatus.textContent = "Scanning for devices...";
+
+				// Use connection.restProxy to scan
+				const devices = await this.connection.restProxy.scanDevices(
+					restUrl,
+					nameFilter,
+					10,
+				);
+
+				if (devices.length === 0) {
+					deviceSelectStatus.textContent = "No devices found";
+					deviceList.innerHTML =
+						'<p style="padding: 20px; text-align: center; color: #6b7280;">No devices discovered. Try rescanning or check if devices are powered on.</p>';
+					return;
+				}
+
+				deviceSelectStatus.textContent = `Found ${devices.length} device${devices.length > 1 ? "s" : ""}:`;
+
+				// Create device list
+				devices.forEach((device) => {
+					const deviceItem = document.createElement("div");
+					deviceItem.style.cssText =
+						"padding: 12px; margin: 8px 0; background: #1f2937; border: 1px solid #374151; border-radius: 8px; cursor: pointer; transition: all 0.2s;";
+					deviceItem.innerHTML = `
+            <div style="font-weight: 500;">${escapeHtml(device.name || "Unknown Device")}</div>
             <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">${escapeHtml(device.address)}</div>
             <div style="font-size: 11px; color: #6b7280;">Signal: ${device.rssi} dBm</div>
           `;
-          
-          deviceItem.addEventListener('mouseenter', () => {
-            deviceItem.style.background = '#374151';
-            deviceItem.style.borderColor = '#3b82f6';
-          });
-          
-          deviceItem.addEventListener('mouseleave', () => {
-            deviceItem.style.background = '#1f2937';
-            deviceItem.style.borderColor = '#374151';
-          });
-          
-          deviceItem.addEventListener('click', async () => {
-            deviceSelectModal.classList.add('hidden');
-            await this.performConnection({ 
-              connectionType: ConnectionType.REST_PROXY, 
-              restUrl, 
-              deviceAddress: device.address 
-            });
-          });
-          
-          deviceList.appendChild(deviceItem);
-        });
-        
-      } catch (error) {
-        console.error('Device scan error:', error);
-        deviceSelectStatus.textContent = 'Scan failed';
-        deviceList.innerHTML = `<p style="padding: 20px; text-align: center; color: #ef4444;">${escapeHtml(error.message)}</p>`;
-      }
-    };
-    
-    // Cancel button
-    const cancelHandler = () => {
-      deviceSelectModal.classList.add('hidden');
-    };
-    
-    // Rescan button
-    const rescanHandler = () => {
-      scanForDevices();
-    };
-    
-    // Add event listeners
-    deviceSelectCancel.removeEventListener('click', cancelHandler);
-    deviceSelectCancel.addEventListener('click', cancelHandler);
-    deviceSelectRescan.removeEventListener('click', rescanHandler);
-    deviceSelectRescan.addEventListener('click', rescanHandler);
-    
-    // Escape key to close
-    const escapeHandler = (e) => {
-      if (e.key === 'Escape' && !deviceSelectModal.classList.contains('hidden')) {
-        deviceSelectModal.classList.add('hidden');
-      }
-    };
-    document.removeEventListener('keydown', escapeHandler);
-    document.addEventListener('keydown', escapeHandler);
-    
-    // Start initial scan
-    await scanForDevices();
-  }
-
-  /**
-   * Initialize advanced menu
-   */
-  initializeAdvancedMenu() {
-    const advMenu = $('#advMenu');
-    const advRaw = $('#advRaw');
-    const advFEDC = $('#advFEDC');
-    const advFileDetails = $('#advFileDetails');
-
-    // Load saved state
-    advRaw.checked = localStorage.getItem(STORAGE_KEYS.ADV_RAW) === '1';
-    advFEDC.checked = localStorage.getItem(STORAGE_KEYS.ADV_FEDC) === '1';
-    advFileDetails.checked = localStorage.getItem(STORAGE_KEYS.SHOW_FILE_DETAILS) === '1';
-
-    // Toggle menu
-    $('#btnAdvanced')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      advMenu?.classList.toggle('hidden');
-    });
-
-    // Close menu on outside click
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.menuwrap')) {
-        advMenu?.classList.add('hidden');
-      }
-    });
-
-    // Save state on change
-    [advRaw, advFEDC, advFileDetails].forEach((el) => {
-      el?.addEventListener('change', () => {
-        localStorage.setItem(STORAGE_KEYS.ADV_RAW, advRaw.checked ? '1' : '0');
-        localStorage.setItem(STORAGE_KEYS.ADV_FEDC, advFEDC.checked ? '1' : '0');
-        localStorage.setItem(STORAGE_KEYS.SHOW_FILE_DETAILS, advFileDetails.checked ? '1' : '0');
-        this.applyAdvancedVisibility();
-      });
-    });
-
-    this.applyAdvancedVisibility();
-  }
-
-  /**
-   * Apply advanced feature visibility
-   */
-  applyAdvancedVisibility() {
-    const advRaw = $('#advRaw');
-    const advFileDetails = $('#advFileDetails');
-    
-    $('#advRawBlock')?.classList.toggle('hidden', !advRaw?.checked);
-    
-    // Toggle detail columns visibility
-    const showDetails = advFileDetails?.checked;
-    document.querySelectorAll('.detail-column').forEach(col => {
-      col.style.display = showDetails ? '' : 'none';
-    });
-  }
-
-  /**
-   * Initialize log filter menu
-   */
-  initializeLogFilter() {
-    const logFilterMenu = $('#logFilterMenu');
-    const logFilterNormal = $('#logFilterNormal');
-    const logFilterWarning = $('#logFilterWarning');
-    const logFilterTx = $('#logFilterTx');
-    const logFilterRx = $('#logFilterRx');
-
-    // Load saved state (default to all checked)
-    logFilterNormal.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_NORMAL) !== '0';
-    logFilterWarning.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_WARNING) !== '0';
-    logFilterTx.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_TX) !== '0';
-    logFilterRx.checked = localStorage.getItem(STORAGE_KEYS.LOG_FILTER_RX) !== '0';
-
-    // Toggle menu
-    $('#btnLogFilter')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      logFilterMenu?.classList.toggle('hidden');
-    });
-
-    // Close menu on outside click
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.menuwrap') || e.target.closest('#advMenu')) {
-        logFilterMenu?.classList.add('hidden');
-      }
-    });
-
-    // Save state and apply filter on change
-    [logFilterNormal, logFilterWarning, logFilterTx, logFilterRx].forEach((el) => {
-      el?.addEventListener('change', () => {
-        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_NORMAL, logFilterNormal.checked ? '1' : '0');
-        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_WARNING, logFilterWarning.checked ? '1' : '0');
-        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_TX, logFilterTx.checked ? '1' : '0');
-        localStorage.setItem(STORAGE_KEYS.LOG_FILTER_RX, logFilterRx.checked ? '1' : '0');
-        this.applyLogFilter();
-      });
-    });
-
-    this.applyLogFilter();
-  }
-
-  /**
-   * Apply log filter visibility
-   */
-  applyLogFilter() {
-    const logFilterNormal = $('#logFilterNormal');
-    const logFilterWarning = $('#logFilterWarning');
-    const logFilterTx = $('#logFilterTx');
-    const logFilterRx = $('#logFilterRx');
-
-    const logEl = $('#log');
-    if (!logEl) return;
-
-    // Apply filter to all log lines
-    logEl.querySelectorAll('.line').forEach((line) => {
-      const classes = line.classList;
-      let visible = true;
-
-      if (classes.contains('warn') && !logFilterWarning?.checked) {
-        visible = false;
-      } else if (classes.contains('tx') && !logFilterTx?.checked) {
-        visible = false;
-      } else if (classes.contains('rx') && !logFilterRx?.checked) {
-        visible = false;
-      } else if (!classes.contains('warn') && !classes.contains('tx') && !classes.contains('rx') && !logFilterNormal?.checked) {
-        visible = false;
-      }
-
-      line.style.display = visible ? '' : 'none';
-    });
-  }
-
-  /**
-   * Initialize query buttons
-   */
-  initializeQueryButtons() {
-    document.querySelectorAll('[data-q]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!this.connection.isConnected()) {
-          this.logger.log('Not connected', LOG_CLASSES.WARNING);
-          return;
-        }
-        const tag = btn.getAttribute('data-q');
-        await this.connection.send(buildCommand(tag, '', 8));
-      });
-    });
-
-    // Get All button - executes all query commands in sequence
-    $('#btnGetAll')?.addEventListener('click', async () => {
-      if (!this.connection.isConnected()) {
-        this.logger.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-      
-      this.logger.log('Executing all queries...', LOG_CLASSES.INFO);
-      const queries = [
-        COMMANDS.QUERY_PARAMS,
-        COMMANDS.QUERY_LIVE,
-        COMMANDS.QUERY_VOLUME,
-        COMMANDS.QUERY_BT_NAME,
-        COMMANDS.QUERY_VERSION,
-        COMMANDS.QUERY_CAPACITY,
-        COMMANDS.QUERY_ORDER
-      ];
-      
-      for (const tag of queries) {
-        await this.connection.send(buildCommand(tag, '', 8));
-        // Small delay between queries to avoid overwhelming the device
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      this.logger.log('All queries completed', LOG_CLASSES.SUCCESS);
-    });
-
-    // Raw command send button
-    $('#btnSendRaw')?.addEventListener('click', async () => {
-      if (!this.connection.isConnected()) {
-        this.logger.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-      const tag = $('#tag')?.value || 'E0';
-      const payload = $('#payload')?.value || '';
-      await this.connection.send(buildCommand(tag, payload, 8));
-      this.logger.log(`Sent raw command: ${tag} with payload: ${payload || '(empty)'}`);
-    });
-
-    // Set Device Name button
-    $('#btnSetDeviceName')?.addEventListener('click', async () => {
-      if (!this.connection.isConnected()) {
-        this.logger.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const deviceNameInput = $('#deviceNameInput');
-      const deviceName = deviceNameInput?.value || '';
-
-      // Validate device name: must not be empty and max 22 chars
-      if (!deviceName || deviceName.trim().length === 0) {
-        this.logger.log('Device name cannot be empty', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      if (deviceName.length > 22) {
-        this.logger.log('Device name cannot exceed 22 characters', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const pin = this.state.device.pin || '0000';
-      await this.setPinAndName(pin, deviceName);
-    });
-
-    // Set PIN button
-    $('#btnSetPin')?.addEventListener('click', async () => {
-      if (!this.connection.isConnected()) {
-        this.logger.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const pinInput = $('#pinInput');
-      const pin = pinInput?.value || '';
-
-      // Validate PIN: must be exactly 4 digits
-      if (!/^\d{4}$/.test(pin)) {
-        this.logger.log('PIN must be exactly 4 digits', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const deviceNameInput = $('#deviceNameInput');
-      const deviceName = deviceNameInput?.value || '';
-      
-      // Use current device name if available, otherwise use entered name or default to btName
-      const btName = deviceName || this.state.device.btName || '';
-      if (!btName) {
-        this.logger.log('Device name not available. Enter a device name first.', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      await this.setPinAndName(pin, btName);
-    });
-
-    // PIN input validation - only allow digits
-    const pinInput = $('#pinInput');
-    if (pinInput) {
-      pinInput.addEventListener('input', (e) => {
-        // Remove non-digit characters
-        e.target.value = e.target.value.replace(/[^0-9]/g, '');
-      });
-    }
-
-    // Device name input validation - enforce max length
-    const deviceNameInput = $('#deviceNameInput');
-    if (deviceNameInput) {
-      deviceNameInput.addEventListener('input', (e) => {
-        // Enforce max length of 22 characters
-        if (e.target.value.length > 22) {
-          e.target.value = e.target.value.substring(0, 22);
-        }
-      });
-    }
-  }
-
-  /**
-   * Set device PIN and Bluetooth name
-   * @param {string} pin - 4-digit PIN
-   * @param {string} btName - Bluetooth name (should end with "(Live)" suffix)
-   */
-  async setPinAndName(pin, btName) {
-    // Ensure BT name ends with "(Live)"
-    if (!btName.endsWith('(Live)')) {
-      btName += '(Live)';
-    }
-
-    // Build the AAFB command payload
-    // Format: <4 bytes PIN in ASCII> <8 bytes wifi password in ASCII> <1 byte name length> <BT name in ASCII with "(Live)">
-    
-    // Convert PIN to ASCII bytes and then to hex
-    const pinBytes = new TextEncoder().encode(pin);
-    const pinHex = bytesToHex(pinBytes);
-    
-    // Hardcoded wifi password "01234567" as ASCII bytes
-    const wifiBytes = new TextEncoder().encode('01234567');
-    const wifiHex = bytesToHex(wifiBytes);
-    
-    const nameLengthHex = btName.length.toString(16).padStart(2, '0').toUpperCase();
-    
-    // BT name as ASCII bytes
-    const nameBytes = new TextEncoder().encode(btName);
-    const nameHex = bytesToHex(nameBytes);
-    
-    const payload = pinHex + wifiHex + nameLengthHex + nameHex;
-    
-    await this.connection.send(buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8));
-    this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
-    
-    // Query device params to get the updated name and PIN back from the device
-    await this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8));
-    await this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8));
-  }
-
-  /**
-   * Initialize media controls
-   */
-  initializeMediaControls() {
-    // Volume control - send command immediately on change
-    const volRange = $('#volRange');
-    const volNum = $('#vol');
-
-    const sendVolumeCommand = async (value) => {
-      if (!this.connection.isConnected()) {
-        return;
-      }
-      const v = Math.max(0, Math.min(255, parseInt(value, 10)));
-      await this.connection.send(buildCommand(COMMANDS.SET_VOLUME, v.toString(16).padStart(2, '0').toUpperCase(), 8));
-      this.logger.log(`Set volume to ${v}`);
-    };
-
-    if (volRange && volNum) {
-      volRange.addEventListener('input', (e) => {
-        volNum.value = e.target.value;
-        sendVolumeCommand(e.target.value);
-      });
-      volNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 100);
-        volRange.value = clamped;
-        sendVolumeCommand(clamped);
-      });
-    }
-
-    // Live Mode button
-    $('#btnBT')?.addEventListener('click', () => this.sendMediaCommand(COMMANDS.ENABLE_CLASSIC_BT, '01'));
-  }
-
-  /**
-   * Send media command
-   */
-  async sendMediaCommand(tag, payload) {
-    if (!this.connection.isConnected()) {
-      this.logger.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
-    await this.connection.send(buildCommand(tag, payload, 8));
-  }
-
-  /**
-   * Initialize live controls
-   */
-  initializeLiveControls() {
-    this.selectedEye = 1; // Default eye selection
-    this.buildLiveEyeGrid();
-
-    // Track color cycle state for each light
-    this.headColorCycleEnabled = false;
-    this.torsoColorCycleEnabled = false;
-
-    // Head Light - Brightness control (immediate)
-    const headBriRange = $('#headBrightnessRange');
-    const headBriNum = $('#headBrightness');
-    
-    const sendHeadBrightness = async (value) => {
-      if (!this.connection.isConnected()) return;
-      const ch = '01'; // Head light is channel 1
-      const brightness = parseInt(value, 10);
-      const brightnessHex = brightness.toString(16).padStart(2, '0').toUpperCase();
-      const cluster = '00000000';
-      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
-      this.logger.log(`Set head light brightness to ${brightness}`);
-    };
-    
-    if (headBriRange && headBriNum) {
-      headBriRange.addEventListener('input', (e) => {
-        headBriNum.value = e.target.value;
-        sendHeadBrightness(e.target.value);
-      });
-      headBriNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 255);
-        headBriRange.value = clamped;
-        sendHeadBrightness(clamped);
-      });
-    }
-
-    // Torso Light - Brightness control (immediate)
-    const torsoBriRange = $('#torsoBrightnessRange');
-    const torsoBriNum = $('#torsoBrightness');
-    
-    const sendTorsoBrightness = async (value) => {
-      if (!this.connection.isConnected()) return;
-      const ch = '00'; // Torso light is channel 0
-      const brightness = parseInt(value, 10);
-      const brightnessHex = brightness.toString(16).padStart(2, '0').toUpperCase();
-      const cluster = '00000000';
-      await this.connection.send(buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8));
-      this.logger.log(`Set torso light brightness to ${brightness}`);
-    };
-    
-    if (torsoBriRange && torsoBriNum) {
-      torsoBriRange.addEventListener('input', (e) => {
-        torsoBriNum.value = e.target.value;
-        sendTorsoBrightness(e.target.value);
-      });
-      torsoBriNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 255);
-        torsoBriRange.value = clamped;
-        sendTorsoBrightness(clamped);
-      });
-    }
-
-    // Head Light - Color/RGB control (immediate)
-    const headColorPick = $('#headColorPick');
-    const headRInput = $('#headR');
-    const headGInput = $('#headG');
-    const headBInput = $('#headB');
-
-    const sendHeadColor = async (disableCycle = false) => {
-      if (!this.connection.isConnected()) return;
-      
-      // If user is setting a new color (not from cycle button), disable cycle
-      if (disableCycle && this.headColorCycleEnabled) {
-        this.headColorCycleEnabled = false;
-        const btnHeadColorCycle = $('#btnHeadColorCycle');
-        if (btnHeadColorCycle) {
-          btnHeadColorCycle.classList.remove('selected');
-        }
-      }
-      
-      const ch = '01'; // Head light is channel 1
-      const r = parseInt(headRInput?.value || '255', 10);
-      const g = parseInt(headGInput?.value || '0', 10);
-      const b = parseInt(headBInput?.value || '0', 10);
-      const cycle = this.headColorCycleEnabled ? '01' : '00';
-      const rHex = r.toString(16).padStart(2, '0').toUpperCase();
-      const gHex = g.toString(16).padStart(2, '0').toUpperCase();
-      const bHex = b.toString(16).padStart(2, '0').toUpperCase();
-      const cluster = '00000000';
-      await this.connection.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
-      this.logger.log(`Set head light color to RGB(${r}, ${g}, ${b}) with cycle ${this.headColorCycleEnabled ? 'ON' : 'OFF'}`);
-    };
-
-    // Sync color picker with RGB inputs and send immediately
-    if (headColorPick && headRInput && headGInput && headBInput) {
-      headColorPick.addEventListener('input', (e) => {
-        const hex = e.target.value;
-        headRInput.value = parseInt(hex.substring(1, 3), 16);
-        headGInput.value = parseInt(hex.substring(3, 5), 16);
-        headBInput.value = parseInt(hex.substring(5, 7), 16);
-        sendHeadColor(true); // Disable cycle when user picks a color
-      });
-
-      [headRInput, headGInput, headBInput].forEach((inp) => {
-        inp?.addEventListener('input', () => {
-          const r = clamp(headRInput.value, 0, 255);
-          const g = clamp(headGInput.value, 0, 255);
-          const b = clamp(headBInput.value, 0, 255);
-          headColorPick.value = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-          sendHeadColor(true); // Disable cycle when user changes RGB values
-        });
-      });
-    }
-
-    // Torso Light - Color/RGB control (immediate)
-    const torsoColorPick = $('#torsoColorPick');
-    const torsoRInput = $('#torsoR');
-    const torsoGInput = $('#torsoG');
-    const torsoBInput = $('#torsoB');
-
-    const sendTorsoColor = async (disableCycle = false) => {
-      if (!this.connection.isConnected()) return;
-      
-      // If user is setting a new color (not from cycle button), disable cycle
-      if (disableCycle && this.torsoColorCycleEnabled) {
-        this.torsoColorCycleEnabled = false;
-        const btnTorsoColorCycle = $('#btnTorsoColorCycle');
-        if (btnTorsoColorCycle) {
-          btnTorsoColorCycle.classList.remove('selected');
-        }
-      }
-      
-      const ch = '00'; // Torso light is channel 0
-      const r = parseInt(torsoRInput?.value || '255', 10);
-      const g = parseInt(torsoGInput?.value || '0', 10);
-      const b = parseInt(torsoBInput?.value || '0', 10);
-      const cycle = this.torsoColorCycleEnabled ? '01' : '00';
-      const rHex = r.toString(16).padStart(2, '0').toUpperCase();
-      const gHex = g.toString(16).padStart(2, '0').toUpperCase();
-      const bHex = b.toString(16).padStart(2, '0').toUpperCase();
-      const cluster = '00000000';
-      await this.connection.send(buildCommand(COMMANDS.SET_RGB, ch + rHex + gHex + bHex + cycle + cluster + '00', 9));
-      this.logger.log(`Set torso light color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? 'ON' : 'OFF'}`);
-    };
-
-    // Sync color picker with RGB inputs and send immediately
-    if (torsoColorPick && torsoRInput && torsoGInput && torsoBInput) {
-      torsoColorPick.addEventListener('input', (e) => {
-        const hex = e.target.value;
-        torsoRInput.value = parseInt(hex.substring(1, 3), 16);
-        torsoGInput.value = parseInt(hex.substring(3, 5), 16);
-        torsoBInput.value = parseInt(hex.substring(5, 7), 16);
-        sendTorsoColor(true); // Disable cycle when user picks a color
-      });
-
-      [torsoRInput, torsoGInput, torsoBInput].forEach((inp) => {
-        inp?.addEventListener('input', () => {
-          const r = clamp(torsoRInput.value, 0, 255);
-          const g = clamp(torsoGInput.value, 0, 255);
-          const b = clamp(torsoBInput.value, 0, 255);
-          torsoColorPick.value = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-          sendTorsoColor(true); // Disable cycle when user changes RGB values
-        });
-      });
-    }
-
-    // Head Light - Effect mode (immediate)
-    const headEffectMode = $('#headEffectMode');
-    const headEffectSpeedBlock = $('#headEffectSpeedBlock');
-
-    if (headEffectMode && headEffectSpeedBlock) {
-      headEffectMode.addEventListener('change', async () => {
-        const v = parseInt(headEffectMode.value, 10);
-        headEffectSpeedBlock.classList.toggle('hidden', v === 1); // hide for Static
-        
-        if (!this.connection.isConnected()) return;
-        const ch = '01'; // Head light is channel 1
-        const modeHex = v.toString(16).padStart(2, '0').toUpperCase();
-        const cluster = '00000000';
-        await this.connection.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 9));
-        this.logger.log(`Set head light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`);
-      });
-    }
-
-    // Torso Light - Effect mode (immediate)
-    const torsoEffectMode = $('#torsoEffectMode');
-    const torsoEffectSpeedBlock = $('#torsoEffectSpeedBlock');
-
-    if (torsoEffectMode && torsoEffectSpeedBlock) {
-      torsoEffectMode.addEventListener('change', async () => {
-        const v = parseInt(torsoEffectMode.value, 10);
-        torsoEffectSpeedBlock.classList.toggle('hidden', v === 1); // hide for Static
-        
-        if (!this.connection.isConnected()) return;
-        const ch = '00'; // Torso light is channel 0
-        const modeHex = v.toString(16).padStart(2, '0').toUpperCase();
-        const cluster = '00000000';
-        await this.connection.send(buildCommand(COMMANDS.SET_MODE, ch + modeHex + cluster + '00', 8));
-        this.logger.log(`Set torso light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`);
-      });
-    }
-
-    // Head Light - Effect speed control (immediate)
-    const headEffectSpeedRange = $('#headEffectSpeedRange');
-    const headEffectSpeedNum = $('#headEffectSpeed');
-
-    const sendHeadSpeed = async (value) => {
-      if (!this.connection.isConnected()) return;
-      const ch = '01'; // Head light is channel 1
-      const uiSpeed = parseInt(value, 10);
-      const deviceSpeed = uiSpeedToDevice(uiSpeed);
-      const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
-      const cluster = '00000000';
-      await this.connection.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
-      this.logger.log(`Set head light speed to ${uiSpeed} (device: ${deviceSpeed})`);
-    };
-
-    if (headEffectSpeedRange && headEffectSpeedNum) {
-      headEffectSpeedRange.addEventListener('input', (e) => {
-        headEffectSpeedNum.value = e.target.value;
-        sendHeadSpeed(e.target.value);
-      });
-      headEffectSpeedNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 254);
-        headEffectSpeedRange.value = clamped;
-        sendHeadSpeed(clamped);
-      });
-    }
-
-    // Torso Light - Effect speed control (immediate)
-    const torsoEffectSpeedRange = $('#torsoEffectSpeedRange');
-    const torsoEffectSpeedNum = $('#torsoEffectSpeed');
-
-    const sendTorsoSpeed = async (value) => {
-      if (!this.connection.isConnected()) return;
-      const ch = '00'; // Torso light is channel 0
-      const uiSpeed = parseInt(value, 10);
-      const deviceSpeed = uiSpeedToDevice(uiSpeed);
-      const speedHex = deviceSpeed.toString(16).padStart(2, '0').toUpperCase();
-      const cluster = '00000000';
-      await this.connection.send(buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8));
-      this.logger.log(`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`);
-    };
-
-    if (torsoEffectSpeedRange && torsoEffectSpeedNum) {
-      torsoEffectSpeedRange.addEventListener('input', (e) => {
-        torsoEffectSpeedNum.value = e.target.value;
-        sendTorsoSpeed(e.target.value);
-      });
-      torsoEffectSpeedNum.addEventListener('input', (e) => {
-        const clamped = clamp(e.target.value, 0, 254);
-        torsoEffectSpeedRange.value = clamped;
-        sendTorsoSpeed(clamped);
-      });
-    }
-
-    // Movement controls — handled by bindMovementGrid (called from applyDeviceProfile)
-
-    // Head Light - Color cycle button (toggles cycle state)
-    const btnHeadColorCycle = $('#btnHeadColorCycle');
-    if (btnHeadColorCycle) {
-      btnHeadColorCycle.addEventListener('click', async () => {
-        if (!this.connection.isConnected()) {
-          this.logger.log('Not connected', LOG_CLASSES.WARNING);
-          return;
-        }
-        this.headColorCycleEnabled = !this.headColorCycleEnabled;
-        btnHeadColorCycle.classList.toggle('selected', this.headColorCycleEnabled);
-        await sendHeadColor();
-      });
-    }
-
-    // Torso Light - Color cycle button (toggles cycle state)
-    const btnTorsoColorCycle = $('#btnTorsoColorCycle');
-    if (btnTorsoColorCycle) {
-      btnTorsoColorCycle.addEventListener('click', async () => {
-        if (!this.connection.isConnected()) {
-          this.logger.log('Not connected', LOG_CLASSES.WARNING);
-          return;
-        }
-        this.torsoColorCycleEnabled = !this.torsoColorCycleEnabled;
-        btnTorsoColorCycle.classList.toggle('selected', this.torsoColorCycleEnabled);
-        await sendTorsoColor();
-      });
-    }
-
-    // Live eye grid selection - send command immediately
-    const apEyeGrid = $('#apEyeGrid');
-    if (apEyeGrid) {
-      apEyeGrid.addEventListener('click', async (e) => {
-        const cell = e.target.closest('.eye-opt');
-        if (!cell) return;
-        
-        this.selectedEye = parseInt(cell.dataset.eye, 10);
-        apEyeGrid.querySelectorAll('.eye-opt').forEach((el) => el.classList.remove('selected'));
-        cell.classList.add('selected');
-        
-        // Send command immediately if connected
-        if (!this.connection.isConnected()) {
-          this.logger.log('Not connected', LOG_CLASSES.WARNING);
-          return;
-        }
-        
-        const eyeHex = this.selectedEye.toString(16).padStart(2, '0').toUpperCase();
-        const clusterHex = '00000000'; // Always cluster 0 for live mode
-        
-        // Build payload: eye + 00 + cluster + 00 (no name)
-        const payload = eyeHex + '00' + clusterHex + '00';
-        
-        await this.connection.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
-        this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
-      });
-    }
-  }
-
-  /**
-   * Apply movement from UI (unused by default; movement binding is in bindMovementGrid)
-   */
-  applyMovement(gridId) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-
-    const toggles = grid.querySelectorAll('.iconToggle.selected');
-    if (toggles.length === 0) {
-      this.logger.log('No movement selected', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    const allSelected = Array.from(toggles).some(b => b.dataset.part === 'all');
-    if (allSelected) {
-      this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, 'FF00000000', 8));
-    } else {
-      let bitfield = 0;
-      toggles.forEach(btn => { bitfield |= parseInt(btn.dataset.bit || '0', 10); });
-      const hex = bitfield.toString(16).padStart(2, '0').toUpperCase();
-      this.connection.send(buildCommand(COMMANDS.SET_MOVEMENT, hex + '00000000', 8));
-    }
-    const parts = Array.from(toggles).map(b => b.dataset.part);
-    this.logger.log(`Applied movement: ${parts.join(', ')}`);
-  }
-
-  /**
-   * Initialize file controls
-   */
-  initializeFileControls() {
-    this.initializeFileListControls();
-    this.initializeBitrateControls();
-    this.initializeChunkSizeControls();
-    this.initializeFileTransferControls();
-    this.initializeFileTableHandlers();
-    this.initializeFileDragAndDrop();
-  }
-
-  /**
-   * Initialize file list refresh and filter controls
-   */
-  initializeFileListControls() {
-    $('#btnRefreshFiles')?.addEventListener('click', () => {
-      this.fileManager.startFetchFiles();
-    });
-
-    $('#filesFilter')?.addEventListener('input', () => {
-      this.updateFilesTable();
-    });
-
-    $('#fileInput')?.addEventListener('change', async (e) => {
-      await this.handleFileSelection(e.target.files?.[0]);
-    });
-  }
-
-  /**
-   * Initialize bitrate override controls
-   */
-  initializeBitrateControls() {
-    const chkBitrateOverride = $('#chkBitrateOverride');
-    const convertOpts = $('#convertOpts');
-    const mp3Kbps = $('#mp3Kbps');
-    
-    // Load saved bitrate preferences from localStorage
-    const savedBitrateOverride = localStorage.getItem(STORAGE_KEYS.BITRATE_OVERRIDE) === 'true';
-    const savedBitrate = localStorage.getItem(STORAGE_KEYS.BITRATE);
-    
-    // Restore checkbox state and visibility
-    if (chkBitrateOverride) {
-      chkBitrateOverride.checked = savedBitrateOverride;
-      if (savedBitrateOverride) {
-        convertOpts?.classList.remove('hidden');
-      }
-    }
-    
-    // Restore bitrate selection
-    if (mp3Kbps && savedBitrate) {
-      mp3Kbps.value = savedBitrate;
-    }
-    
-    // Toggle bitrate options and save preference
-    chkBitrateOverride?.addEventListener('change', (e) => {
-      convertOpts?.classList.toggle('hidden', !e.target.checked);
-      localStorage.setItem(STORAGE_KEYS.BITRATE_OVERRIDE, e.target.checked.toString());
-    });
-    
-    // Save bitrate selection when changed
-    mp3Kbps?.addEventListener('change', (e) => {
-      localStorage.setItem(STORAGE_KEYS.BITRATE, e.target.value);
-    });
-  }
-
-  /**
-   * Initialize chunk size override controls
-   */
-  initializeChunkSizeControls() {
-    const chkChunkOverride = $('#chkChunkOverride');
-    const chunkOverrideOpts = $('#chunkOverrideOpts');
-    const chunkSizeSlider = $('#chunkSizeSlider');
-    const chunkSizeValue = $('#chunkSizeValue');
-
-    // Load saved preferences from localStorage
-    const savedOverride = localStorage.getItem(STORAGE_KEYS.CHUNK_OVERRIDE) === 'true';
-    const savedChunkSize = parseInt(localStorage.getItem(STORAGE_KEYS.CHUNK_SIZE), 10);
-
-    // Initialize slider with saved or auto-determined chunk size
-    if (chunkSizeSlider && chunkSizeValue) {
-      const autoChunkSize = this.fileManager.getChunkSize();
-      const initialSize = (savedChunkSize >= 50 && savedChunkSize <= 500) ? savedChunkSize : autoChunkSize;
-      chunkSizeSlider.value = initialSize;
-      chunkSizeValue.textContent = initialSize;
-    }
-
-    // Restore checkbox state and visibility
-    if (chkChunkOverride) {
-      chkChunkOverride.checked = savedOverride;
-      if (savedOverride) {
-        chunkOverrideOpts?.classList.remove('hidden');
-      }
-    }
-
-    // Toggle chunk override options
-    chkChunkOverride?.addEventListener('change', (e) => {
-      chunkOverrideOpts?.classList.toggle('hidden', !e.target.checked);
-      
-      // Save preference
-      localStorage.setItem(STORAGE_KEYS.CHUNK_OVERRIDE, e.target.checked.toString());
-      
-      // If enabling override, update slider to current auto value (if not previously saved)
-      if (e.target.checked && chunkSizeSlider && chunkSizeValue && !savedChunkSize) {
-        const autoChunkSize = this.fileManager.getChunkSize();
-        chunkSizeSlider.value = autoChunkSize;
-        chunkSizeValue.textContent = autoChunkSize;
-      }
-    });
-
-    // Update chunk size display when slider changes and save to localStorage
-    chunkSizeSlider?.addEventListener('input', (e) => {
-      if (chunkSizeValue) {
-        chunkSizeValue.textContent = e.target.value;
-      }
-      localStorage.setItem(STORAGE_KEYS.CHUNK_SIZE, e.target.value);
-    });
-  }
-
-  /**
-   * Initialize file transfer controls (send/cancel)
-   */
-  initializeFileTransferControls() {
-    $('#btnSendFile')?.addEventListener('click', async () => {
-      await this.handleFileSend();
-    });
-
-    $('#btnCancelFile')?.addEventListener('click', async () => {
-      await this.fileManager.cancelTransfer();
-    });
-  }
-
-  /**
-   * Initialize file table button and checkbox handlers
-   */
-  initializeFileTableHandlers() {
-    // Files table button handler (Play and Edit)
-    $('#filesTable')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-action]');
-      if (!btn) return;
-      
-      if (!this.connection.isConnected()) {
-        this.logger.log('Not connected', LOG_CLASSES.WARNING);
-        return;
-      }
-
-      const serial = parseInt(btn.dataset.serial, 10);
-      const item = this.state.files.items.get(serial);
-      if (!item) return;
-
-      if (btn.dataset.action === 'play' || btn.dataset.action === 'stop') {
-        this.handlePlayFile(serial);
-      } else if (btn.dataset.action === 'edit') {
-        if (btn.disabled) return;
-        this.handleEditFile(item);
-      }
-    });
-
-    // Files table checkbox handler (Enable/Disable)
-    $('#filesTable')?.addEventListener('change', async (e) => {
-      const checkbox = e.target.closest('.file-enabled-checkbox');
-      if (!checkbox) return;
-      
-      if (!this.connection.isConnected()) {
-        this.logger.log('Not connected', LOG_CLASSES.WARNING);
-        // Revert checkbox state
-        checkbox.checked = !checkbox.checked;
-        return;
-      }
-
-      await this.handleFileEnableToggle();
-    });
-  }
-
-  /**
-   * Initialize drag and drop handlers for file reordering
-   */
-  initializeFileDragAndDrop() {
-    let draggedRow = null;
-    let touchStartY = 0;
-    let touchCurrentY = 0;
-    let placeholder = null;
-
-    const tbody = $('#filesTable tbody');
-    if (!tbody) return;
-
-    // Desktop drag and drop
-    tbody.addEventListener('dragstart', (e) => {
-      const row = e.target.closest('tr.draggable-row');
-      if (!row) return;
-      
-      draggedRow = row;
-      row.style.opacity = '0.4';
-      e.dataTransfer.effectAllowed = 'move';
-    });
-
-    tbody.addEventListener('dragend', (e) => {
-      const row = e.target.closest('tr.draggable-row');
-      if (row) {
-        row.style.opacity = '1';
-      }
-      draggedRow = null;
-    });
-
-    tbody.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      const row = e.target.closest('tr.draggable-row');
-      if (!row || !draggedRow || row === draggedRow) return;
-      
-      e.dataTransfer.dropEffect = 'move';
-      
-      // Visual feedback - add border to indicate drop position
-      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
-      const draggedIndex = rows.indexOf(draggedRow);
-      const targetIndex = rows.indexOf(row);
-      
-      if (draggedIndex < targetIndex) {
-        row.style.borderBottom = '2px solid #4CAF50';
-        row.style.borderTop = '';
-      } else {
-        row.style.borderTop = '2px solid #4CAF50';
-        row.style.borderBottom = '';
-      }
-    });
-
-    tbody.addEventListener('dragleave', (e) => {
-      const row = e.target.closest('tr.draggable-row');
-      if (row) {
-        row.style.borderTop = '';
-        row.style.borderBottom = '';
-      }
-    });
-
-    tbody.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      const targetRow = e.target.closest('tr.draggable-row');
-      if (!targetRow || !draggedRow || targetRow === draggedRow) return;
-      
-      // Clear visual feedback
-      targetRow.style.borderTop = '';
-      targetRow.style.borderBottom = '';
-      
-      await this.handleFileDrop(draggedRow, targetRow);
-    });
-
-    // Mobile touch events
-    tbody.addEventListener('touchstart', (e) => {
-      const dragHandle = e.target.closest('.drag-handle');
-      if (!dragHandle) return;
-      
-      const row = e.target.closest('tr.draggable-row');
-      if (!row) return;
-      
-      draggedRow = row;
-      touchStartY = e.touches[0].clientY;
-      
-      // Create visual feedback
-      row.style.opacity = '0.6';
-      row.style.backgroundColor = 'rgba(34, 211, 238, 0.1)';
-      
-      // Prevent scrolling while dragging
-      e.preventDefault();
-    }, { passive: false });
-
-    tbody.addEventListener('touchmove', (e) => {
-      if (!draggedRow) return;
-      
-      e.preventDefault();
-      touchCurrentY = e.touches[0].clientY;
-      const deltaY = touchCurrentY - touchStartY;
-      
-      // Get all draggable rows
-      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
-      const draggedIndex = rows.indexOf(draggedRow);
-      
-      // Clear previous visual feedback
-      rows.forEach(r => {
-        r.style.borderTop = '';
-        r.style.borderBottom = '';
-      });
-      
-      // Find the row under the touch point
-      const elementAtPoint = document.elementFromPoint(
-        e.touches[0].clientX,
-        e.touches[0].clientY
-      );
-      const targetRow = elementAtPoint?.closest('tr.draggable-row');
-      
-      if (targetRow && targetRow !== draggedRow) {
-        const targetIndex = rows.indexOf(targetRow);
-        
-        // Show visual feedback
-        if (draggedIndex < targetIndex) {
-          targetRow.style.borderBottom = '2px solid #4CAF50';
-        } else {
-          targetRow.style.borderTop = '2px solid #4CAF50';
-        }
-      }
-    }, { passive: false });
-
-    tbody.addEventListener('touchend', async (e) => {
-      if (!draggedRow) return;
-      
-      // Clear visual feedback
-      draggedRow.style.opacity = '1';
-      draggedRow.style.backgroundColor = '';
-      
-      // Find the row at the drop position
-      const elementAtPoint = document.elementFromPoint(
-        e.changedTouches[0].clientX,
-        e.changedTouches[0].clientY
-      );
-      const targetRow = elementAtPoint?.closest('tr.draggable-row');
-      
-      // Clear all borders
-      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
-      rows.forEach(r => {
-        r.style.borderTop = '';
-        r.style.borderBottom = '';
-      });
-      
-      if (targetRow && targetRow !== draggedRow) {
-        await this.handleFileDrop(draggedRow, targetRow);
-      }
-      
-      draggedRow = null;
-    });
-
-    tbody.addEventListener('touchcancel', (e) => {
-      if (!draggedRow) return;
-      
-      // Clear visual feedback
-      draggedRow.style.opacity = '1';
-      draggedRow.style.backgroundColor = '';
-      
-      // Clear all borders
-      const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
-      rows.forEach(r => {
-        r.style.borderTop = '';
-        r.style.borderBottom = '';
-      });
-      
-      draggedRow = null;
-    });
-  }
-
-  /**
-   * Handle play file button click
-   */
-  async handlePlayFile(serial) {
-    const serialHex = serial.toString(16).padStart(4, '0').toUpperCase();
-    
-    // Check if this file is currently playing
-    const isPlaying = this.playState.playing && this.playState.serial === serial;
-    
-    // Send '01' to play, '00' to stop
-    const playPauseByte = isPlaying ? '00' : '01';
-    await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8));
-    
-    if (isPlaying) {
-      this.logger.log(`Stopping file #${serial}`);
-    } else {
-      this.logger.log(`Playing file #${serial}`);
-    }
-  }
-
-  /**
-   * Handle edit file button click
-   */
-  handleEditFile(item) {
-    this.editModal.open(item);
-  }
-
-  /**
-   * Handle file drop for reordering
-   * @param {HTMLElement} draggedRow - The row being dragged
-   * @param {HTMLElement} targetRow - The row being dropped onto
-   */
-  async handleFileDrop(draggedRow, targetRow) {
-    if (!this.connection.isConnected()) {
-      this.logger.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    const tbody = draggedRow.parentElement;
-    const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
-    const draggedIndex = rows.indexOf(draggedRow);
-    const targetIndex = rows.indexOf(targetRow);
-    
-    if (draggedIndex === targetIndex) return;
-
-    // Reorder rows in DOM
-    if (draggedIndex < targetIndex) {
-      targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
-    } else {
-      targetRow.parentNode.insertBefore(draggedRow, targetRow);
-    }
-
-    // Collect new order from DOM
-    const enabledSerials = Array.from(tbody.querySelectorAll('tr.draggable-row'))
-      .map(row => parseInt(row.dataset.serial, 10));
-
-    // Update state and device
-    const ordersAsString = JSON.stringify(enabledSerials);
-    this.state.updateDevice({ order: ordersAsString });
-    this.state.notify('files'); // This will re-render the table with new numbers
-
-    this.logger.log(`Reordered files: ${enabledSerials.length} files`, LOG_CLASSES.INFO);
-    await this.fileManager.updateFileOrder(enabledSerials);
-  }
-
-  /**
-   * Handle file enable/disable toggle
-   * Collects all checked files in display order and updates device
-   */
-  async handleFileEnableToggle() {
-    // Collect all checked checkboxes in DOM order (which reflects sort order)
-    const checkboxes = Array.from(document.querySelectorAll('.file-enabled-checkbox'));
-    const enabledSerials = checkboxes
-      .filter(cb => cb.checked)
-      .map(cb => parseInt(cb.dataset.serial, 10));
-
-    if (enabledSerials.length === 0) {
-      this.logger.log('At least one file must be enabled', LOG_CLASSES.WARNING);
-      // Find first checkbox and re-check it
-      if (checkboxes.length > 0) {
-        checkboxes[0].checked = true;
-      }
-      return;
-    }
-
-    // Immediately update order in state to trigger UI resort
-    const ordersAsString = JSON.stringify(enabledSerials);
-    this.state.updateDevice({ order: ordersAsString });
-    this.state.notify('files');
-
-    this.logger.log(`Updating file order: ${enabledSerials.length} files enabled`, LOG_CLASSES.INFO);
-    await this.fileManager.updateFileOrder(enabledSerials);
-  }
-
-  /**
-   * Handle play/pause message from device
-   */
-  handlePlayPauseMessage(serial, playing, duration) {
-    if (playing) {
-      // Start playing
-      this.playState.serial = serial;
-      this.playState.playing = true;
-      this.playState.duration = duration;
-      this.playState.startTime = Date.now();
-      
-      // Start countdown timer
-      this.startPlayTimer(serial);
-    } else {
-      // Stop playing
-      this.stopPlayTimer();
-      this.playState.serial = null;
-      this.playState.playing = false;
-      this.playState.duration = 0;
-      this.playState.startTime = null;
-    }
-    
-    // Update the file table to reflect play state
-    this.updateFilesTable();
-  }
-
-  /**
-   * Start countdown timer for playing file
-   */
-  startPlayTimer(serial) {
-    // Clear any existing timer
-    this.stopPlayTimer();
-    
-    // Update timer every second
-    this.playState.timerInterval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - this.playState.startTime) / 1000);
-      const remaining = Math.max(0, this.playState.duration - elapsed);
-      
-      // Update the timer display
-      this.updatePlayTimer(serial, remaining);
-      
-      // Stop timer when done
-      if (remaining <= 0) {
-        this.stopPlayTimer();
-      }
-    }, 1000);
-    
-    // Initial update
-    this.updatePlayTimer(serial, this.playState.duration);
-  }
-
-  /**
-   * Stop countdown timer
-   */
-  stopPlayTimer() {
-    if (this.playState.timerInterval) {
-      clearInterval(this.playState.timerInterval);
-      this.playState.timerInterval = null;
-    }
-  }
-
-  /**
-   * Update play timer display for a specific file
-   */
-  updatePlayTimer(serial, seconds) {
-    const btn = document.querySelector(`button[data-action="stop"][data-serial="${serial}"]`);
-    if (btn) {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-      btn.textContent = `⏹ Stop (${timeStr})`;
-    }
-  }
-
-  /**
-   * Handle file selection
-   */
-  async handleFileSelection(file) {
-    if (!file) return;
-
-    try {
-      // Get duration for warning
-      const duration = await this.audioConverter.getAudioDuration(file);
-      // TODO: Show warning if > 30 seconds
-
-      // Read file
-      const buffer = await file.arrayBuffer();
-      const originalBytes = new Uint8Array(buffer);
-
-      let fileBytes = originalBytes;
-      let fileName = file.name;
-
-      // If convert box is already checked, convert right away
-      if ($('#chkConvert')?.checked) {
-        const kbps = $('#chkBitrateOverride')?.checked 
-          ? parseInt($('#mp3Kbps')?.value || '32', 10)
-          : 32; // Use default 32 kbps if not overriding
-        this.logger.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
-        const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
-        fileBytes = result.u8;
-        fileName = result.name;
-        this.logger.log(`Converted: ${fileName} (${fileBytes.length} bytes)`, LOG_CLASSES.WARNING);
-      } else {
-        this.logger.log(`Picked file: ${file.name} (${originalBytes.length} bytes)`);
-      }
-
-      // Store file data
-      this.fileManager.storeFilePickerData(file, originalBytes, fileBytes, fileName);
-
-      // Pre-fill filename if empty
-      if (!$('#fileName')?.value) {
-        $('#fileName').value = fileName;
-      }
-
-      // Check for name conflicts
-      this.checkFileNameConflict($('#fileName')?.value || fileName);
-    } catch (error) {
-      this.logger.log(`File error: ${error.message}`, LOG_CLASSES.WARNING);
-    }
-  }
-
-  /**
-   * Handle file send
-   */
-  async handleFileSend() {
-    if (!this.connection.isConnected()) {
-      this.logger.log('Not connected', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    const pickerData = this.fileManager.getFilePickerData();
-    if (!pickerData.file && !pickerData.fileBytes) {
-      this.logger.log('Pick a file first.', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    let fileBytes = pickerData.fileBytes;
-    let fileName = pickerData.fileName;
-
-    // If user toggled "Convert" AFTER selecting the file, convert now
-    try {
-      if ($('#chkConvert')?.checked && pickerData.file) {
-        const kbps = $('#chkBitrateOverride')?.checked 
-          ? parseInt($('#mp3Kbps')?.value || '32', 10)
-          : 32; // Use default 32 kbps if not overriding
-        this.logger.log(`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`);
-        const result = await this.audioConverter.convertToDeviceMp3(pickerData.file, kbps);
-        fileBytes = result.u8;
-        // If the filename box is empty or still matches the previous base, prefer .mp3
-        const typed = ($('#fileName')?.value || '').trim();
-        if (!typed || typed === pickerData.fileName) {
-          $('#fileName').value = result.name;
-        }
-        fileName = result.name;
-      } else if (!$('#chkConvert')?.checked && pickerData.originalBytes) {
-        // Ensure we're using the original bytes if convert is off
-        fileBytes = pickerData.originalBytes;
-        fileName = pickerData.file?.name || pickerData.fileName;
-      }
-    } catch (error) {
-      this.logger.log(`Convert error: ${error.message} — sending original file`, LOG_CLASSES.WARNING);
-      if (pickerData.originalBytes) {
-        fileBytes = pickerData.originalBytes;
-        fileName = pickerData.file?.name || pickerData.fileName;
-      }
-    }
-
-    // Filename to send (auto .mp3 if converting)
-    let finalName = ($('#fileName')?.value || fileName || 'skelly.bin').trim();
-    if ($('#chkConvert')?.checked && !/\.mp3$/i.test(finalName)) {
-      finalName = finalName.replace(/\.\w+$/, '') + '.mp3';
-      $('#fileName').value = finalName;
-    }
-    if (!finalName) {
-      this.logger.log('Provide a device filename.', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    // Check for filename conflict
-    const conflict = this.checkFileNameConflict(finalName);
-    if (conflict) {
-      // Show overwrite confirmation modal
-      const confirmed = await this.showOverwriteConfirmation(conflict.name);
-      if (!confirmed) {
-        this.logger.log('Upload cancelled by user', LOG_CLASSES.INFO);
-        return;
-      }
-    }
-
-    // Check if chunk size override is enabled
-    let chunkSizeOverride = null;
-    const chkChunkOverride = $('#chkChunkOverride');
-    const chunkSizeSlider = $('#chunkSizeSlider');
-    if (chkChunkOverride?.checked && chunkSizeSlider) {
-      chunkSizeOverride = parseInt(chunkSizeSlider.value, 10);
-    }
-
-    try {
-      await this.fileManager.uploadFile(fileBytes, finalName, chunkSizeOverride);
-    } catch (error) {
-      this.logger.log(`Upload error: ${error.message}`, LOG_CLASSES.WARNING);
-    }
-  }
-
-  /**
-   * Show overwrite confirmation modal
-   * @param {string} fileName - Name of the existing file
-   * @returns {Promise<boolean>} - True if user confirms, false if cancelled
-   */
-  async showOverwriteConfirmation(fileName) {
-    return new Promise((resolve) => {
-      const modal = $('#overwriteModal');
-      const message = $('#overwriteMessage');
-      const confirmBtn = $('#overwriteConfirm');
-      const cancelBtn = $('#overwriteCancel');
-
-      if (!modal || !message || !confirmBtn || !cancelBtn) {
-        resolve(false);
-        return;
-      }
-
-      // Update message with filename
-      message.textContent = `A file named "${fileName}" already exists on the device.`;
-
-      // Show modal
-      modal.classList.remove('hidden');
-
-      // Handle confirm
-      const handleConfirm = () => {
-        cleanup();
-        resolve(true);
-      };
-
-      // Handle cancel
-      const handleCancel = () => {
-        cleanup();
-        resolve(false);
-      };
-
-      // Handle escape key
-      const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-          handleCancel();
-        }
-      };
-
-      // Cleanup function
-      const cleanup = () => {
-        modal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        document.removeEventListener('keydown', handleEscape);
-      };
-
-      // Add event listeners
-      confirmBtn.addEventListener('click', handleConfirm);
-      cancelBtn.addEventListener('click', handleCancel);
-      document.addEventListener('keydown', handleEscape);
-    });
-  }
-
-  /**
-   * Check for filename conflicts
-   * @param {string} name - Filename to check
-   * @returns {Object|null} - Conflict object if found, null otherwise
-   */
-  checkFileNameConflict(name) {
-    const conflict = this.state.hasFileName(name);
-    const inputEl = $('#fileName');
-    if (inputEl) {
-      inputEl.classList.toggle('warn-border', !!conflict);
-    }
-    return conflict;
-  }
-
-  /**
-   * Save log contents to file
-   */
-  saveLog() {
-    const logEl = $('#log');
-    if (!logEl) return;
-
-    // Get all log lines and filter out hidden ones
-    const lines = logEl.querySelectorAll('.line');
-    const logContent = Array.from(lines)
-      .filter(line => line.style.display !== 'none')
-      .map(line => line.textContent)
-      .join('\n');
-
-    if (!logContent.trim()) {
-      this.logger.log('Log is empty - nothing to save', LOG_CLASSES.WARNING);
-      return;
-    }
-
-    // Create filename with timestamp
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
-    const filename = `UltraSkelly-${dateStr}-${timeStr}.log`;
-
-    // Create blob and download
-    const blob = new Blob([logContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    this.logger.log(`Log saved to ${filename}`, LOG_CLASSES.INFO);
-  }
-
-  /**
-   * Handle connect button - show connection modal
-   */
-  async handleConnect() {
-    console.log('handleConnect called - showing modal');
-    const connectModal = $('#connectModal');
-    connectModal?.classList.remove('hidden');
-  }
-
-  /**
-   * Perform actual connection with filter
-   */
-  async performConnection(options) {
-    console.log('performConnection called');
-    try {
-      const connectionOptions = {
-        type: options.connectionType || ConnectionType.DIRECT_BLE,
-        nameFilter: options.nameFilter || options.deviceAddress || '',
-        restUrl: options.restUrl || '',
-      };
-      
-      console.log('Connecting with options:', connectionOptions);
-      await this.connection.connect(connectionOptions);
-      console.log('Connected successfully');
-      
-      // Query device state in sequence: live mode, params, volume, BT name
-      await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, '', 8));
-      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, '', 8)), 50);
-      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_VOLUME, '', 8)), 100);
-      setTimeout(() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, '', 8)), 150);
-      
-      // Start file list fetch - this will query capacity and order after files are received
-      setTimeout(() => {
-        this.fileManager.startFetchFiles();
-      }, 200);
-    } catch (error) {
-      console.error('Connection error:', error);
-      this.logger.log(`Connection failed: ${error.message}`, LOG_CLASSES.WARNING);
-    }
-  }
-
-  /**
-   * Handle disconnect button
-   */
-  async handleDisconnect() {
-    await this.connection.disconnect();
-  }
-
-  /**
-   * Build live eye grid
-   */
-  buildLiveEyeGrid() {
-    const grid = $('#apEyeGrid');
-    if (!grid) return;
-    
-    grid.innerHTML = '';
-    
-    // Create eye options for images 1-18
-    for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
-      const eyeNum = imgIdx;
-      const div = document.createElement('div');
-      div.className = 'eye-opt' + (eyeNum === this.selectedEye ? ' selected' : '');
-      div.dataset.eye = String(eyeNum);
-      div.title = `Eye ${eyeNum}`;
-      
-      // Create image element
-      const img = document.createElement('img');
-      img.className = 'eye-thumb';
-      img.src = `images/skelly/eye_icon_${imgIdx}.png`;
-      img.alt = `eye ${eyeNum}`;
-      
-      div.appendChild(img);
-      grid.appendChild(div);
-    }
-  }
-
-  /**
-   * UTF-16LE hex encoding helper
-   */
-  utf16leHex(str) {
-    let hex = '';
-    for (let i = 0; i < str.length; i++) {
-      const code = str.charCodeAt(i);
-      hex += (code & 0xff).toString(16).padStart(2, '0');
-      hex += ((code >> 8) & 0xff).toString(16).padStart(2, '0');
-    }
-    return hex.toUpperCase();
-  }
-
-  /**
-   * Update device UI
-   */
-  updateDeviceUI(device) {
-    console.log('updateDeviceUI called, connected:', device.connected);
-    
-    // Update status
-    const statusSpan = $('#status span');
-    if (statusSpan) {
-      if (device.connected) {
-        // Get connection info directly from connection manager
-        const deviceInfo = this.connection.getDeviceInfo();
-        
-        // Show REST URL if connected via REST proxy
-        if (deviceInfo && deviceInfo.connectionType === ConnectionType.REST_PROXY && deviceInfo.restUrl) {
-          statusSpan.textContent = `Connected (via ${deviceInfo.restUrl})`;
-        } else {
-          statusSpan.textContent = 'Connected';
-        }
-      } else {
-        statusSpan.textContent = 'Disconnected';
-      }
-    }
-
-    document.body.classList.toggle('disconnected', !device.connected);
-    
-    const btnDisconnect = $('#btnDisconnect');
-    if (btnDisconnect) {
-      btnDisconnect.disabled = !device.connected;
-    }
-    
-    const btnConnect = $('#btnConnect');
-    if (btnConnect) {
-      btnConnect.disabled = device.connected;
-    }
-
-    // Update device info
-    if ($('#statName')) $('#statName').textContent = device.name || '—';
-    if ($('#statShowMode')) $('#statShowMode').textContent = device.showMode ?? '—';
-    if ($('#statChannels')) {
-      $('#statChannels').textContent = device.channels.length ? device.channels.join(', ') : '—';
-    }
-    if ($('#statBtName')) $('#statBtName').textContent = device.btName || '—';
-    
-    // Update volume slider when device volume changes
-    if (device.volume != null) {
-      const volRange = $('#volRange');
-      const volNum = $('#vol');
-      if (volRange) volRange.value = device.volume;
-      if (volNum) volNum.value = device.volume;
-    }
-    
-    if ($('#statCapacity')) {
-      $('#statCapacity').textContent =
-        device.capacity != null
-          ? `${device.capacity} KB remaining`
-          : '—';
-    }
-    
-    if ($('#statFileCount')) {
-      const reported = device.filesReported ?? '—';
-      const received = device.filesReceived ?? '—';
-      const mismatch = (device.filesReported != null && device.filesReceived != null && 
-                        device.filesReported !== device.filesReceived);
-      
-      $('#statFileCount').textContent = `${received} / ${reported}`;
-      
-      // Add warning styling if counts don't match
-      if (mismatch) {
-        $('#statFileCount').style.color = 'var(--warn)';
-        $('#statFileCount').title = 'Received count differs from reported count';
-      } else {
-        $('#statFileCount').style.color = '';
-        $('#statFileCount').title = '';
-      }
-    }
-    
-    if ($('#statOrder')) {
-      $('#statOrder').textContent = device.order || '—';
-    }
-    
-    if ($('#statPin')) {
-      $('#statPin').textContent = device.pin || '—';
-    }
-    
-    // Update PIN input field
-    if ($('#pinInput') && device.pin) {
-      $('#pinInput').value = device.pin;
-    }
-    
-    // Update device name input field (remove "(Live)" suffix if present)
-    if ($('#deviceNameInput') && device.btName) {
-      const displayName = device.btName.replace(/\s*\(Live\)\s*$/i, '');
-      $('#deviceNameInput').value = displayName;
-    }
-  }
-
-  /**
-   * Update live status UI
-   */
-  updateLiveUI(live) {
-    // Update movement icons based on action bitfield
-    if (live.action != null) {
-      const actionBits = parseInt(live.action, 10);
-      const liveMove = $('#liveMove');
-      
-      if (liveMove && !isNaN(actionBits)) {
-        liveMove.querySelectorAll('.iconToggle').forEach(btn => btn.classList.remove('selected'));
-        
-        if (actionBits === 255) {
-          liveMove.querySelector('[data-part="all"]')?.classList.add('selected');
-        } else {
-          liveMove.querySelectorAll('[data-part]:not([data-part="all"])').forEach(btn => {
-            const bit = parseInt(btn.dataset.bit || '0', 10);
-            if (bit && (actionBits & bit)) btn.classList.add('selected');
-          });
-        }
-      }
-    }
-
-    // Update eye icon selection
-    if (live.eye != null) {
-      this.selectedEye = live.eye;
-      const apEyeGrid = $('#apEyeGrid');
-      if (apEyeGrid) {
-        // Clear all selections
-        apEyeGrid.querySelectorAll('.eye-opt').forEach(el => el.classList.remove('selected'));
-        // Select the current eye
-        const eyeOpt = apEyeGrid.querySelector(`[data-eye="${live.eye}"]`);
-        if (eyeOpt) eyeOpt.classList.add('selected');
-      }
-    }
-
-    // Update light settings from live.lights array
-    if (live.lights && Array.isArray(live.lights)) {
-      // Head light (index 1)
-      if (live.lights[1]) {
-        const headLight = live.lights[1];
-        
-        // Brightness
-        if ($('#headBrightness')) $('#headBrightness').value = headLight.brightness;
-        if ($('#headBrightnessRange')) $('#headBrightnessRange').value = headLight.brightness;
-        
-        // Color (RGB)
-        if ($('#headR')) $('#headR').value = headLight.r;
-        if ($('#headG')) $('#headG').value = headLight.g;
-        if ($('#headB')) $('#headB').value = headLight.b;
-        const headHex = `#${headLight.r.toString(16).padStart(2, '0')}${headLight.g.toString(16).padStart(2, '0')}${headLight.b.toString(16).padStart(2, '0')}`;
-        if ($('#headColorPick')) $('#headColorPick').value = headHex;
-        
-        // Color cycle state
-        this.headColorCycleEnabled = (headLight.colorCycle === 1);
-        const headCycleBtn = $('#btnHeadColorCycle');
-        if (headCycleBtn) {
-          if (this.headColorCycleEnabled) {
-            headCycleBtn.classList.add('selected');
-          } else {
-            headCycleBtn.classList.remove('selected');
-          }
-        }
-        
-        // Effect mode
-        if ($('#headEffectMode')) $('#headEffectMode').value = headLight.effectMode;
-        
-        // Effect speed (show/hide speed block based on mode)
-        const headEffectSpeedBlock = $('#headEffectSpeedBlock');
-        if (headEffectSpeedBlock) {
-          headEffectSpeedBlock.classList.toggle('hidden', headLight.effectMode === 1);
-        }
-        const headUISpeed = deviceSpeedToUI(headLight.effectSpeed);
-        if ($('#headEffectSpeed')) $('#headEffectSpeed').value = headUISpeed;
-        if ($('#headEffectSpeedRange')) $('#headEffectSpeedRange').value = headUISpeed;
-      }
-      
-      // Torso light (index 0)
-      if (live.lights[0]) {
-        const torsoLight = live.lights[0];
-        
-        // Brightness
-        if ($('#torsoBrightness')) $('#torsoBrightness').value = torsoLight.brightness;
-        if ($('#torsoBrightnessRange')) $('#torsoBrightnessRange').value = torsoLight.brightness;
-        
-        // Color (RGB)
-        if ($('#torsoR')) $('#torsoR').value = torsoLight.r;
-        if ($('#torsoG')) $('#torsoG').value = torsoLight.g;
-        if ($('#torsoB')) $('#torsoB').value = torsoLight.b;
-        const torsoHex = `#${torsoLight.r.toString(16).padStart(2, '0')}${torsoLight.g.toString(16).padStart(2, '0')}${torsoLight.b.toString(16).padStart(2, '0')}`;
-        if ($('#torsoColorPick')) $('#torsoColorPick').value = torsoHex;
-        
-        // Color cycle state
-        this.torsoColorCycleEnabled = (torsoLight.colorCycle === 1);
-        const torsoCycleBtn = $('#btnTorsoColorCycle');
-        if (torsoCycleBtn) {
-          if (this.torsoColorCycleEnabled) {
-            torsoCycleBtn.classList.add('selected');
-          } else {
-            torsoCycleBtn.classList.remove('selected');
-          }
-        }
-        
-        // Effect mode
-        if ($('#torsoEffectMode')) $('#torsoEffectMode').value = torsoLight.effectMode;
-        
-        // Effect speed (show/hide speed block based on mode)
-        const torsoEffectSpeedBlock = $('#torsoEffectSpeedBlock');
-        if (torsoEffectSpeedBlock) {
-          torsoEffectSpeedBlock.classList.toggle('hidden', torsoLight.effectMode === 1);
-        }
-        const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed);
-        if ($('#torsoEffectSpeed')) $('#torsoEffectSpeed').value = torsoUISpeed;
-        if ($('#torsoEffectSpeedRange')) $('#torsoEffectSpeedRange').value = torsoUISpeed;
-      }
-    }
-  }
-
-  /**
-   * Update files table
-   */
-  updateFilesTable() {
-    const tbody = $('#filesTable tbody');
-    if (!tbody) return;
-
-    // Disable table during active fetch
-    const table = $('#filesTable');
-    const isRefreshing = this.state.files.activeFetch;
-    if (table) {
-      if (isRefreshing) {
-        table.style.opacity = '0.5';
-        table.style.pointerEvents = 'none';
-      } else {
-        table.style.opacity = '1';
-        table.style.pointerEvents = 'auto';
-      }
-    }
-
-    tbody.innerHTML = '';
-
-    // Show refreshing message if no files yet and currently fetching
-    if (isRefreshing && this.state.files.items.size === 0) {
-      const tr = document.createElement('tr');
-      const td = document.createElement('td');
-      td.colSpan = 10; // Span all columns
-      td.textContent = 'Refreshing...';
-      td.style.textAlign = 'center';
-      td.style.fontStyle = 'italic';
-      td.style.color = '#888';
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-      return;
-    }
-
-    const query = ($('#filesFilter')?.value || '').toLowerCase().trim();
-    
-    // Get file order from device state
-    let fileOrder = [];
-    try {
-      if (this.state.device.order) {
-        fileOrder = JSON.parse(this.state.device.order);
-      }
-    } catch (e) {
-      // If parsing fails, use empty array
-    }
-    
-    // Sort files: enabled (in order) first by order position, disabled (not in order) last by serial
-    const files = Array.from(this.state.files.items.values())
-      .filter((file) => !query || (file.name || '').toLowerCase().includes(query))
-      .sort((a, b) => {
-        const indexA = fileOrder.indexOf(a.serial);
-        const indexB = fileOrder.indexOf(b.serial);
-        const inOrderA = indexA !== -1;
-        const inOrderB = indexB !== -1;
-        
-        // Both enabled: sort by order position
-        if (inOrderA && inOrderB) return indexA - indexB;
-        // Only A enabled: A comes first
-        if (inOrderA) return -1;
-        // Only B enabled: B comes first
-        if (inOrderB) return 1;
-        // Both disabled: sort by serial
-        return a.serial - b.serial;
-      });
-
-    const canEdit = true; // Edit feature is now always enabled
-
-    let rowIndex = 1;
-    for (const file of files) {
-      const tr = document.createElement('tr');
-      const eyeImgIdx = file.eye;
-      
-      // Generate Head color indicator (lights[1])
-      let headColorHtml = '';
-      if (file.lights && file.lights[1]) {
-        const headLight = file.lights[1];
-        if (headLight.colorCycle) {
-          headColorHtml = '<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
-        } else {
-          const rgb = `rgb(${headLight.r}, ${headLight.g}, ${headLight.b})`;
-          headColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${headLight.r},${headLight.g},${headLight.b})"></div>`;
-        }
-      }
-      
-      // Generate Torso color indicator (lights[0])
-      let torsoColorHtml = '';
-      if (file.lights && file.lights[0]) {
-        const torsoLight = file.lights[0];
-        if (torsoLight.colorCycle) {
-          torsoColorHtml = '<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
-        } else {
-          const rgb = `rgb(${torsoLight.r}, ${torsoLight.g}, ${torsoLight.b})`;
-          torsoColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${torsoLight.r},${torsoLight.g},${torsoLight.b})"></div>`;
-        }
-      }
-      
-      // Generate movement icons based on action bitfield using current profile
-      let movementIcons = '';
-      const actionBits = file.action || 0;
-      const profile = DEVICE_PROFILES[this.state.deviceType] || DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
-      if (actionBits === 255) {
-        const allMove = profile.movements.find(m => m.part === 'all');
-        if (allMove) {
-          movementIcons = `<img class="eye-thumb" src="${allMove.icon}" alt="All" title="All movements" />`;
-        }
-      } else {
-        profile.movements.filter(m => m.part !== 'all').forEach(m => {
-          if (actionBits & m.bit) {
-            movementIcons += `<img class="eye-thumb" src="${m.icon}" alt="${m.label}" title="${m.label}" />`;
-          }
-        });
-      }
-      
-      // Determine if this file is currently playing
-      const isPlaying = this.playState.playing && this.playState.serial === file.serial;
-      const playButtonHtml = isPlaying
-        ? `<button class="btn sm" data-action="stop" data-serial="${file.serial}">⏹ Stop</button>`
-        : `<button class="btn sm" data-action="play" data-serial="${file.serial}">▶ Play</button>`;
-      
-      // Check if file is in the order array (enabled)
-      const isEnabled = fileOrder.indexOf(file.serial) !== -1;
-      
-      // Make row draggable if enabled
-      if (isEnabled) {
-        tr.draggable = true;
-        tr.dataset.serial = file.serial;
-        tr.classList.add('draggable-row');
-      }
-      
-      const dragHandle = isEnabled 
-        ? '<span class="drag-handle" style="cursor:move;user-select:none;font-size:18px;color:#888;">≡</span>'
-        : '';
-      
-      tr.innerHTML = `
+
+					deviceItem.addEventListener("mouseenter", () => {
+						deviceItem.style.background = "#374151";
+						deviceItem.style.borderColor = "#3b82f6";
+					});
+
+					deviceItem.addEventListener("mouseleave", () => {
+						deviceItem.style.background = "#1f2937";
+						deviceItem.style.borderColor = "#374151";
+					});
+
+					deviceItem.addEventListener("click", async () => {
+						deviceSelectModal.classList.add("hidden");
+						await this.performConnection({
+							connectionType: ConnectionType.REST_PROXY,
+							restUrl,
+							deviceAddress: device.address,
+						});
+					});
+
+					deviceList.appendChild(deviceItem);
+				});
+			} catch (error) {
+				console.error("Device scan error:", error);
+				deviceSelectStatus.textContent = "Scan failed";
+				deviceList.innerHTML = `<p style="padding: 20px; text-align: center; color: #ef4444;">${escapeHtml(error.message)}</p>`;
+			}
+		};
+
+		// Cancel button
+		const cancelHandler = () => {
+			deviceSelectModal.classList.add("hidden");
+		};
+
+		// Rescan button
+		const rescanHandler = () => {
+			scanForDevices();
+		};
+
+		// Add event listeners
+		deviceSelectCancel.removeEventListener("click", cancelHandler);
+		deviceSelectCancel.addEventListener("click", cancelHandler);
+		deviceSelectRescan.removeEventListener("click", rescanHandler);
+		deviceSelectRescan.addEventListener("click", rescanHandler);
+
+		// Escape key to close
+		const escapeHandler = (e) => {
+			if (
+				e.key === "Escape" &&
+				!deviceSelectModal.classList.contains("hidden")
+			) {
+				deviceSelectModal.classList.add("hidden");
+			}
+		};
+		document.removeEventListener("keydown", escapeHandler);
+		document.addEventListener("keydown", escapeHandler);
+
+		// Start initial scan
+		await scanForDevices();
+	}
+
+	/**
+	 * Initialize advanced menu
+	 */
+	initializeAdvancedMenu() {
+		const advMenu = $("#advMenu");
+		const advRaw = $("#advRaw");
+		const advFEDC = $("#advFEDC");
+		const advFileDetails = $("#advFileDetails");
+
+		// Load saved state
+		advRaw.checked = localStorage.getItem(STORAGE_KEYS.ADV_RAW) === "1";
+		advFEDC.checked = localStorage.getItem(STORAGE_KEYS.ADV_FEDC) === "1";
+		advFileDetails.checked =
+			localStorage.getItem(STORAGE_KEYS.SHOW_FILE_DETAILS) === "1";
+
+		// Toggle menu
+		$("#btnAdvanced")?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			advMenu?.classList.toggle("hidden");
+		});
+
+		// Close menu on outside click
+		document.addEventListener("click", (e) => {
+			if (!e.target.closest(".menuwrap")) {
+				advMenu?.classList.add("hidden");
+			}
+		});
+
+		// Save state on change
+		[advRaw, advFEDC, advFileDetails].forEach((el) => {
+			el?.addEventListener("change", () => {
+				localStorage.setItem(STORAGE_KEYS.ADV_RAW, advRaw.checked ? "1" : "0");
+				localStorage.setItem(
+					STORAGE_KEYS.ADV_FEDC,
+					advFEDC.checked ? "1" : "0",
+				);
+				localStorage.setItem(
+					STORAGE_KEYS.SHOW_FILE_DETAILS,
+					advFileDetails.checked ? "1" : "0",
+				);
+				this.applyAdvancedVisibility();
+			});
+		});
+
+		this.applyAdvancedVisibility();
+	}
+
+	/**
+	 * Apply advanced feature visibility
+	 */
+	applyAdvancedVisibility() {
+		const advRaw = $("#advRaw");
+		const advFileDetails = $("#advFileDetails");
+
+		$("#advRawBlock")?.classList.toggle("hidden", !advRaw?.checked);
+
+		// Toggle detail columns visibility
+		const showDetails = advFileDetails?.checked;
+		document.querySelectorAll(".detail-column").forEach((col) => {
+			col.style.display = showDetails ? "" : "none";
+		});
+	}
+
+	/**
+	 * Initialize log filter menu
+	 */
+	initializeLogFilter() {
+		const logFilterMenu = $("#logFilterMenu");
+		const logFilterNormal = $("#logFilterNormal");
+		const logFilterWarning = $("#logFilterWarning");
+		const logFilterTx = $("#logFilterTx");
+		const logFilterRx = $("#logFilterRx");
+
+		// Load saved state (default to all checked)
+		logFilterNormal.checked =
+			localStorage.getItem(STORAGE_KEYS.LOG_FILTER_NORMAL) !== "0";
+		logFilterWarning.checked =
+			localStorage.getItem(STORAGE_KEYS.LOG_FILTER_WARNING) !== "0";
+		logFilterTx.checked =
+			localStorage.getItem(STORAGE_KEYS.LOG_FILTER_TX) !== "0";
+		logFilterRx.checked =
+			localStorage.getItem(STORAGE_KEYS.LOG_FILTER_RX) !== "0";
+
+		// Toggle menu
+		$("#btnLogFilter")?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			logFilterMenu?.classList.toggle("hidden");
+		});
+
+		// Close menu on outside click
+		document.addEventListener("click", (e) => {
+			if (!e.target.closest(".menuwrap") || e.target.closest("#advMenu")) {
+				logFilterMenu?.classList.add("hidden");
+			}
+		});
+
+		// Save state and apply filter on change
+		[logFilterNormal, logFilterWarning, logFilterTx, logFilterRx].forEach(
+			(el) => {
+				el?.addEventListener("change", () => {
+					localStorage.setItem(
+						STORAGE_KEYS.LOG_FILTER_NORMAL,
+						logFilterNormal.checked ? "1" : "0",
+					);
+					localStorage.setItem(
+						STORAGE_KEYS.LOG_FILTER_WARNING,
+						logFilterWarning.checked ? "1" : "0",
+					);
+					localStorage.setItem(
+						STORAGE_KEYS.LOG_FILTER_TX,
+						logFilterTx.checked ? "1" : "0",
+					);
+					localStorage.setItem(
+						STORAGE_KEYS.LOG_FILTER_RX,
+						logFilterRx.checked ? "1" : "0",
+					);
+					this.applyLogFilter();
+				});
+			},
+		);
+
+		this.applyLogFilter();
+	}
+
+	/**
+	 * Apply log filter visibility
+	 */
+	applyLogFilter() {
+		const logFilterNormal = $("#logFilterNormal");
+		const logFilterWarning = $("#logFilterWarning");
+		const logFilterTx = $("#logFilterTx");
+		const logFilterRx = $("#logFilterRx");
+
+		const logEl = $("#log");
+		if (!logEl) return;
+
+		// Apply filter to all log lines
+		logEl.querySelectorAll(".line").forEach((line) => {
+			const classes = line.classList;
+			let visible = true;
+
+			if (classes.contains("warn") && !logFilterWarning?.checked) {
+				visible = false;
+			} else if (classes.contains("tx") && !logFilterTx?.checked) {
+				visible = false;
+			} else if (classes.contains("rx") && !logFilterRx?.checked) {
+				visible = false;
+			} else if (
+				!classes.contains("warn") &&
+				!classes.contains("tx") &&
+				!classes.contains("rx") &&
+				!logFilterNormal?.checked
+			) {
+				visible = false;
+			}
+
+			line.style.display = visible ? "" : "none";
+		});
+	}
+
+	/**
+	 * Initialize query buttons
+	 */
+	initializeQueryButtons() {
+		document.querySelectorAll("[data-q]").forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				if (!this.connection.isConnected()) {
+					this.logger.log("Not connected", LOG_CLASSES.WARNING);
+					return;
+				}
+				const tag = btn.getAttribute("data-q");
+				await this.connection.send(buildCommand(tag, "", 8));
+			});
+		});
+
+		// Get All button - executes all query commands in sequence
+		$("#btnGetAll")?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			this.logger.log("Executing all queries...", LOG_CLASSES.INFO);
+			const queries = [
+				COMMANDS.QUERY_PARAMS,
+				COMMANDS.QUERY_LIVE,
+				COMMANDS.QUERY_VOLUME,
+				COMMANDS.QUERY_BT_NAME,
+				COMMANDS.QUERY_VERSION,
+				COMMANDS.QUERY_CAPACITY,
+				COMMANDS.QUERY_ORDER,
+			];
+
+			for (const tag of queries) {
+				await this.connection.send(buildCommand(tag, "", 8));
+				// Small delay between queries to avoid overwhelming the device
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
+
+			this.logger.log("All queries completed", LOG_CLASSES.SUCCESS);
+		});
+
+		// Raw command send button
+		$("#btnSendRaw")?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+			const tag = $("#tag")?.value || "E0";
+			const payload = $("#payload")?.value || "";
+			await this.connection.send(buildCommand(tag, payload, 8));
+			this.logger.log(
+				`Sent raw command: ${tag} with payload: ${payload || "(empty)"}`,
+			);
+		});
+
+		// Set Device Name button
+		$("#btnSetDeviceName")?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const deviceNameInput = $("#deviceNameInput");
+			const deviceName = deviceNameInput?.value || "";
+
+			// Validate device name: must not be empty and max 22 chars
+			if (!deviceName || deviceName.trim().length === 0) {
+				this.logger.log("Device name cannot be empty", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			if (deviceName.length > 22) {
+				this.logger.log(
+					"Device name cannot exceed 22 characters",
+					LOG_CLASSES.WARNING,
+				);
+				return;
+			}
+
+			const pin = this.state.device.pin || "0000";
+			await this.setPinAndName(pin, deviceName);
+		});
+
+		// Set PIN button
+		$("#btnSetPin")?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const pinInput = $("#pinInput");
+			const pin = pinInput?.value || "";
+
+			// Validate PIN: must be exactly 4 digits
+			if (!/^\d{4}$/.test(pin)) {
+				this.logger.log("PIN must be exactly 4 digits", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const deviceNameInput = $("#deviceNameInput");
+			const deviceName = deviceNameInput?.value || "";
+
+			// Use current device name if available, otherwise use entered name or default to btName
+			const btName = deviceName || this.state.device.btName || "";
+			if (!btName) {
+				this.logger.log(
+					"Device name not available. Enter a device name first.",
+					LOG_CLASSES.WARNING,
+				);
+				return;
+			}
+
+			await this.setPinAndName(pin, btName);
+		});
+
+		// PIN input validation - only allow digits
+		const pinInput = $("#pinInput");
+		if (pinInput) {
+			pinInput.addEventListener("input", (e) => {
+				// Remove non-digit characters
+				e.target.value = e.target.value.replace(/[^0-9]/g, "");
+			});
+		}
+
+		// Device name input validation - enforce max length
+		const deviceNameInput = $("#deviceNameInput");
+		if (deviceNameInput) {
+			deviceNameInput.addEventListener("input", (e) => {
+				// Enforce max length of 22 characters
+				if (e.target.value.length > 22) {
+					e.target.value = e.target.value.substring(0, 22);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Set device PIN and Bluetooth name
+	 * @param {string} pin - 4-digit PIN
+	 * @param {string} btName - Bluetooth name (should end with "(Live)" suffix)
+	 */
+	async setPinAndName(pin, btName) {
+		// Ensure BT name ends with "(Live)"
+		if (!btName.endsWith("(Live)")) {
+			btName += "(Live)";
+		}
+
+		// Build the AAFB command payload
+		// Format: <4 bytes PIN in ASCII> <8 bytes wifi password in ASCII> <1 byte name length> <BT name in ASCII with "(Live)">
+
+		// Convert PIN to ASCII bytes and then to hex
+		const pinBytes = new TextEncoder().encode(pin);
+		const pinHex = bytesToHex(pinBytes);
+
+		// Hardcoded wifi password "01234567" as ASCII bytes
+		const wifiBytes = new TextEncoder().encode("01234567");
+		const wifiHex = bytesToHex(wifiBytes);
+
+		const nameLengthHex = btName.length
+			.toString(16)
+			.padStart(2, "0")
+			.toUpperCase();
+
+		// BT name as ASCII bytes
+		const nameBytes = new TextEncoder().encode(btName);
+		const nameHex = bytesToHex(nameBytes);
+
+		const payload = pinHex + wifiHex + nameLengthHex + nameHex;
+
+		await this.connection.send(
+			buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8),
+		);
+		this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
+
+		// Query device params to get the updated name and PIN back from the device
+		await this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8));
+		await this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8));
+	}
+
+	/**
+	 * Initialize media controls
+	 */
+	initializeMediaControls() {
+		// Volume control - send command immediately on change
+		const volRange = $("#volRange");
+		const volNum = $("#vol");
+
+		const sendVolumeCommand = async (value) => {
+			if (!this.connection.isConnected()) {
+				return;
+			}
+			const v = Math.max(0, Math.min(255, parseInt(value, 10)));
+			await this.connection.send(
+				buildCommand(
+					COMMANDS.SET_VOLUME,
+					v.toString(16).padStart(2, "0").toUpperCase(),
+					8,
+				),
+			);
+			this.logger.log(`Set volume to ${v}`);
+		};
+
+		if (volRange && volNum) {
+			volRange.addEventListener("input", (e) => {
+				volNum.value = e.target.value;
+				sendVolumeCommand(e.target.value);
+			});
+			volNum.addEventListener("input", (e) => {
+				const clamped = clamp(e.target.value, 0, 100);
+				volRange.value = clamped;
+				sendVolumeCommand(clamped);
+			});
+		}
+
+		// Live Mode button
+		$("#btnBT")?.addEventListener("click", () =>
+			this.sendMediaCommand(COMMANDS.ENABLE_CLASSIC_BT, "01"),
+		);
+	}
+
+	/**
+	 * Send media command
+	 */
+	async sendMediaCommand(tag, payload) {
+		if (!this.connection.isConnected()) {
+			this.logger.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
+		await this.connection.send(buildCommand(tag, payload, 8));
+	}
+
+	/**
+	 * Initialize live controls
+	 */
+	initializeLiveControls() {
+		this.selectedEye = 1; // Default eye selection
+		this.buildLiveEyeGrid();
+
+		// Track color cycle state for each light
+		this.headColorCycleEnabled = false;
+		this.torsoColorCycleEnabled = false;
+
+		// Head Light - Brightness control (immediate)
+		const headBriRange = $("#headBrightnessRange");
+		const headBriNum = $("#headBrightness");
+
+		const sendHeadBrightness = async (value) => {
+			if (!this.connection.isConnected()) return;
+			const ch = "01"; // Head light is channel 1
+			const brightness = parseInt(value, 10);
+			const brightnessHex = brightness
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const cluster = "00000000";
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
+			);
+			this.logger.log(`Set head light brightness to ${brightness}`);
+		};
+
+		if (headBriRange && headBriNum) {
+			headBriRange.addEventListener("input", (e) => {
+				headBriNum.value = e.target.value;
+				sendHeadBrightness(e.target.value);
+			});
+			headBriNum.addEventListener("input", (e) => {
+				const clamped = clamp(e.target.value, 0, 255);
+				headBriRange.value = clamped;
+				sendHeadBrightness(clamped);
+			});
+		}
+
+		// Torso Light - Brightness control (immediate)
+		const torsoBriRange = $("#torsoBrightnessRange");
+		const torsoBriNum = $("#torsoBrightness");
+
+		const sendTorsoBrightness = async (value) => {
+			if (!this.connection.isConnected()) return;
+			const ch = "00"; // Torso light is channel 0
+			const brightness = parseInt(value, 10);
+			const brightnessHex = brightness
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const cluster = "00000000";
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
+			);
+			this.logger.log(`Set torso light brightness to ${brightness}`);
+		};
+
+		if (torsoBriRange && torsoBriNum) {
+			torsoBriRange.addEventListener("input", (e) => {
+				torsoBriNum.value = e.target.value;
+				sendTorsoBrightness(e.target.value);
+			});
+			torsoBriNum.addEventListener("input", (e) => {
+				const clamped = clamp(e.target.value, 0, 255);
+				torsoBriRange.value = clamped;
+				sendTorsoBrightness(clamped);
+			});
+		}
+
+		// Head Light - Color/RGB control (immediate)
+		const headColorPick = $("#headColorPick");
+		const headRInput = $("#headR");
+		const headGInput = $("#headG");
+		const headBInput = $("#headB");
+
+		const sendHeadColor = async (disableCycle = false) => {
+			if (!this.connection.isConnected()) return;
+
+			// If user is setting a new color (not from cycle button), disable cycle
+			if (disableCycle && this.headColorCycleEnabled) {
+				this.headColorCycleEnabled = false;
+				const btnHeadColorCycle = $("#btnHeadColorCycle");
+				if (btnHeadColorCycle) {
+					btnHeadColorCycle.classList.remove("selected");
+				}
+			}
+
+			const ch = "01"; // Head light is channel 1
+			const r = parseInt(headRInput?.value || "255", 10);
+			const g = parseInt(headGInput?.value || "0", 10);
+			const b = parseInt(headBInput?.value || "0", 10);
+			const cycle = this.headColorCycleEnabled ? "01" : "00";
+			const rHex = r.toString(16).padStart(2, "0").toUpperCase();
+			const gHex = g.toString(16).padStart(2, "0").toUpperCase();
+			const bHex = b.toString(16).padStart(2, "0").toUpperCase();
+			const cluster = "00000000";
+			await this.connection.send(
+				buildCommand(
+					COMMANDS.SET_RGB,
+					`${ch + rHex + gHex + bHex + cycle + cluster}00`,
+					9,
+				),
+			);
+			this.logger.log(
+				`Set head light color to RGB(${r}, ${g}, ${b}) with cycle ${this.headColorCycleEnabled ? "ON" : "OFF"}`,
+			);
+		};
+
+		// Sync color picker with RGB inputs and send immediately
+		if (headColorPick && headRInput && headGInput && headBInput) {
+			headColorPick.addEventListener("input", (e) => {
+				const hex = e.target.value;
+				headRInput.value = parseInt(hex.substring(1, 3), 16);
+				headGInput.value = parseInt(hex.substring(3, 5), 16);
+				headBInput.value = parseInt(hex.substring(5, 7), 16);
+				sendHeadColor(true); // Disable cycle when user picks a color
+			});
+
+			[headRInput, headGInput, headBInput].forEach((inp) => {
+				inp?.addEventListener("input", () => {
+					const r = clamp(headRInput.value, 0, 255);
+					const g = clamp(headGInput.value, 0, 255);
+					const b = clamp(headBInput.value, 0, 255);
+					headColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+					sendHeadColor(true); // Disable cycle when user changes RGB values
+				});
+			});
+		}
+
+		// Torso Light - Color/RGB control (immediate)
+		const torsoColorPick = $("#torsoColorPick");
+		const torsoRInput = $("#torsoR");
+		const torsoGInput = $("#torsoG");
+		const torsoBInput = $("#torsoB");
+
+		const sendTorsoColor = async (disableCycle = false) => {
+			if (!this.connection.isConnected()) return;
+
+			// If user is setting a new color (not from cycle button), disable cycle
+			if (disableCycle && this.torsoColorCycleEnabled) {
+				this.torsoColorCycleEnabled = false;
+				const btnTorsoColorCycle = $("#btnTorsoColorCycle");
+				if (btnTorsoColorCycle) {
+					btnTorsoColorCycle.classList.remove("selected");
+				}
+			}
+
+			const ch = "00"; // Torso light is channel 0
+			const r = parseInt(torsoRInput?.value || "255", 10);
+			const g = parseInt(torsoGInput?.value || "0", 10);
+			const b = parseInt(torsoBInput?.value || "0", 10);
+			const cycle = this.torsoColorCycleEnabled ? "01" : "00";
+			const rHex = r.toString(16).padStart(2, "0").toUpperCase();
+			const gHex = g.toString(16).padStart(2, "0").toUpperCase();
+			const bHex = b.toString(16).padStart(2, "0").toUpperCase();
+			const cluster = "00000000";
+			await this.connection.send(
+				buildCommand(
+					COMMANDS.SET_RGB,
+					`${ch + rHex + gHex + bHex + cycle + cluster}00`,
+					9,
+				),
+			);
+			this.logger.log(
+				`Set torso light color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? "ON" : "OFF"}`,
+			);
+		};
+
+		// Sync color picker with RGB inputs and send immediately
+		if (torsoColorPick && torsoRInput && torsoGInput && torsoBInput) {
+			torsoColorPick.addEventListener("input", (e) => {
+				const hex = e.target.value;
+				torsoRInput.value = parseInt(hex.substring(1, 3), 16);
+				torsoGInput.value = parseInt(hex.substring(3, 5), 16);
+				torsoBInput.value = parseInt(hex.substring(5, 7), 16);
+				sendTorsoColor(true); // Disable cycle when user picks a color
+			});
+
+			[torsoRInput, torsoGInput, torsoBInput].forEach((inp) => {
+				inp?.addEventListener("input", () => {
+					const r = clamp(torsoRInput.value, 0, 255);
+					const g = clamp(torsoGInput.value, 0, 255);
+					const b = clamp(torsoBInput.value, 0, 255);
+					torsoColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+					sendTorsoColor(true); // Disable cycle when user changes RGB values
+				});
+			});
+		}
+
+		// Head Light - Effect mode (immediate)
+		const headEffectMode = $("#headEffectMode");
+		const headEffectSpeedBlock = $("#headEffectSpeedBlock");
+
+		if (headEffectMode && headEffectSpeedBlock) {
+			headEffectMode.addEventListener("change", async () => {
+				const v = parseInt(headEffectMode.value, 10);
+				headEffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
+
+				if (!this.connection.isConnected()) return;
+				const ch = "01"; // Head light is channel 1
+				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
+				const cluster = "00000000";
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 9),
+				);
+				this.logger.log(
+					`Set head light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
+				);
+			});
+		}
+
+		// Torso Light - Effect mode (immediate)
+		const torsoEffectMode = $("#torsoEffectMode");
+		const torsoEffectSpeedBlock = $("#torsoEffectSpeedBlock");
+
+		if (torsoEffectMode && torsoEffectSpeedBlock) {
+			torsoEffectMode.addEventListener("change", async () => {
+				const v = parseInt(torsoEffectMode.value, 10);
+				torsoEffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
+
+				if (!this.connection.isConnected()) return;
+				const ch = "00"; // Torso light is channel 0
+				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
+				const cluster = "00000000";
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
+				);
+				this.logger.log(
+					`Set torso light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
+				);
+			});
+		}
+
+		// Head Light - Effect speed control (immediate)
+		const headEffectSpeedRange = $("#headEffectSpeedRange");
+		const headEffectSpeedNum = $("#headEffectSpeed");
+
+		const sendHeadSpeed = async (value) => {
+			if (!this.connection.isConnected()) return;
+			const ch = "01"; // Head light is channel 1
+			const uiSpeed = parseInt(value, 10);
+			const deviceSpeed = uiSpeedToDevice(uiSpeed);
+			const speedHex = deviceSpeed.toString(16).padStart(2, "0").toUpperCase();
+			const cluster = "00000000";
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
+			);
+			this.logger.log(
+				`Set head light speed to ${uiSpeed} (device: ${deviceSpeed})`,
+			);
+		};
+
+		if (headEffectSpeedRange && headEffectSpeedNum) {
+			headEffectSpeedRange.addEventListener("input", (e) => {
+				headEffectSpeedNum.value = e.target.value;
+				sendHeadSpeed(e.target.value);
+			});
+			headEffectSpeedNum.addEventListener("input", (e) => {
+				const clamped = clamp(e.target.value, 0, 254);
+				headEffectSpeedRange.value = clamped;
+				sendHeadSpeed(clamped);
+			});
+		}
+
+		// Torso Light - Effect speed control (immediate)
+		const torsoEffectSpeedRange = $("#torsoEffectSpeedRange");
+		const torsoEffectSpeedNum = $("#torsoEffectSpeed");
+
+		const sendTorsoSpeed = async (value) => {
+			if (!this.connection.isConnected()) return;
+			const ch = "00"; // Torso light is channel 0
+			const uiSpeed = parseInt(value, 10);
+			const deviceSpeed = uiSpeedToDevice(uiSpeed);
+			const speedHex = deviceSpeed.toString(16).padStart(2, "0").toUpperCase();
+			const cluster = "00000000";
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
+			);
+			this.logger.log(
+				`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`,
+			);
+		};
+
+		if (torsoEffectSpeedRange && torsoEffectSpeedNum) {
+			torsoEffectSpeedRange.addEventListener("input", (e) => {
+				torsoEffectSpeedNum.value = e.target.value;
+				sendTorsoSpeed(e.target.value);
+			});
+			torsoEffectSpeedNum.addEventListener("input", (e) => {
+				const clamped = clamp(e.target.value, 0, 254);
+				torsoEffectSpeedRange.value = clamped;
+				sendTorsoSpeed(clamped);
+			});
+		}
+
+		// Movement controls — handled by bindMovementGrid (called from applyDeviceProfile)
+
+		// Head Light - Color cycle button (toggles cycle state)
+		const btnHeadColorCycle = $("#btnHeadColorCycle");
+		if (btnHeadColorCycle) {
+			btnHeadColorCycle.addEventListener("click", async () => {
+				if (!this.connection.isConnected()) {
+					this.logger.log("Not connected", LOG_CLASSES.WARNING);
+					return;
+				}
+				this.headColorCycleEnabled = !this.headColorCycleEnabled;
+				btnHeadColorCycle.classList.toggle(
+					"selected",
+					this.headColorCycleEnabled,
+				);
+				await sendHeadColor();
+			});
+		}
+
+		// Torso Light - Color cycle button (toggles cycle state)
+		const btnTorsoColorCycle = $("#btnTorsoColorCycle");
+		if (btnTorsoColorCycle) {
+			btnTorsoColorCycle.addEventListener("click", async () => {
+				if (!this.connection.isConnected()) {
+					this.logger.log("Not connected", LOG_CLASSES.WARNING);
+					return;
+				}
+				this.torsoColorCycleEnabled = !this.torsoColorCycleEnabled;
+				btnTorsoColorCycle.classList.toggle(
+					"selected",
+					this.torsoColorCycleEnabled,
+				);
+				await sendTorsoColor();
+			});
+		}
+
+		// Live eye grid selection - send command immediately
+		const apEyeGrid = $("#apEyeGrid");
+		if (apEyeGrid) {
+			apEyeGrid.addEventListener("click", async (e) => {
+				const cell = e.target.closest(".eye-opt");
+				if (!cell) return;
+
+				this.selectedEye = parseInt(cell.dataset.eye, 10);
+				apEyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
+					el.classList.remove("selected");
+				});
+				cell.classList.add("selected");
+
+				// Send command immediately if connected
+				if (!this.connection.isConnected()) {
+					this.logger.log("Not connected", LOG_CLASSES.WARNING);
+					return;
+				}
+
+				const eyeHex = this.selectedEye
+					.toString(16)
+					.padStart(2, "0")
+					.toUpperCase();
+				const clusterHex = "00000000"; // Always cluster 0 for live mode
+
+				// Build payload: eye + 00 + cluster + 00 (no name)
+				const payload = `${eyeHex}00${clusterHex}00`;
+
+				await this.connection.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
+				this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
+			});
+		}
+	}
+
+	/**
+	 * Apply movement from UI (unused by default; movement binding is in bindMovementGrid)
+	 */
+	applyMovement(gridId) {
+		const grid = document.getElementById(gridId);
+		if (!grid) return;
+
+		const toggles = grid.querySelectorAll(".iconToggle.selected");
+		if (toggles.length === 0) {
+			this.logger.log("No movement selected", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		const allSelected = Array.from(toggles).some(
+			(b) => b.dataset.part === "all",
+		);
+		if (allSelected) {
+			this.connection.send(
+				buildCommand(COMMANDS.SET_MOVEMENT, "FF00000000", 8),
+			);
+		} else {
+			let bitfield = 0;
+			toggles.forEach((btn) => {
+				bitfield |= parseInt(btn.dataset.bit || "0", 10);
+			});
+			const hex = bitfield.toString(16).padStart(2, "0").toUpperCase();
+			this.connection.send(
+				buildCommand(COMMANDS.SET_MOVEMENT, `${hex}00000000`, 8),
+			);
+		}
+		const parts = Array.from(toggles).map((b) => b.dataset.part);
+		this.logger.log(`Applied movement: ${parts.join(", ")}`);
+	}
+
+	/**
+	 * Initialize file controls
+	 */
+	initializeFileControls() {
+		this.initializeFileListControls();
+		this.initializeBitrateControls();
+		this.initializeChunkSizeControls();
+		this.initializeFileTransferControls();
+		this.initializeFileTableHandlers();
+		this.initializeFileDragAndDrop();
+	}
+
+	/**
+	 * Initialize file list refresh and filter controls
+	 */
+	initializeFileListControls() {
+		$("#btnRefreshFiles")?.addEventListener("click", () => {
+			this.fileManager.startFetchFiles();
+		});
+
+		$("#filesFilter")?.addEventListener("input", () => {
+			this.updateFilesTable();
+		});
+
+		$("#fileInput")?.addEventListener("change", async (e) => {
+			await this.handleFileSelection(e.target.files?.[0]);
+		});
+	}
+
+	/**
+	 * Initialize bitrate override controls
+	 */
+	initializeBitrateControls() {
+		const chkBitrateOverride = $("#chkBitrateOverride");
+		const convertOpts = $("#convertOpts");
+		const mp3Kbps = $("#mp3Kbps");
+
+		// Load saved bitrate preferences from localStorage
+		const savedBitrateOverride =
+			localStorage.getItem(STORAGE_KEYS.BITRATE_OVERRIDE) === "true";
+		const savedBitrate = localStorage.getItem(STORAGE_KEYS.BITRATE);
+
+		// Restore checkbox state and visibility
+		if (chkBitrateOverride) {
+			chkBitrateOverride.checked = savedBitrateOverride;
+			if (savedBitrateOverride) {
+				convertOpts?.classList.remove("hidden");
+			}
+		}
+
+		// Restore bitrate selection
+		if (mp3Kbps && savedBitrate) {
+			mp3Kbps.value = savedBitrate;
+		}
+
+		// Toggle bitrate options and save preference
+		chkBitrateOverride?.addEventListener("change", (e) => {
+			convertOpts?.classList.toggle("hidden", !e.target.checked);
+			localStorage.setItem(
+				STORAGE_KEYS.BITRATE_OVERRIDE,
+				e.target.checked.toString(),
+			);
+		});
+
+		// Save bitrate selection when changed
+		mp3Kbps?.addEventListener("change", (e) => {
+			localStorage.setItem(STORAGE_KEYS.BITRATE, e.target.value);
+		});
+	}
+
+	/**
+	 * Initialize chunk size override controls
+	 */
+	initializeChunkSizeControls() {
+		const chkChunkOverride = $("#chkChunkOverride");
+		const chunkOverrideOpts = $("#chunkOverrideOpts");
+		const chunkSizeSlider = $("#chunkSizeSlider");
+		const chunkSizeValue = $("#chunkSizeValue");
+
+		// Load saved preferences from localStorage
+		const savedOverride =
+			localStorage.getItem(STORAGE_KEYS.CHUNK_OVERRIDE) === "true";
+		const savedChunkSize = parseInt(
+			localStorage.getItem(STORAGE_KEYS.CHUNK_SIZE),
+			10,
+		);
+
+		// Initialize slider with saved or auto-determined chunk size
+		if (chunkSizeSlider && chunkSizeValue) {
+			const autoChunkSize = this.fileManager.getChunkSize();
+			const initialSize =
+				savedChunkSize >= 50 && savedChunkSize <= 500
+					? savedChunkSize
+					: autoChunkSize;
+			chunkSizeSlider.value = initialSize;
+			chunkSizeValue.textContent = initialSize;
+		}
+
+		// Restore checkbox state and visibility
+		if (chkChunkOverride) {
+			chkChunkOverride.checked = savedOverride;
+			if (savedOverride) {
+				chunkOverrideOpts?.classList.remove("hidden");
+			}
+		}
+
+		// Toggle chunk override options
+		chkChunkOverride?.addEventListener("change", (e) => {
+			chunkOverrideOpts?.classList.toggle("hidden", !e.target.checked);
+
+			// Save preference
+			localStorage.setItem(
+				STORAGE_KEYS.CHUNK_OVERRIDE,
+				e.target.checked.toString(),
+			);
+
+			// If enabling override, update slider to current auto value (if not previously saved)
+			if (
+				e.target.checked &&
+				chunkSizeSlider &&
+				chunkSizeValue &&
+				!savedChunkSize
+			) {
+				const autoChunkSize = this.fileManager.getChunkSize();
+				chunkSizeSlider.value = autoChunkSize;
+				chunkSizeValue.textContent = autoChunkSize;
+			}
+		});
+
+		// Update chunk size display when slider changes and save to localStorage
+		chunkSizeSlider?.addEventListener("input", (e) => {
+			if (chunkSizeValue) {
+				chunkSizeValue.textContent = e.target.value;
+			}
+			localStorage.setItem(STORAGE_KEYS.CHUNK_SIZE, e.target.value);
+		});
+	}
+
+	/**
+	 * Initialize file transfer controls (send/cancel)
+	 */
+	initializeFileTransferControls() {
+		$("#btnSendFile")?.addEventListener("click", async () => {
+			await this.handleFileSend();
+		});
+
+		$("#btnCancelFile")?.addEventListener("click", async () => {
+			await this.fileManager.cancelTransfer();
+		});
+	}
+
+	/**
+	 * Initialize file table button and checkbox handlers
+	 */
+	initializeFileTableHandlers() {
+		// Files table button handler (Play and Edit)
+		$("#filesTable")?.addEventListener("click", (e) => {
+			const btn = e.target.closest("button[data-action]");
+			if (!btn) return;
+
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const serial = parseInt(btn.dataset.serial, 10);
+			const item = this.state.files.items.get(serial);
+			if (!item) return;
+
+			if (btn.dataset.action === "play" || btn.dataset.action === "stop") {
+				this.handlePlayFile(serial);
+			} else if (btn.dataset.action === "edit") {
+				if (btn.disabled) return;
+				this.handleEditFile(item);
+			}
+		});
+
+		// Files table checkbox handler (Enable/Disable)
+		$("#filesTable")?.addEventListener("change", async (e) => {
+			const checkbox = e.target.closest(".file-enabled-checkbox");
+			if (!checkbox) return;
+
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				// Revert checkbox state
+				checkbox.checked = !checkbox.checked;
+				return;
+			}
+
+			await this.handleFileEnableToggle();
+		});
+	}
+
+	/**
+	 * Initialize drag and drop handlers for file reordering
+	 */
+	initializeFileDragAndDrop() {
+		let draggedRow = null;
+		let touchStartY = 0;
+		let touchCurrentY = 0;
+		const _placeholder = null;
+
+		const tbody = $("#filesTable tbody");
+		if (!tbody) return;
+
+		// Desktop drag and drop
+		tbody.addEventListener("dragstart", (e) => {
+			const row = e.target.closest("tr.draggable-row");
+			if (!row) return;
+
+			draggedRow = row;
+			row.style.opacity = "0.4";
+			e.dataTransfer.effectAllowed = "move";
+		});
+
+		tbody.addEventListener("dragend", (e) => {
+			const row = e.target.closest("tr.draggable-row");
+			if (row) {
+				row.style.opacity = "1";
+			}
+			draggedRow = null;
+		});
+
+		tbody.addEventListener("dragover", (e) => {
+			e.preventDefault();
+			const row = e.target.closest("tr.draggable-row");
+			if (!row || !draggedRow || row === draggedRow) return;
+
+			e.dataTransfer.dropEffect = "move";
+
+			// Visual feedback - add border to indicate drop position
+			const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
+			const draggedIndex = rows.indexOf(draggedRow);
+			const targetIndex = rows.indexOf(row);
+
+			if (draggedIndex < targetIndex) {
+				row.style.borderBottom = "2px solid #4CAF50";
+				row.style.borderTop = "";
+			} else {
+				row.style.borderTop = "2px solid #4CAF50";
+				row.style.borderBottom = "";
+			}
+		});
+
+		tbody.addEventListener("dragleave", (e) => {
+			const row = e.target.closest("tr.draggable-row");
+			if (row) {
+				row.style.borderTop = "";
+				row.style.borderBottom = "";
+			}
+		});
+
+		tbody.addEventListener("drop", async (e) => {
+			e.preventDefault();
+			const targetRow = e.target.closest("tr.draggable-row");
+			if (!targetRow || !draggedRow || targetRow === draggedRow) return;
+
+			// Clear visual feedback
+			targetRow.style.borderTop = "";
+			targetRow.style.borderBottom = "";
+
+			await this.handleFileDrop(draggedRow, targetRow);
+		});
+
+		// Mobile touch events
+		tbody.addEventListener(
+			"touchstart",
+			(e) => {
+				const dragHandle = e.target.closest(".drag-handle");
+				if (!dragHandle) return;
+
+				const row = e.target.closest("tr.draggable-row");
+				if (!row) return;
+
+				draggedRow = row;
+				touchStartY = e.touches[0].clientY;
+
+				// Create visual feedback
+				row.style.opacity = "0.6";
+				row.style.backgroundColor = "rgba(34, 211, 238, 0.1)";
+
+				// Prevent scrolling while dragging
+				e.preventDefault();
+			},
+			{ passive: false },
+		);
+
+		tbody.addEventListener(
+			"touchmove",
+			(e) => {
+				if (!draggedRow) return;
+
+				e.preventDefault();
+				touchCurrentY = e.touches[0].clientY;
+				const _deltaY = touchCurrentY - touchStartY;
+
+				// Get all draggable rows
+				const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
+				const draggedIndex = rows.indexOf(draggedRow);
+
+				// Clear previous visual feedback
+				rows.forEach((r) => {
+					r.style.borderTop = "";
+					r.style.borderBottom = "";
+				});
+
+				// Find the row under the touch point
+				const elementAtPoint = document.elementFromPoint(
+					e.touches[0].clientX,
+					e.touches[0].clientY,
+				);
+				const targetRow = elementAtPoint?.closest("tr.draggable-row");
+
+				if (targetRow && targetRow !== draggedRow) {
+					const targetIndex = rows.indexOf(targetRow);
+
+					// Show visual feedback
+					if (draggedIndex < targetIndex) {
+						targetRow.style.borderBottom = "2px solid #4CAF50";
+					} else {
+						targetRow.style.borderTop = "2px solid #4CAF50";
+					}
+				}
+			},
+			{ passive: false },
+		);
+
+		tbody.addEventListener("touchend", async (e) => {
+			if (!draggedRow) return;
+
+			// Clear visual feedback
+			draggedRow.style.opacity = "1";
+			draggedRow.style.backgroundColor = "";
+
+			// Find the row at the drop position
+			const elementAtPoint = document.elementFromPoint(
+				e.changedTouches[0].clientX,
+				e.changedTouches[0].clientY,
+			);
+			const targetRow = elementAtPoint?.closest("tr.draggable-row");
+
+			// Clear all borders
+			const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
+			rows.forEach((r) => {
+				r.style.borderTop = "";
+				r.style.borderBottom = "";
+			});
+
+			if (targetRow && targetRow !== draggedRow) {
+				await this.handleFileDrop(draggedRow, targetRow);
+			}
+
+			draggedRow = null;
+		});
+
+		tbody.addEventListener("touchcancel", (_e) => {
+			if (!draggedRow) return;
+
+			// Clear visual feedback
+			draggedRow.style.opacity = "1";
+			draggedRow.style.backgroundColor = "";
+
+			// Clear all borders
+			const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
+			rows.forEach((r) => {
+				r.style.borderTop = "";
+				r.style.borderBottom = "";
+			});
+
+			draggedRow = null;
+		});
+	}
+
+	/**
+	 * Handle play file button click
+	 */
+	async handlePlayFile(serial) {
+		const serialHex = serial.toString(16).padStart(4, "0").toUpperCase();
+
+		// Check if this file is currently playing
+		const isPlaying =
+			this.playState.playing && this.playState.serial === serial;
+
+		// Send '01' to play, '00' to stop
+		const playPauseByte = isPlaying ? "00" : "01";
+		await this.connection.send(
+			buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8),
+		);
+
+		if (isPlaying) {
+			this.logger.log(`Stopping file #${serial}`);
+		} else {
+			this.logger.log(`Playing file #${serial}`);
+		}
+	}
+
+	/**
+	 * Handle edit file button click
+	 */
+	handleEditFile(item) {
+		this.editModal.open(item);
+	}
+
+	/**
+	 * Handle file drop for reordering
+	 * @param {HTMLElement} draggedRow - The row being dragged
+	 * @param {HTMLElement} targetRow - The row being dropped onto
+	 */
+	async handleFileDrop(draggedRow, targetRow) {
+		if (!this.connection.isConnected()) {
+			this.logger.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		const tbody = draggedRow.parentElement;
+		const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
+		const draggedIndex = rows.indexOf(draggedRow);
+		const targetIndex = rows.indexOf(targetRow);
+
+		if (draggedIndex === targetIndex) return;
+
+		// Reorder rows in DOM
+		if (draggedIndex < targetIndex) {
+			targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
+		} else {
+			targetRow.parentNode.insertBefore(draggedRow, targetRow);
+		}
+
+		// Collect new order from DOM
+		const enabledSerials = Array.from(
+			tbody.querySelectorAll("tr.draggable-row"),
+		).map((row) => parseInt(row.dataset.serial, 10));
+
+		// Update state and device
+		const ordersAsString = JSON.stringify(enabledSerials);
+		this.state.updateDevice({ order: ordersAsString });
+		this.state.notify("files"); // This will re-render the table with new numbers
+
+		this.logger.log(
+			`Reordered files: ${enabledSerials.length} files`,
+			LOG_CLASSES.INFO,
+		);
+		await this.fileManager.updateFileOrder(enabledSerials);
+	}
+
+	/**
+	 * Handle file enable/disable toggle
+	 * Collects all checked files in display order and updates device
+	 */
+	async handleFileEnableToggle() {
+		// Collect all checked checkboxes in DOM order (which reflects sort order)
+		const checkboxes = Array.from(
+			document.querySelectorAll(".file-enabled-checkbox"),
+		);
+		const enabledSerials = checkboxes
+			.filter((cb) => cb.checked)
+			.map((cb) => parseInt(cb.dataset.serial, 10));
+
+		if (enabledSerials.length === 0) {
+			this.logger.log("At least one file must be enabled", LOG_CLASSES.WARNING);
+			// Find first checkbox and re-check it
+			if (checkboxes.length > 0) {
+				checkboxes[0].checked = true;
+			}
+			return;
+		}
+
+		// Immediately update order in state to trigger UI resort
+		const ordersAsString = JSON.stringify(enabledSerials);
+		this.state.updateDevice({ order: ordersAsString });
+		this.state.notify("files");
+
+		this.logger.log(
+			`Updating file order: ${enabledSerials.length} files enabled`,
+			LOG_CLASSES.INFO,
+		);
+		await this.fileManager.updateFileOrder(enabledSerials);
+	}
+
+	/**
+	 * Handle play/pause message from device
+	 */
+	handlePlayPauseMessage(serial, playing, duration) {
+		if (playing) {
+			// Start playing
+			this.playState.serial = serial;
+			this.playState.playing = true;
+			this.playState.duration = duration;
+			this.playState.startTime = Date.now();
+
+			// Start countdown timer
+			this.startPlayTimer(serial);
+		} else {
+			// Stop playing
+			this.stopPlayTimer();
+			this.playState.serial = null;
+			this.playState.playing = false;
+			this.playState.duration = 0;
+			this.playState.startTime = null;
+		}
+
+		// Update the file table to reflect play state
+		this.updateFilesTable();
+	}
+
+	/**
+	 * Start countdown timer for playing file
+	 */
+	startPlayTimer(serial) {
+		// Clear any existing timer
+		this.stopPlayTimer();
+
+		// Update timer every second
+		this.playState.timerInterval = setInterval(() => {
+			const elapsed = Math.floor(
+				(Date.now() - this.playState.startTime) / 1000,
+			);
+			const remaining = Math.max(0, this.playState.duration - elapsed);
+
+			// Update the timer display
+			this.updatePlayTimer(serial, remaining);
+
+			// Stop timer when done
+			if (remaining <= 0) {
+				this.stopPlayTimer();
+			}
+		}, 1000);
+
+		// Initial update
+		this.updatePlayTimer(serial, this.playState.duration);
+	}
+
+	/**
+	 * Stop countdown timer
+	 */
+	stopPlayTimer() {
+		if (this.playState.timerInterval) {
+			clearInterval(this.playState.timerInterval);
+			this.playState.timerInterval = null;
+		}
+	}
+
+	/**
+	 * Update play timer display for a specific file
+	 */
+	updatePlayTimer(serial, seconds) {
+		const btn = document.querySelector(
+			`button[data-action="stop"][data-serial="${serial}"]`,
+		);
+		if (btn) {
+			const mins = Math.floor(seconds / 60);
+			const secs = seconds % 60;
+			const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+			btn.textContent = `⏹ Stop (${timeStr})`;
+		}
+	}
+
+	/**
+	 * Handle file selection
+	 */
+	async handleFileSelection(file) {
+		if (!file) return;
+
+		try {
+			// Get duration for warning
+			const _duration = await this.audioConverter.getAudioDuration(file);
+			// TODO: Show warning if > 30 seconds
+
+			// Read file
+			const buffer = await file.arrayBuffer();
+			const originalBytes = new Uint8Array(buffer);
+
+			let fileBytes = originalBytes;
+			let fileName = file.name;
+
+			// If convert box is already checked, convert right away
+			if ($("#chkConvert")?.checked) {
+				const kbps = $("#chkBitrateOverride")?.checked
+					? parseInt($("#mp3Kbps")?.value || "32", 10)
+					: 32; // Use default 32 kbps if not overriding
+				this.logger.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
+				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
+				fileBytes = result.u8;
+				fileName = result.name;
+				this.logger.log(
+					`Converted: ${fileName} (${fileBytes.length} bytes)`,
+					LOG_CLASSES.WARNING,
+				);
+			} else {
+				this.logger.log(
+					`Picked file: ${file.name} (${originalBytes.length} bytes)`,
+				);
+			}
+
+			// Store file data
+			this.fileManager.storeFilePickerData(
+				file,
+				originalBytes,
+				fileBytes,
+				fileName,
+			);
+
+			// Pre-fill filename if empty
+			if (!$("#fileName")?.value) {
+				$("#fileName").value = fileName;
+			}
+
+			// Check for name conflicts
+			this.checkFileNameConflict($("#fileName")?.value || fileName);
+		} catch (error) {
+			this.logger.log(`File error: ${error.message}`, LOG_CLASSES.WARNING);
+		}
+	}
+
+	/**
+	 * Handle file send
+	 */
+	async handleFileSend() {
+		if (!this.connection.isConnected()) {
+			this.logger.log("Not connected", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		const pickerData = this.fileManager.getFilePickerData();
+		if (!pickerData.file && !pickerData.fileBytes) {
+			this.logger.log("Pick a file first.", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		let fileBytes = pickerData.fileBytes;
+		let fileName = pickerData.fileName;
+
+		// If user toggled "Convert" AFTER selecting the file, convert now
+		try {
+			if ($("#chkConvert")?.checked && pickerData.file) {
+				const kbps = $("#chkBitrateOverride")?.checked
+					? parseInt($("#mp3Kbps")?.value || "32", 10)
+					: 32; // Use default 32 kbps if not overriding
+				this.logger.log(
+					`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`,
+				);
+				const result = await this.audioConverter.convertToDeviceMp3(
+					pickerData.file,
+					kbps,
+				);
+				fileBytes = result.u8;
+				// If the filename box is empty or still matches the previous base, prefer .mp3
+				const typed = ($("#fileName")?.value || "").trim();
+				if (!typed || typed === pickerData.fileName) {
+					$("#fileName").value = result.name;
+				}
+				fileName = result.name;
+			} else if (!$("#chkConvert")?.checked && pickerData.originalBytes) {
+				// Ensure we're using the original bytes if convert is off
+				fileBytes = pickerData.originalBytes;
+				fileName = pickerData.file?.name || pickerData.fileName;
+			}
+		} catch (error) {
+			this.logger.log(
+				`Convert error: ${error.message} — sending original file`,
+				LOG_CLASSES.WARNING,
+			);
+			if (pickerData.originalBytes) {
+				fileBytes = pickerData.originalBytes;
+				fileName = pickerData.file?.name || pickerData.fileName;
+			}
+		}
+
+		// Filename to send (auto .mp3 if converting)
+		let finalName = ($("#fileName")?.value || fileName || "skelly.bin").trim();
+		if ($("#chkConvert")?.checked && !/\.mp3$/i.test(finalName)) {
+			finalName = `${finalName.replace(/\.\w+$/, "")}.mp3`;
+			$("#fileName").value = finalName;
+		}
+		if (!finalName) {
+			this.logger.log("Provide a device filename.", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		// Check for filename conflict
+		const conflict = this.checkFileNameConflict(finalName);
+		if (conflict) {
+			// Show overwrite confirmation modal
+			const confirmed = await this.showOverwriteConfirmation(conflict.name);
+			if (!confirmed) {
+				this.logger.log("Upload cancelled by user", LOG_CLASSES.INFO);
+				return;
+			}
+		}
+
+		// Check if chunk size override is enabled
+		let chunkSizeOverride = null;
+		const chkChunkOverride = $("#chkChunkOverride");
+		const chunkSizeSlider = $("#chunkSizeSlider");
+		if (chkChunkOverride?.checked && chunkSizeSlider) {
+			chunkSizeOverride = parseInt(chunkSizeSlider.value, 10);
+		}
+
+		try {
+			await this.fileManager.uploadFile(
+				fileBytes,
+				finalName,
+				chunkSizeOverride,
+			);
+		} catch (error) {
+			this.logger.log(`Upload error: ${error.message}`, LOG_CLASSES.WARNING);
+		}
+	}
+
+	/**
+	 * Show overwrite confirmation modal
+	 * @param {string} fileName - Name of the existing file
+	 * @returns {Promise<boolean>} - True if user confirms, false if cancelled
+	 */
+	async showOverwriteConfirmation(fileName) {
+		return new Promise((resolve) => {
+			const modal = $("#overwriteModal");
+			const message = $("#overwriteMessage");
+			const confirmBtn = $("#overwriteConfirm");
+			const cancelBtn = $("#overwriteCancel");
+
+			if (!modal || !message || !confirmBtn || !cancelBtn) {
+				resolve(false);
+				return;
+			}
+
+			// Update message with filename
+			message.textContent = `A file named "${fileName}" already exists on the device.`;
+
+			// Show modal
+			modal.classList.remove("hidden");
+
+			// Handle confirm
+			const handleConfirm = () => {
+				cleanup();
+				resolve(true);
+			};
+
+			// Handle cancel
+			const handleCancel = () => {
+				cleanup();
+				resolve(false);
+			};
+
+			// Handle escape key
+			const handleEscape = (e) => {
+				if (e.key === "Escape") {
+					handleCancel();
+				}
+			};
+
+			// Cleanup function
+			const cleanup = () => {
+				modal.classList.add("hidden");
+				confirmBtn.removeEventListener("click", handleConfirm);
+				cancelBtn.removeEventListener("click", handleCancel);
+				document.removeEventListener("keydown", handleEscape);
+			};
+
+			// Add event listeners
+			confirmBtn.addEventListener("click", handleConfirm);
+			cancelBtn.addEventListener("click", handleCancel);
+			document.addEventListener("keydown", handleEscape);
+		});
+	}
+
+	/**
+	 * Check for filename conflicts
+	 * @param {string} name - Filename to check
+	 * @returns {Object|null} - Conflict object if found, null otherwise
+	 */
+	checkFileNameConflict(name) {
+		const conflict = this.state.hasFileName(name);
+		const inputEl = $("#fileName");
+		if (inputEl) {
+			inputEl.classList.toggle("warn-border", !!conflict);
+		}
+		return conflict;
+	}
+
+	/**
+	 * Save log contents to file
+	 */
+	saveLog() {
+		const logEl = $("#log");
+		if (!logEl) return;
+
+		// Get all log lines and filter out hidden ones
+		const lines = logEl.querySelectorAll(".line");
+		const logContent = Array.from(lines)
+			.filter((line) => line.style.display !== "none")
+			.map((line) => line.textContent)
+			.join("\n");
+
+		if (!logContent.trim()) {
+			this.logger.log("Log is empty - nothing to save", LOG_CLASSES.WARNING);
+			return;
+		}
+
+		// Create filename with timestamp
+		const now = new Date();
+		const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+		const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "-"); // HH-MM-SS
+		const filename = `UltraSkelly-${dateStr}-${timeStr}.log`;
+
+		// Create blob and download
+		const blob = new Blob([logContent], { type: "text/plain" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		a.click();
+		URL.revokeObjectURL(url);
+
+		this.logger.log(`Log saved to ${filename}`, LOG_CLASSES.INFO);
+	}
+
+	/**
+	 * Handle connect button - show connection modal
+	 */
+	async handleConnect() {
+		console.log("handleConnect called - showing modal");
+		const connectModal = $("#connectModal");
+		connectModal?.classList.remove("hidden");
+	}
+
+	/**
+	 * Perform actual connection with filter
+	 */
+	async performConnection(options) {
+		console.log("performConnection called");
+		try {
+			const connectionOptions = {
+				type: options.connectionType || ConnectionType.DIRECT_BLE,
+				nameFilter: options.nameFilter || options.deviceAddress || "",
+				restUrl: options.restUrl || "",
+			};
+
+			console.log("Connecting with options:", connectionOptions);
+			await this.connection.connect(connectionOptions);
+			console.log("Connected successfully");
+
+			// Query device state in sequence: live mode, params, volume, BT name
+			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, "", 8));
+			setTimeout(
+				() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8)),
+				50,
+			);
+			setTimeout(
+				() => this.connection.send(buildCommand(COMMANDS.QUERY_VOLUME, "", 8)),
+				100,
+			);
+			setTimeout(
+				() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8)),
+				150,
+			);
+
+			// Start file list fetch - this will query capacity and order after files are received
+			setTimeout(() => {
+				this.fileManager.startFetchFiles();
+			}, 200);
+		} catch (error) {
+			console.error("Connection error:", error);
+			this.logger.log(
+				`Connection failed: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+		}
+	}
+
+	/**
+	 * Handle disconnect button
+	 */
+	async handleDisconnect() {
+		await this.connection.disconnect();
+	}
+
+	/**
+	 * Build live eye grid
+	 */
+	buildLiveEyeGrid() {
+		const grid = $("#apEyeGrid");
+		if (!grid) return;
+
+		grid.innerHTML = "";
+
+		// Create eye options for images 1-18
+		for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
+			const eyeNum = imgIdx;
+			const div = document.createElement("div");
+			div.className = `eye-opt${eyeNum === this.selectedEye ? " selected" : ""}`;
+			div.dataset.eye = String(eyeNum);
+			div.title = `Eye ${eyeNum}`;
+
+			// Create image element
+			const img = document.createElement("img");
+			img.className = "eye-thumb";
+			img.src = `images/skelly/eye_icon_${imgIdx}.png`;
+			img.alt = `eye ${eyeNum}`;
+
+			div.appendChild(img);
+			grid.appendChild(div);
+		}
+	}
+
+	/**
+	 * UTF-16LE hex encoding helper
+	 */
+	utf16leHex(str) {
+		let hex = "";
+		for (let i = 0; i < str.length; i++) {
+			const code = str.charCodeAt(i);
+			hex += (code & 0xff).toString(16).padStart(2, "0");
+			hex += ((code >> 8) & 0xff).toString(16).padStart(2, "0");
+		}
+		return hex.toUpperCase();
+	}
+
+	/**
+	 * Update device UI
+	 */
+	updateDeviceUI(device) {
+		console.log("updateDeviceUI called, connected:", device.connected);
+
+		// Update status
+		const statusSpan = $("#status span");
+		if (statusSpan) {
+			if (device.connected) {
+				// Get connection info directly from connection manager
+				const deviceInfo = this.connection.getDeviceInfo();
+
+				// Show REST URL if connected via REST proxy
+				if (
+					deviceInfo &&
+					deviceInfo.connectionType === ConnectionType.REST_PROXY &&
+					deviceInfo.restUrl
+				) {
+					statusSpan.textContent = `Connected (via ${deviceInfo.restUrl})`;
+				} else {
+					statusSpan.textContent = "Connected";
+				}
+			} else {
+				statusSpan.textContent = "Disconnected";
+			}
+		}
+
+		document.body.classList.toggle("disconnected", !device.connected);
+
+		const btnDisconnect = $("#btnDisconnect");
+		if (btnDisconnect) {
+			btnDisconnect.disabled = !device.connected;
+		}
+
+		const btnConnect = $("#btnConnect");
+		if (btnConnect) {
+			btnConnect.disabled = device.connected;
+		}
+
+		// Update device info
+		if ($("#statName")) $("#statName").textContent = device.name || "—";
+		if ($("#statShowMode"))
+			$("#statShowMode").textContent = device.showMode ?? "—";
+		if ($("#statChannels")) {
+			$("#statChannels").textContent = device.channels.length
+				? device.channels.join(", ")
+				: "—";
+		}
+		if ($("#statBtName")) $("#statBtName").textContent = device.btName || "—";
+
+		// Update volume slider when device volume changes
+		if (device.volume != null) {
+			const volRange = $("#volRange");
+			const volNum = $("#vol");
+			if (volRange) volRange.value = device.volume;
+			if (volNum) volNum.value = device.volume;
+		}
+
+		if ($("#statCapacity")) {
+			$("#statCapacity").textContent =
+				device.capacity != null ? `${device.capacity} KB remaining` : "—";
+		}
+
+		if ($("#statFileCount")) {
+			const reported = device.filesReported ?? "—";
+			const received = device.filesReceived ?? "—";
+			const mismatch =
+				device.filesReported != null &&
+				device.filesReceived != null &&
+				device.filesReported !== device.filesReceived;
+
+			$("#statFileCount").textContent = `${received} / ${reported}`;
+
+			// Add warning styling if counts don't match
+			if (mismatch) {
+				$("#statFileCount").style.color = "var(--warn)";
+				$("#statFileCount").title =
+					"Received count differs from reported count";
+			} else {
+				$("#statFileCount").style.color = "";
+				$("#statFileCount").title = "";
+			}
+		}
+
+		if ($("#statOrder")) {
+			$("#statOrder").textContent = device.order || "—";
+		}
+
+		if ($("#statPin")) {
+			$("#statPin").textContent = device.pin || "—";
+		}
+
+		// Update PIN input field
+		if ($("#pinInput") && device.pin) {
+			$("#pinInput").value = device.pin;
+		}
+
+		// Update device name input field (remove "(Live)" suffix if present)
+		if ($("#deviceNameInput") && device.btName) {
+			const displayName = device.btName.replace(/\s*\(Live\)\s*$/i, "");
+			$("#deviceNameInput").value = displayName;
+		}
+	}
+
+	/**
+	 * Update live status UI
+	 */
+	updateLiveUI(live) {
+		// Update movement icons based on action bitfield
+		if (live.action != null) {
+			const actionBits = parseInt(live.action, 10);
+			const liveMove = $("#liveMove");
+
+			if (liveMove && !Number.isNaN(actionBits)) {
+				liveMove.querySelectorAll(".iconToggle").forEach((btn) => {
+					btn.classList.remove("selected");
+				});
+
+				if (actionBits === 255) {
+					liveMove
+						.querySelector('[data-part="all"]')
+						?.classList.add("selected");
+				} else {
+					liveMove
+						.querySelectorAll('[data-part]:not([data-part="all"])')
+						.forEach((btn) => {
+							const bit = parseInt(btn.dataset.bit || "0", 10);
+							if (bit && actionBits & bit) btn.classList.add("selected");
+						});
+				}
+			}
+		}
+
+		// Update eye icon selection
+		if (live.eye != null) {
+			this.selectedEye = live.eye;
+			const apEyeGrid = $("#apEyeGrid");
+			if (apEyeGrid) {
+				// Clear all selections
+				apEyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
+					el.classList.remove("selected");
+				});
+				// Select the current eye
+				const eyeOpt = apEyeGrid.querySelector(`[data-eye="${live.eye}"]`);
+				if (eyeOpt) eyeOpt.classList.add("selected");
+			}
+		}
+
+		// Update light settings from live.lights array
+		if (live.lights && Array.isArray(live.lights)) {
+			// Head light (index 1)
+			if (live.lights[1]) {
+				const headLight = live.lights[1];
+
+				// Brightness
+				if ($("#headBrightness"))
+					$("#headBrightness").value = headLight.brightness;
+				if ($("#headBrightnessRange"))
+					$("#headBrightnessRange").value = headLight.brightness;
+
+				// Color (RGB)
+				if ($("#headR")) $("#headR").value = headLight.r;
+				if ($("#headG")) $("#headG").value = headLight.g;
+				if ($("#headB")) $("#headB").value = headLight.b;
+				const headHex = `#${headLight.r.toString(16).padStart(2, "0")}${headLight.g.toString(16).padStart(2, "0")}${headLight.b.toString(16).padStart(2, "0")}`;
+				if ($("#headColorPick")) $("#headColorPick").value = headHex;
+
+				// Color cycle state
+				this.headColorCycleEnabled = headLight.colorCycle === 1;
+				const headCycleBtn = $("#btnHeadColorCycle");
+				if (headCycleBtn) {
+					if (this.headColorCycleEnabled) {
+						headCycleBtn.classList.add("selected");
+					} else {
+						headCycleBtn.classList.remove("selected");
+					}
+				}
+
+				// Effect mode
+				if ($("#headEffectMode"))
+					$("#headEffectMode").value = headLight.effectMode;
+
+				// Effect speed (show/hide speed block based on mode)
+				const headEffectSpeedBlock = $("#headEffectSpeedBlock");
+				if (headEffectSpeedBlock) {
+					headEffectSpeedBlock.classList.toggle(
+						"hidden",
+						headLight.effectMode === 1,
+					);
+				}
+				const headUISpeed = deviceSpeedToUI(headLight.effectSpeed);
+				if ($("#headEffectSpeed")) $("#headEffectSpeed").value = headUISpeed;
+				if ($("#headEffectSpeedRange"))
+					$("#headEffectSpeedRange").value = headUISpeed;
+			}
+
+			// Torso light (index 0)
+			if (live.lights[0]) {
+				const torsoLight = live.lights[0];
+
+				// Brightness
+				if ($("#torsoBrightness"))
+					$("#torsoBrightness").value = torsoLight.brightness;
+				if ($("#torsoBrightnessRange"))
+					$("#torsoBrightnessRange").value = torsoLight.brightness;
+
+				// Color (RGB)
+				if ($("#torsoR")) $("#torsoR").value = torsoLight.r;
+				if ($("#torsoG")) $("#torsoG").value = torsoLight.g;
+				if ($("#torsoB")) $("#torsoB").value = torsoLight.b;
+				const torsoHex = `#${torsoLight.r.toString(16).padStart(2, "0")}${torsoLight.g.toString(16).padStart(2, "0")}${torsoLight.b.toString(16).padStart(2, "0")}`;
+				if ($("#torsoColorPick")) $("#torsoColorPick").value = torsoHex;
+
+				// Color cycle state
+				this.torsoColorCycleEnabled = torsoLight.colorCycle === 1;
+				const torsoCycleBtn = $("#btnTorsoColorCycle");
+				if (torsoCycleBtn) {
+					if (this.torsoColorCycleEnabled) {
+						torsoCycleBtn.classList.add("selected");
+					} else {
+						torsoCycleBtn.classList.remove("selected");
+					}
+				}
+
+				// Effect mode
+				if ($("#torsoEffectMode"))
+					$("#torsoEffectMode").value = torsoLight.effectMode;
+
+				// Effect speed (show/hide speed block based on mode)
+				const torsoEffectSpeedBlock = $("#torsoEffectSpeedBlock");
+				if (torsoEffectSpeedBlock) {
+					torsoEffectSpeedBlock.classList.toggle(
+						"hidden",
+						torsoLight.effectMode === 1,
+					);
+				}
+				const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed);
+				if ($("#torsoEffectSpeed")) $("#torsoEffectSpeed").value = torsoUISpeed;
+				if ($("#torsoEffectSpeedRange"))
+					$("#torsoEffectSpeedRange").value = torsoUISpeed;
+			}
+		}
+	}
+
+	/**
+	 * Update files table
+	 */
+	updateFilesTable() {
+		const tbody = $("#filesTable tbody");
+		if (!tbody) return;
+
+		// Disable table during active fetch
+		const table = $("#filesTable");
+		const isRefreshing = this.state.files.activeFetch;
+		if (table) {
+			if (isRefreshing) {
+				table.style.opacity = "0.5";
+				table.style.pointerEvents = "none";
+			} else {
+				table.style.opacity = "1";
+				table.style.pointerEvents = "auto";
+			}
+		}
+
+		tbody.innerHTML = "";
+
+		// Show refreshing message if no files yet and currently fetching
+		if (isRefreshing && this.state.files.items.size === 0) {
+			const tr = document.createElement("tr");
+			const td = document.createElement("td");
+			td.colSpan = 10; // Span all columns
+			td.textContent = "Refreshing...";
+			td.style.textAlign = "center";
+			td.style.fontStyle = "italic";
+			td.style.color = "#888";
+			tr.appendChild(td);
+			tbody.appendChild(tr);
+			return;
+		}
+
+		const query = ($("#filesFilter")?.value || "").toLowerCase().trim();
+
+		// Get file order from device state
+		let fileOrder = [];
+		try {
+			if (this.state.device.order) {
+				fileOrder = JSON.parse(this.state.device.order);
+			}
+		} catch (_e) {
+			// If parsing fails, use empty array
+		}
+
+		// Sort files: enabled (in order) first by order position, disabled (not in order) last by serial
+		const files = Array.from(this.state.files.items.values())
+			.filter(
+				(file) => !query || (file.name || "").toLowerCase().includes(query),
+			)
+			.sort((a, b) => {
+				const indexA = fileOrder.indexOf(a.serial);
+				const indexB = fileOrder.indexOf(b.serial);
+				const inOrderA = indexA !== -1;
+				const inOrderB = indexB !== -1;
+
+				// Both enabled: sort by order position
+				if (inOrderA && inOrderB) return indexA - indexB;
+				// Only A enabled: A comes first
+				if (inOrderA) return -1;
+				// Only B enabled: B comes first
+				if (inOrderB) return 1;
+				// Both disabled: sort by serial
+				return a.serial - b.serial;
+			});
+
+		const canEdit = true; // Edit feature is now always enabled
+
+		let rowIndex = 1;
+		for (const file of files) {
+			const tr = document.createElement("tr");
+			const eyeImgIdx = file.eye;
+
+			// Generate Head color indicator (lights[1])
+			let headColorHtml = "";
+			if (file.lights?.[1]) {
+				const headLight = file.lights[1];
+				if (headLight.colorCycle) {
+					headColorHtml =
+						'<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
+				} else {
+					const rgb = `rgb(${headLight.r}, ${headLight.g}, ${headLight.b})`;
+					headColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${headLight.r},${headLight.g},${headLight.b})"></div>`;
+				}
+			}
+
+			// Generate Torso color indicator (lights[0])
+			let torsoColorHtml = "";
+			if (file.lights?.[0]) {
+				const torsoLight = file.lights[0];
+				if (torsoLight.colorCycle) {
+					torsoColorHtml =
+						'<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
+				} else {
+					const rgb = `rgb(${torsoLight.r}, ${torsoLight.g}, ${torsoLight.b})`;
+					torsoColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${torsoLight.r},${torsoLight.g},${torsoLight.b})"></div>`;
+				}
+			}
+
+			// Generate movement icons based on action bitfield using current profile
+			let movementIcons = "";
+			const actionBits = file.action || 0;
+			const profile =
+				DEVICE_PROFILES[this.state.deviceType] ||
+				DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+			if (actionBits === 255) {
+				const allMove = profile.movements.find((m) => m.part === "all");
+				if (allMove) {
+					movementIcons = `<img class="eye-thumb" src="${allMove.icon}" alt="All" title="All movements" />`;
+				}
+			} else {
+				profile.movements
+					.filter((m) => m.part !== "all")
+					.forEach((m) => {
+						if (actionBits & m.bit) {
+							movementIcons += `<img class="eye-thumb" src="${m.icon}" alt="${m.label}" title="${m.label}" />`;
+						}
+					});
+			}
+
+			// Determine if this file is currently playing
+			const isPlaying =
+				this.playState.playing && this.playState.serial === file.serial;
+			const playButtonHtml = isPlaying
+				? `<button class="btn sm" data-action="stop" data-serial="${file.serial}">⏹ Stop</button>`
+				: `<button class="btn sm" data-action="play" data-serial="${file.serial}">▶ Play</button>`;
+
+			// Check if file is in the order array (enabled)
+			const isEnabled = fileOrder.indexOf(file.serial) !== -1;
+
+			// Make row draggable if enabled
+			if (isEnabled) {
+				tr.draggable = true;
+				tr.dataset.serial = file.serial;
+				tr.classList.add("draggable-row");
+			}
+
+			const dragHandle = isEnabled
+				? '<span class="drag-handle" style="cursor:move;user-select:none;font-size:18px;color:#888;">≡</span>'
+				: "";
+
+			tr.innerHTML = `
         <td style="text-align:center;padding:4px 8px;">${dragHandle}</td>
         <td>${rowIndex}</td>
-        <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? 'checked' : ''} /></td>
-        <td>${escapeHtml(file.name || '')}</td>
+        <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? "checked" : ""} /></td>
+        <td>${escapeHtml(file.name || "")}</td>
         <td class="col-head-light">${headColorHtml}</td>
         <td>${torsoColorHtml}</td>
         <td>${movementIcons}</td>
-        <td class="col-eye"><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ''}</td>
+        <td class="col-eye"><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ""}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>
         <td>
           ${playButtonHtml}
           <button class="btn sm" data-action="edit" data-serial="${file.serial}"
-            ${canEdit ? '' : 'disabled'}>✏️ Edit</button>
+            ${canEdit ? "" : "disabled"}>✏️ Edit</button>
         </td>
       `;
-      tbody.appendChild(tr);
-      rowIndex++;
-    }
+			tbody.appendChild(tr);
+			rowIndex++;
+		}
 
-    const summary = $('#filesSummary');
-    const lastRefreshEl = $('#filesLastRefresh');
-    
-    if (summary) {
-      const got = files.length;
-      const expected = this.state.files.expected;
-      summary.textContent = `Received ${got}${expected ? ` / ${expected}` : ''}`;
-    }
-    
-    if (lastRefreshEl) {
-      const lastRefresh = this.state.files.lastRefresh;
-      if (lastRefresh) {
-        const timeStr = lastRefresh.toLocaleTimeString();
-        lastRefreshEl.textContent = `Last refresh: ${timeStr}`;
-      } else {
-        lastRefreshEl.textContent = '';
-      }
-    }
-    
-    // Apply detail column visibility based on advanced settings
-    const advFileDetails = $('#advFileDetails');
-    const showDetails = advFileDetails?.checked;
-    document.querySelectorAll('.detail-column').forEach(col => {
-      col.style.display = showDetails ? '' : 'none';
-    });
-  }
+		const summary = $("#filesSummary");
+		const lastRefreshEl = $("#filesLastRefresh");
 
-  /**
-   * Update transfer UI
-   */
-  updateTransferUI(transfer) {
-    const btnSend = $('#btnSendFile');
-    const btnCancel = $('#btnCancelFile');
+		if (summary) {
+			const got = files.length;
+			const expected = this.state.files.expected;
+			summary.textContent = `Received ${got}${expected ? ` / ${expected}` : ""}`;
+		}
 
-    if (btnSend) btnSend.disabled = transfer.inProgress;
-    if (btnCancel) btnCancel.disabled = !transfer.inProgress;
-  }
+		if (lastRefreshEl) {
+			const lastRefresh = this.state.files.lastRefresh;
+			if (lastRefresh) {
+				const timeStr = lastRefresh.toLocaleTimeString();
+				lastRefreshEl.textContent = `Last refresh: ${timeStr}`;
+			} else {
+				lastRefreshEl.textContent = "";
+			}
+		}
+
+		// Apply detail column visibility based on advanced settings
+		const advFileDetails = $("#advFileDetails");
+		const showDetails = advFileDetails?.checked;
+		document.querySelectorAll(".detail-column").forEach((col) => {
+			col.style.display = showDetails ? "" : "none";
+		});
+	}
+
+	/**
+	 * Update transfer UI
+	 */
+	updateTransferUI(transfer) {
+		const btnSend = $("#btnSendFile");
+		const btnCancel = $("#btnCancelFile");
+
+		if (btnSend) btnSend.disabled = transfer.inProgress;
+		if (btnCancel) btnCancel.disabled = !transfer.inProgress;
+	}
 }
 
 // Initialize application when DOM is ready
 // Note: ES6 modules are deferred by default, so DOM is already loaded
 function initializeApp() {
-  console.log('Initializing SkellyApp...');
-  console.log('DOM ready state:', document.readyState);
-  
-  // Check if critical elements exist
-  const btnConnect = document.querySelector('#btnConnect');
-  const logEl = document.querySelector('#log');
-  console.log('Connect button found:', !!btnConnect);
-  console.log('Log element found:', !!logEl);
-  
-  if (!btnConnect) {
-    console.error('Critical UI elements missing! Cannot initialize.');
-    return;
-  }
-  
-  window.skellyApp = new SkellyApp();
+	console.log("Initializing SkellyApp...");
+	console.log("DOM ready state:", document.readyState);
+
+	// Check if critical elements exist
+	const btnConnect = document.querySelector("#btnConnect");
+	const logEl = document.querySelector("#log");
+	console.log("Connect button found:", !!btnConnect);
+	console.log("Log element found:", !!logEl);
+
+	if (!btnConnect) {
+		console.error("Critical UI elements missing! Cannot initialize.");
+		return;
+	}
+
+	window.skellyApp = new SkellyApp();
 }
 
 // ES6 modules are deferred, so DOM is usually ready
 // But check to be safe
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp);
+if (document.readyState === "loading") {
+	document.addEventListener("DOMContentLoaded", initializeApp);
 } else {
-  // DOM already loaded
-  initializeApp();
+	// DOM already loaded
+	initializeApp();
 }
 
 })();

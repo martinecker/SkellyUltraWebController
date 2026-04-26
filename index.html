@@ -14,7 +14,7 @@
     body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--text); overflow-x: hidden; }
     header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #1f242c; position:sticky; top:0; background:rgba(11,13,16,.8); backdrop-filter: blur(6px); z-index:10; }
     h1 { font-size:18px; margin:0; letter-spacing:.4px; }
-    .btn { live:none; border:1px solid #2a3039; background:#151a21; color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; transition:.15s transform, .15s background, .15s border; }
+    .btn { border:1px solid #2a3039; background:#151a21; color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; transition:.15s transform, .15s background, .15s border; }
     .btn:hover { background:#1b212a; }
     .btn:active { transform: scale(.98); }
     .btn.primary { border-color:#134e55; background:#07333a; color:#a5f3fc; }
@@ -357,8 +357,8 @@
       <p>This tool talks directly to your skeleton over Bluetooth and can send file and control commands. While many features have been tested, there is <strong>NO GUARANTEE</strong> this won’t misbehave or damage your device. By continuing, you accept all risk.</p>
       <p class="muted">Use a fully charged device, keep the browser tab focused during transfers, and avoid interrupting power.</p>
       <div class="modal-actions">
-        <button id="riskCancel" class="btn">Leave page</button>
-        <button id="riskAccept" class="btn danger">I understand — continue</button>
+        <button type="button" id="riskCancel" class="btn">Leave page</button>
+        <button type="button" id="riskAccept" class="btn danger">I understand — continue</button>
       </div>
     </div>
   </div>
@@ -370,8 +370,8 @@
     <p id="overwriteMessage">A file with this name already exists on the device.</p>
     <p class="muted">Overwriting will replace the existing file. This action cannot be undone.</p>
     <div class="modal-actions">
-      <button id="overwriteCancel" class="btn">Cancel</button>
-      <button id="overwriteConfirm" class="btn danger">Overwrite File</button>
+      <button type="button" id="overwriteCancel" class="btn">Cancel</button>
+      <button type="button" id="overwriteConfirm" class="btn danger">Overwrite File</button>
     </div>
   </div>
 </div>
@@ -447,8 +447,8 @@
     </div>
     
     <div class="modal-actions">
-      <button id="connectCancel" class="btn">Cancel</button>
-      <button id="connectOk" class="btn primary">Connect</button>
+      <button type="button" id="connectCancel" class="btn">Cancel</button>
+      <button type="button" id="connectOk" class="btn primary">Connect</button>
     </div>
   </div>
 </div>
@@ -464,8 +464,8 @@
     </div>
     
     <div class="modal-actions">
-      <button id="deviceSelectCancel" class="btn">Cancel</button>
-      <button id="deviceSelectRescan" class="btn">Rescan</button>
+      <button type="button" id="deviceSelectCancel" class="btn">Cancel</button>
+      <button type="button" id="deviceSelectRescan" class="btn">Rescan</button>
     </div>
   </div>
 </div>
@@ -486,8 +486,8 @@
         <input id="slowDontShow" type="checkbox"> Don’t show this again
       </label>
       <div class="modal-actions">
-        <button id="slowCancel" class="btn">Cancel</button>
-        <button id="slowOk" class="btn primary">Continue</button>
+        <button type="button" id="slowCancel" class="btn">Cancel</button>
+        <button type="button" id="slowOk" class="btn primary">Continue</button>
       </div>
     </div>
 </div>
@@ -504,7 +504,7 @@
       <input id="longDontShow" type="checkbox"> Don’t show this again
     </label>
     <div class="modal-actions">
-      <button id="longOk" class="btn primary">OK</button>
+      <button type="button" id="longOk" class="btn primary">OK</button>
     </div>
   </div>
 </div>
@@ -538,16 +538,16 @@
         <div style="flex:1">
           <label>Movement</label>
           <div id="edMove" class="move-grid" style="gap:0.5rem">
-            <button class="iconToggle" data-part="all" title="All" style="padding:4px">
+            <button type="button" class="iconToggle" data-part="all" title="All" style="padding:4px">
               <img src="images/skelly/icon_action1.png" alt="All" style="width:32px;height:32px" />
             </button>
-            <button class="iconToggle" data-part="head" title="Head" style="padding:4px">
+            <button type="button" class="iconToggle" data-part="head" title="Head" style="padding:4px">
               <img src="images/skelly/icon_action2.png" alt="Head" style="width:32px;height:32px" />
             </button>
-            <button class="iconToggle" data-part="arm" title="Arm" style="padding:4px">
+            <button type="button" class="iconToggle" data-part="arm" title="Arm" style="padding:4px">
               <img src="images/skelly/icon_action3.png" alt="Arm" style="width:32px;height:32px" />
             </button>
-            <button class="iconToggle" data-part="torso" title="Torso" style="padding:4px">
+            <button type="button" class="iconToggle" data-part="torso" title="Torso" style="padding:4px">
               <img src="images/skelly/icon_action4.png" alt="Torso" style="width:32px;height:32px" />
             </button>
           </div>
@@ -574,7 +574,7 @@
           <input id="edHeadR" type="number" min="0" max="255" value="255" />
           <input id="edHeadG" type="number" min="0" max="255" value="0" />
           <input id="edHeadB" type="number" min="0" max="255" value="0" />
-          <button class="iconToggle" id="edHeadColorCycle" title="Cycle all colors">
+          <button type="button" class="iconToggle" id="edHeadColorCycle" title="Cycle all colors">
             <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:24px;height:24px" />
           </button>
         </div>
@@ -614,7 +614,7 @@
           <input id="edTorsoR" type="number" min="0" max="255" value="0" />
           <input id="edTorsoG" type="number" min="0" max="255" value="0" />
           <input id="edTorsoB" type="number" min="0" max="255" value="255" />
-          <button class="iconToggle" id="edTorsoColorCycle" title="Cycle all colors">
+          <button type="button" class="iconToggle" id="edTorsoColorCycle" title="Cycle all colors">
             <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:24px;height:24px" />
           </button>
         </div>
@@ -656,7 +656,7 @@
       </div>
 
       <div class="actions">
-        <button class="btn primary" id="edUploadBtn">Upload & Replace</button>
+        <button type="button" class="btn primary" id="edUploadBtn">Upload & Replace</button>
       </div>
       <div class="capsule">
         <div>Progress: <span id="edProgText">0 / 0</span></div>
@@ -673,9 +673,9 @@
       <div class="spacer"></div>
       
       <div class="modal-actions">
-        <button id="edDelete" class="btn danger">Delete</button>
-        <button id="edApplyAll" class="btn primary">Apply All Settings</button>
-        <button id="edClose" class="btn">Close</button>
+        <button type="button" id="edDelete" class="btn danger">Delete</button>
+        <button type="button" id="edApplyAll" class="btn primary">Apply All Settings</button>
+        <button type="button" id="edClose" class="btn">Close</button>
       </div>
     </div>
   </div>
@@ -684,10 +684,10 @@
     <h1>🦴 Ultra Skelly Web Controller</h1>
     <div class="topbar-right">
       <span id="status" class="pill">● <span>Disconnected</span></span>
-      <button class="btn primary" id="btnConnect">Connect</button>
-      <button class="btn danger" id="btnDisconnect" disabled>Disconnect</button>
+      <button type="button" class="btn primary" id="btnConnect">Connect</button>
+      <button type="button" class="btn danger" id="btnDisconnect" disabled>Disconnect</button>
       <div class="menuwrap">
-        <button class="btn" id="btnAdvanced">⚙️ Advanced ▾</button>
+        <button type="button" class="btn" id="btnAdvanced">⚙️ Advanced ▾</button>
         <div id="advMenu" class="dropdown hidden" role="menu" aria-label="Advanced options">
           <label><input type="checkbox" id="advRaw"> Show "Raw Command"</label>
           <label><input type="checkbox" id="advFEDC"> Show FEDC keepalives</label>
@@ -716,14 +716,14 @@
       <div>
         <label>Queries</label>
           <div class="actions">
-            <button class="btn cmd" data-q="AAE0">Get Device Params</button>
-            <button class="btn cmd" data-q="AAE1">Get Live Mode</button>
-            <button class="btn cmd" data-q="AAE5">Get Volume</button>
-            <button class="btn cmd" data-q="AAE6">Get BT Name</button>
-            <button class="btn cmd" data-q="AAEE">Get Version</button>
-            <button class="btn cmd" data-q="AAD2">Get Capacity</button>
-            <button class="btn cmd" data-q="AAD1">Get File Order</button>
-            <button class="btn" id="btnGetAll" style="font-weight: bold; background: #4CAF50;">Get All</button>
+            <button type="button" class="btn cmd" data-q="AAE0">Get Device Params</button>
+            <button type="button" class="btn cmd" data-q="AAE1">Get Live Mode</button>
+            <button type="button" class="btn cmd" data-q="AAE5">Get Volume</button>
+            <button type="button" class="btn cmd" data-q="AAE6">Get BT Name</button>
+            <button type="button" class="btn cmd" data-q="AAEE">Get Version</button>
+            <button type="button" class="btn cmd" data-q="AAD2">Get Capacity</button>
+            <button type="button" class="btn cmd" data-q="AAD1">Get File Order</button>
+            <button type="button" class="btn" id="btnGetAll" style="font-weight: bold; background: #4CAF50;">Get All</button>
           </div>
 
         </div>
@@ -734,12 +734,12 @@
           <div class="compact-row">
             <label>Device Name</label>
             <input id="deviceNameInput" type="text" maxlength="22" placeholder="Animated Skelly" style="flex:1; font-family:monospace;" />
-            <button class="btn" id="btnSetDeviceName">Set</button>
+            <button type="button" class="btn" id="btnSetDeviceName">Set</button>
           </div>
           <div class="compact-row">
             <label>PIN</label>
             <input id="pinInput" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0000" style="width:80px; text-align:center; font-family:monospace;" />
-            <button class="btn" id="btnSetPin">Set PIN</button>
+            <button type="button" class="btn" id="btnSetPin">Set PIN</button>
           </div>
         </div>
 
@@ -777,7 +777,7 @@
           </select>
           <input id="payload" placeholder="payload hex (optional)" />
         </div>
-        <div class="actions"><button class="btn" id="btnSendRaw">Send</button></div>
+        <div class="actions"><button type="button" class="btn" id="btnSendRaw">Send</button></div>
         <div class="small muted" style="margin-top:6px">Payload auto-pads to <strong>16 hex chars (8 bytes)</strong> before CRC8 (poly 0x8C).</div>
       </div>
       
@@ -806,7 +806,7 @@
         <h2>Live Mode</h2>
 
         <div class="actions">
-          <button class="btn" id="btnBT">Enable Live Mode</button>
+          <button type="button" class="btn" id="btnBT">Enable Live Mode</button>
         </div>
 
         <!-- Volume -->
@@ -819,16 +819,16 @@
         <div class="spacer"></div>
         <label>Movement</label>
         <div id="liveMove" class="move-grid">
-          <button class="iconToggle" data-part="all"   title="All">
+          <button type="button" class="iconToggle" data-part="all"   title="All">
             <img src="images/skelly/icon_action1.png" alt="All" />
           </button>
-          <button class="iconToggle" data-part="head"  title="Head">
+          <button type="button" class="iconToggle" data-part="head"  title="Head">
             <img src="images/skelly/icon_action2.png" alt="Head" />
           </button>
-          <button class="iconToggle" data-part="arm"   title="Arm">
+          <button type="button" class="iconToggle" data-part="arm"   title="Arm">
             <img src="images/skelly/icon_action3.png" alt="Arm" />
           </button>
-          <button class="iconToggle" data-part="torso" title="Torso">
+          <button type="button" class="iconToggle" data-part="torso" title="Torso">
             <img src="images/skelly/icon_action4.png" alt="Torso" />
           </button>
         </div>
@@ -858,7 +858,7 @@
           </div>
 
           <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
-            <button class="iconToggle" id="btnHeadColorCycle" title="Cycle all colors" style="padding:4px;">
+            <button type="button" class="iconToggle" id="btnHeadColorCycle" title="Cycle all colors" style="padding:4px;">
               <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:28px;height:28px" />
             </button>
             <span class="small muted">Cycle</span>
@@ -899,7 +899,7 @@
           </div>
 
           <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
-            <button class="iconToggle" id="btnTorsoColorCycle" title="Cycle all colors" style="padding:4px;">
+            <button type="button" class="iconToggle" id="btnTorsoColorCycle" title="Cycle all colors" style="padding:4px;">
               <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:28px;height:28px" />
             </button>
             <span class="small muted">Cycle</span>
@@ -971,8 +971,8 @@
 
       <div class="spacer"></div>
       <div class="actions">
-        <button class="btn primary" id="btnSendFile">Send to Device</button>
-        <button class="btn danger" id="btnCancelFile" disabled>Cancel</button>
+        <button type="button" class="btn primary" id="btnSendFile">Send to Device</button>
+        <button type="button" class="btn danger" id="btnCancelFile" disabled>Cancel</button>
       </div>
       <div class="capsule">
         <div>Progress: <span id="progText">0 / 0</span></div>
@@ -992,7 +992,7 @@
           <textarea id="ttsText" rows="5" placeholder="Type what Skelly should say..."></textarea>
     
           <div class="actions">
-            <button class="btn primary" id="btnSendTTS">Send</button>
+            <button type="button" class="btn primary" id="btnSendTTS">Send</button>
           </div>
     
           <div class="small muted">TODO: Add effects...</div>
@@ -1008,8 +1008,8 @@
           Capture mic audio or forward system audio directly to Skelly (work in progress).
         </p>
         <div class="row">
-          <button class="btn" disabled>Record from Microphone</button>
-          <button class="btn" disabled>Forward Device Audio</button>
+          <button type="button" class="btn" disabled>Record from Microphone</button>
+          <button type="button" class="btn" disabled>Forward Device Audio</button>
         </div>
       </div>
     
@@ -1019,7 +1019,7 @@
       <section class="card area-files">
       <h2>Files on Device</h2>
       <div class="actions">
-        <button class="btn" id="btnRefreshFiles">Refresh List</button>
+        <button type="button" class="btn" id="btnRefreshFiles">Refresh List</button>
         <div style="display:flex; flex-direction:column; gap:2px;">
           <span class="small muted" id="filesSummary">—</span>
           <span class="small muted" id="filesLastRefresh"></span>
@@ -1054,13 +1054,13 @@
       <section class="card area-log">
         <h2>Log</h2>
         <div class="actions">
-          <button class="btn xs" id="btnClearLog">Clear</button>
-          <button class="btn xs" id="btnSaveLog">Save</button>
+          <button type="button" class="btn xs" id="btnClearLog">Clear</button>
+          <button type="button" class="btn xs" id="btnSaveLog">Save</button>
           <label class="small checkline">
             <input type="checkbox" id="chkAutoscroll" checked /> Autoscroll
           </label>
           <div class="menuwrap">
-            <button class="btn xs" id="btnLogFilter">Filter ▾</button>
+            <button type="button" class="btn xs" id="btnLogFilter">Filter ▾</button>
             <div id="logFilterMenu" class="dropdown hidden" role="menu" aria-label="Log filter options">
               <label><input type="checkbox" id="logFilterNormal" checked> Normal</label>
               <label><input type="checkbox" id="logFilterWarning" checked> Warning</label>

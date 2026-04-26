@@ -1,0 +1,5 @@
+#!/bin/sh
+# Auto-format staged JS/HTML files with Biome before committing.
+# Re-stages any files Biome modifies so the formatted version is committed.
+npx @biomejs/biome check --staged --write --no-errors-on-unmatched
+git add -u

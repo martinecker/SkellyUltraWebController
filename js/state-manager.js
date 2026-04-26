@@ -3,368 +3,370 @@
  * Centralized application state with observer pattern for reactive updates
  */
 
-import { DEVICE_TYPES } from './constants.js';
+import { DEVICE_TYPES } from "./constants.js";
 
 /**
  * Application State Manager
  * Manages device status, file list, and transfer state with change notifications
  */
 export class StateManager {
-  constructor() {
-    // Device state
-    this.device = {
-      name: '',
-      btName: '',
-      connected: false,
-      showMode: null,
-      channels: [],
-      volume: null,
-      capacity: null,
-      filesReported: null,  // Count reported by device in capacity query
-      filesReceived: null,  // Count of files actually received in file list
-      order: null, // Music play order
-      pin: null, // Device PIN
-    };
+	constructor() {
+		// Device state
+		this.device = {
+			name: "",
+			btName: "",
+			connected: false,
+			showMode: null,
+			channels: [],
+			volume: null,
+			capacity: null,
+			filesReported: null, // Count reported by device in capacity query
+			filesReceived: null, // Count of files actually received in file list
+			order: null, // Music play order
+			pin: null, // Device PIN
+		};
 
-    // Active device type (drives UI profile)
-    this.deviceType = DEVICE_TYPES.SKELLY;
+		// Active device type (drives UI profile)
+		this.deviceType = DEVICE_TYPES.SKELLY;
 
-    // Live status (action, eye icon, lights)
-    this.live = {
-      action: null,
-      eye: null,
-      lights: [],
-    };
+		// Live status (action, eye icon, lights)
+		this.live = {
+			action: null,
+			eye: null,
+			lights: [],
+		};
 
-    // File list state
-    this.files = {
-      expected: null,
-      items: new Map(), // serial -> file object
-      activeFetch: false, // When true, UI is disabled waiting for complete list
-      fetchTimer: null,
-      lastRefresh: null, // Timestamp of last successful refresh
-    };
+		// File list state
+		this.files = {
+			expected: null,
+			items: new Map(), // serial -> file object
+			activeFetch: false, // When true, UI is disabled waiting for complete list
+			fetchTimer: null,
+			lastRefresh: null, // Timestamp of last successful refresh
+		};
 
-    // Transfer state
-    this.transfer = {
-      inProgress: false,
-      cancel: false,
-      resumeFrom: null,
-      chunks: new Map(), // index -> payload hex
-      currentFile: null,
-    };
+		// Transfer state
+		this.transfer = {
+			inProgress: false,
+			cancel: false,
+			resumeFrom: null,
+			chunks: new Map(), // index -> payload hex
+			currentFile: null,
+		};
 
-    // Edit modal state
-    this.editModal = {
-      serial: null,
-      cluster: 0,
-      name: '',
-      eye: 1,
-    };
+		// Edit modal state
+		this.editModal = {
+			serial: null,
+			cluster: 0,
+			name: "",
+			eye: 1,
+		};
 
-    // Observers: key -> Set of callbacks
-    this.observers = new Map();
-    
-    // Build flag
-    this.targetsBuiltFromE0 = false;
-  }
+		// Observers: key -> Set of callbacks
+		this.observers = new Map();
 
-  /**
-   * Subscribe to state changes
-   * @param {string} key - State key to watch (e.g., 'device', 'files', 'transfer')
-   * @param {Function} callback - Callback function to invoke on changes
-   * @returns {Function} - Unsubscribe function
-   */
-  subscribe(key, callback) {
-    if (!this.observers.has(key)) {
-      this.observers.set(key, new Set());
-    }
-    this.observers.get(key).add(callback);
+		// Build flag
+		this.targetsBuiltFromE0 = false;
+	}
 
-    // Return unsubscribe function
-    return () => {
-      const observers = this.observers.get(key);
-      if (observers) {
-        observers.delete(callback);
-      }
-    };
-  }
+	/**
+	 * Subscribe to state changes
+	 * @param {string} key - State key to watch (e.g., 'device', 'files', 'transfer')
+	 * @param {Function} callback - Callback function to invoke on changes
+	 * @returns {Function} - Unsubscribe function
+	 */
+	subscribe(key, callback) {
+		if (!this.observers.has(key)) {
+			this.observers.set(key, new Set());
+		}
+		this.observers.get(key).add(callback);
 
-  /**
-   * Notify observers of state changes
-   * @param {string} key - State key that changed
-   */
-  notify(key) {
-    const observers = this.observers.get(key);
-    if (observers) {
-      observers.forEach(callback => {
-        try {
-          callback(this[key]);
-        } catch (error) {
-          console.error(`Error in observer for ${key}:`, error);
-        }
-      });
-    }
-  }
+		// Return unsubscribe function
+		return () => {
+			const observers = this.observers.get(key);
+			if (observers) {
+				observers.delete(callback);
+			}
+		};
+	}
 
-  /**
-   * Set the active device type and notify observers
-   * @param {string} type - DEVICE_TYPES value
-   */
-  setDeviceType(type) {
-    this.deviceType = type;
-    this.notify('deviceType');
-  }
+	/**
+	 * Notify observers of state changes
+	 * @param {string} key - State key that changed
+	 */
+	notify(key) {
+		const observers = this.observers.get(key);
+		if (observers) {
+			observers.forEach((callback) => {
+				try {
+					callback(this[key]);
+				} catch (error) {
+					console.error(`Error in observer for ${key}:`, error);
+				}
+			});
+		}
+	}
 
-  // === Device State Methods ===
+	/**
+	 * Set the active device type and notify observers
+	 * @param {string} type - DEVICE_TYPES value
+	 */
+	setDeviceType(type) {
+		this.deviceType = type;
+		this.notify("deviceType");
+	}
 
-  /**
-   * Update device state
-   * @param {Object} updates - Partial device state updates
-   */
-  updateDevice(updates) {
-    Object.assign(this.device, updates);
-    this.notify('device');
-  }
+	// === Device State Methods ===
 
-  /**
-   * Set connection status
-   * @param {boolean} connected - Connection status
-   */
-  setConnected(connected) {
-    this.device.connected = connected;
-    this.notify('device');
-  }
+	/**
+	 * Update device state
+	 * @param {Object} updates - Partial device state updates
+	 */
+	updateDevice(updates) {
+		Object.assign(this.device, updates);
+		this.notify("device");
+	}
 
-  /**
-   * Update live status
-   * @param {Object} updates - Partial live status updates
-   */
-  updateLive(updates) {
-    Object.assign(this.live, updates);
-    this.notify('live');
-  }
+	/**
+	 * Set connection status
+	 * @param {boolean} connected - Connection status
+	 */
+	setConnected(connected) {
+		this.device.connected = connected;
+		this.notify("device");
+	}
 
-  // === File State Methods ===
+	/**
+	 * Update live status
+	 * @param {Object} updates - Partial live status updates
+	 */
+	updateLive(updates) {
+		Object.assign(this.live, updates);
+		this.notify("live");
+	}
 
-  /**
-   * Reset file list state and clear old items
-   */
-  resetFiles() {
-    this.files.expected = null;
-    this.files.items.clear(); // Clear old items immediately at start of refresh
-    this.files.activeFetch = false;
-    if (this.files.fetchTimer) {
-      clearTimeout(this.files.fetchTimer);
-      this.files.fetchTimer = null;
-    }
-    this.notify('files');
-  }
+	// === File State Methods ===
 
-  /**
-   * Add or update a file in the list
-   * @param {number} serial - File serial number
-   * @param {Object} fileData - File data object
-   */
-  setFile(serial, fileData) {
-    this.files.items.set(serial, fileData);
-    // Never notify during active fetch - wait until order arrives
-    if (!this.files.activeFetch) {
-      this.notify('files');
-    }
-  }
+	/**
+	 * Reset file list state and clear old items
+	 */
+	resetFiles() {
+		this.files.expected = null;
+		this.files.items.clear(); // Clear old items immediately at start of refresh
+		this.files.activeFetch = false;
+		if (this.files.fetchTimer) {
+			clearTimeout(this.files.fetchTimer);
+			this.files.fetchTimer = null;
+		}
+		this.notify("files");
+	}
 
-  /**
-   * Get file by serial number
-   * @param {number} serial - File serial number
-   * @returns {Object|undefined} - File data or undefined
-   */
-  getFile(serial) {
-    return this.files.items.get(serial);
-  }
+	/**
+	 * Add or update a file in the list
+	 * @param {number} serial - File serial number
+	 * @param {Object} fileData - File data object
+	 */
+	setFile(serial, fileData) {
+		this.files.items.set(serial, fileData);
+		// Never notify during active fetch - wait until order arrives
+		if (!this.files.activeFetch) {
+			this.notify("files");
+		}
+	}
 
-  /**
-   * Check if a filename exists on device
-   * @param {string} name - Filename to check
-   * @returns {Object|null} - File object if found, null otherwise
-   */
-  hasFileName(name) {
-    if (!name) return null;
-    const needle = name.trim().toLowerCase();
-    for (const file of this.files.items.values()) {
-      if ((file.name || '').trim().toLowerCase() === needle) {
-        return file;
-      }
-    }
-    return null;
-  }
+	/**
+	 * Get file by serial number
+	 * @param {number} serial - File serial number
+	 * @returns {Object|undefined} - File data or undefined
+	 */
+	getFile(serial) {
+		return this.files.items.get(serial);
+	}
 
-  /**
-   * Update file list metadata
-   * @param {Object} updates - Updates to files metadata
-   */
-  updateFilesMetadata(updates) {
-    Object.assign(this.files, updates);
-    this.notify('files');
-  }
+	/**
+	 * Check if a filename exists on device
+	 * @param {string} name - Filename to check
+	 * @returns {Object|null} - File object if found, null otherwise
+	 */
+	hasFileName(name) {
+		if (!name) return null;
+		const needle = name.trim().toLowerCase();
+		for (const file of this.files.items.values()) {
+			if ((file.name || "").trim().toLowerCase() === needle) {
+				return file;
+			}
+		}
+		return null;
+	}
 
-  /**
-   * Check if file list is complete
-   * @returns {boolean}
-   */
-  isFileListComplete() {
-    return this.files.expected !== null && 
-           this.files.items.size >= this.files.expected;
-  }
+	/**
+	 * Update file list metadata
+	 * @param {Object} updates - Updates to files metadata
+	 */
+	updateFilesMetadata(updates) {
+		Object.assign(this.files, updates);
+		this.notify("files");
+	}
 
-  // === Transfer State Methods ===
+	/**
+	 * Check if file list is complete
+	 * @returns {boolean}
+	 */
+	isFileListComplete() {
+		return (
+			this.files.expected !== null &&
+			this.files.items.size >= this.files.expected
+		);
+	}
 
-  /**
-   * Start a transfer
-   * @param {string} fileName - Name of file being transferred
-   */
-  startTransfer(fileName) {
-    this.transfer.inProgress = true;
-    this.transfer.cancel = false;
-    this.transfer.resumeFrom = null;
-    this.transfer.chunks.clear();
-    this.transfer.currentFile = fileName;
-    this.notify('transfer');
-  }
+	// === Transfer State Methods ===
 
-  /**
-   * Cancel transfer
-   */
-  cancelTransfer() {
-    this.transfer.cancel = true;
-    this.notify('transfer');
-  }
+	/**
+	 * Start a transfer
+	 * @param {string} fileName - Name of file being transferred
+	 */
+	startTransfer(fileName) {
+		this.transfer.inProgress = true;
+		this.transfer.cancel = false;
+		this.transfer.resumeFrom = null;
+		this.transfer.chunks.clear();
+		this.transfer.currentFile = fileName;
+		this.notify("transfer");
+	}
 
-  /**
-   * End transfer
-   */
-  endTransfer() {
-    this.transfer.inProgress = false;
-    this.transfer.cancel = false;
-    this.transfer.currentFile = null;
-    this.transfer.chunks.clear();
-    this.notify('transfer');
-  }
+	/**
+	 * Cancel transfer
+	 */
+	cancelTransfer() {
+		this.transfer.cancel = true;
+		this.notify("transfer");
+	}
 
-  /**
-   * Set resume point for transfer
-   * @param {number} index - Chunk index to resume from
-   */
-  setResumePoint(index) {
-    this.transfer.resumeFrom = index;
-    this.notify('transfer');
-  }
+	/**
+	 * End transfer
+	 */
+	endTransfer() {
+		this.transfer.inProgress = false;
+		this.transfer.cancel = false;
+		this.transfer.currentFile = null;
+		this.transfer.chunks.clear();
+		this.notify("transfer");
+	}
 
-  /**
-   * Store a chunk for potential resend
-   * @param {number} index - Chunk index
-   * @param {string} payload - Chunk payload hex
-   */
-  storeChunk(index, payload) {
-    this.transfer.chunks.set(index, payload);
-  }
+	/**
+	 * Set resume point for transfer
+	 * @param {number} index - Chunk index to resume from
+	 */
+	setResumePoint(index) {
+		this.transfer.resumeFrom = index;
+		this.notify("transfer");
+	}
 
-  /**
-   * Get stored chunk
-   * @param {number} index - Chunk index
-   * @returns {string|undefined} - Chunk payload hex or undefined
-   */
-  getChunk(index) {
-    return this.transfer.chunks.get(index);
-  }
+	/**
+	 * Store a chunk for potential resend
+	 * @param {number} index - Chunk index
+	 * @param {string} payload - Chunk payload hex
+	 */
+	storeChunk(index, payload) {
+		this.transfer.chunks.set(index, payload);
+	}
 
-  // === Edit Modal State Methods ===
+	/**
+	 * Get stored chunk
+	 * @param {number} index - Chunk index
+	 * @returns {string|undefined} - Chunk payload hex or undefined
+	 */
+	getChunk(index) {
+		return this.transfer.chunks.get(index);
+	}
 
-  /**
-   * Open edit modal with file data
-   * @param {Object} fileData - File data object
-   */
-  openEditModal(fileData) {
-    this.editModal.serial = fileData.serial;
-    this.editModal.cluster = fileData.cluster;
-    this.editModal.name = fileData.name || '';
-    this.editModal.eye = fileData.eye || 1;
-    this.notify('editModal');
-  }
+	// === Edit Modal State Methods ===
 
-  /**
-   * Update edit modal state
-   * @param {Object} updates - Partial edit modal updates
-   */
-  updateEditModal(updates) {
-    Object.assign(this.editModal, updates);
-    this.notify('editModal');
-  }
+	/**
+	 * Open edit modal with file data
+	 * @param {Object} fileData - File data object
+	 */
+	openEditModal(fileData) {
+		this.editModal.serial = fileData.serial;
+		this.editModal.cluster = fileData.cluster;
+		this.editModal.name = fileData.name || "";
+		this.editModal.eye = fileData.eye || 1;
+		this.notify("editModal");
+	}
 
-  /**
-   * Close edit modal
-   */
-  closeEditModal() {
-    this.editModal.serial = null;
-    this.notify('editModal');
-  }
+	/**
+	 * Update edit modal state
+	 * @param {Object} updates - Partial edit modal updates
+	 */
+	updateEditModal(updates) {
+		Object.assign(this.editModal, updates);
+		this.notify("editModal");
+	}
 
-  // === Utility Methods ===
+	/**
+	 * Close edit modal
+	 */
+	closeEditModal() {
+		this.editModal.serial = null;
+		this.notify("editModal");
+	}
 
-  /**
-   * Get current state snapshot
-   * @returns {Object} - Complete state object
-   */
-  getSnapshot() {
-    return {
-      device: { ...this.device },
-      live: { ...this.live },
-      files: {
-        ...this.files,
-        items: new Map(this.files.items),
-      },
-      transfer: {
-        ...this.transfer,
-        chunks: new Map(this.transfer.chunks),
-      },
-      editModal: { ...this.editModal },
-    };
-  }
+	// === Utility Methods ===
 
-  /**
-   * Reset all state
-   */
-  reset() {
-    this.device = {
-      name: '',
-      btName: '',
-      connected: false,
-      showMode: null,
-      channels: [],
-      volume: null,
-      capacity: null,
-      filesReported: null,
-    };
-    this.live = {
-      action: null,
-      eye: null,
-      lights: [],
-    };
-    this.resetFiles();
-    this.endTransfer();
-    this.editModal = {
-      serial: null,
-      cluster: 0,
-      name: '',
-      eye: 1,
-    };
-    this.targetsBuiltFromE0 = false;
-    
-    // Notify all observers
-    this.notify('device');
-    this.notify('live');
-    this.notify('files');
-    this.notify('transfer');
-    this.notify('editModal');
-  }
+	/**
+	 * Get current state snapshot
+	 * @returns {Object} - Complete state object
+	 */
+	getSnapshot() {
+		return {
+			device: { ...this.device },
+			live: { ...this.live },
+			files: {
+				...this.files,
+				items: new Map(this.files.items),
+			},
+			transfer: {
+				...this.transfer,
+				chunks: new Map(this.transfer.chunks),
+			},
+			editModal: { ...this.editModal },
+		};
+	}
+
+	/**
+	 * Reset all state
+	 */
+	reset() {
+		this.device = {
+			name: "",
+			btName: "",
+			connected: false,
+			showMode: null,
+			channels: [],
+			volume: null,
+			capacity: null,
+			filesReported: null,
+		};
+		this.live = {
+			action: null,
+			eye: null,
+			lights: [],
+		};
+		this.resetFiles();
+		this.endTransfer();
+		this.editModal = {
+			serial: null,
+			cluster: 0,
+			name: "",
+			eye: 1,
+		};
+		this.targetsBuiltFromE0 = false;
+
+		// Notify all observers
+		this.notify("device");
+		this.notify("live");
+		this.notify("files");
+		this.notify("transfer");
+		this.notify("editModal");
+	}
 }

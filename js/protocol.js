@@ -3,7 +3,7 @@
  * Handles BLE protocol encoding/decoding, CRC calculation, and command building
  */
 
-import { PADDING, PROTOCOL_MARKERS } from './constants.js';
+import { PADDING, PROTOCOL_MARKERS } from "./constants.js";
 
 /**
  * Calculate CRC8 checksum for BLE protocol
@@ -11,15 +11,15 @@ import { PADDING, PROTOCOL_MARKERS } from './constants.js';
  * @returns {string} - 2-character hex string
  */
 export function crc8(bytes) {
-  let crc = 0;
-  for (const b of bytes) {
-    let x = crc ^ b;
-    for (let i = 0; i < 8; i++) {
-      x = (x & 1) ? ((x >>> 1) ^ 0x8C) : (x >>> 1);
-    }
-    crc = x & 0xFF;
-  }
-  return crc.toString(16).toUpperCase().padStart(2, '0');
+	let crc = 0;
+	for (const b of bytes) {
+		let x = crc ^ b;
+		for (let i = 0; i < 8; i++) {
+			x = x & 1 ? (x >>> 1) ^ 0x8c : x >>> 1;
+		}
+		crc = x & 0xff;
+	}
+	return crc.toString(16).toUpperCase().padStart(2, "0");
 }
 
 /**
@@ -28,16 +28,16 @@ export function crc8(bytes) {
  * @returns {Uint8Array}
  */
 export function hexToBytes(hex) {
-  if (!hex) return new Uint8Array();
-  const clean = hex.replace(/\s+/g, '');
-  if (clean.length % 2 !== 0) {
-    throw new Error('Hex length must be even');
-  }
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = parseInt(clean.substr(i * 2, 2), 16);
-  }
-  return out;
+	if (!hex) return new Uint8Array();
+	const clean = hex.replace(/\s+/g, "");
+	if (clean.length % 2 !== 0) {
+		throw new Error("Hex length must be even");
+	}
+	const out = new Uint8Array(clean.length / 2);
+	for (let i = 0; i < out.length; i++) {
+		out[i] = parseInt(clean.substr(i * 2, 2), 16);
+	}
+	return out;
 }
 
 /**
@@ -46,7 +46,9 @@ export function hexToBytes(hex) {
  * @returns {string} - Uppercase hex string
  */
 export function bytesToHex(u8) {
-  return Array.from(u8, b => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+	return Array.from(u8, (b) =>
+		b.toString(16).toUpperCase().padStart(2, "0"),
+	).join("");
 }
 
 /**
@@ -56,7 +58,11 @@ export function bytesToHex(u8) {
  * @returns {string} - Uppercase hex string
  */
 export function intToHex(n, bytes) {
-  return (n >>> 0).toString(16).toUpperCase().padStart(bytes * 2, '0').slice(-bytes * 2);
+	return (n >>> 0)
+		.toString(16)
+		.toUpperCase()
+		.padStart(bytes * 2, "0")
+		.slice(-bytes * 2);
 }
 
 /**
@@ -65,26 +71,29 @@ export function intToHex(n, bytes) {
  * @returns {string} - Uppercase hex string
  */
 export function utf16leHex(str) {
-  if (!str) return '';
-  let hex = '';
-  for (const ch of str) {
-    const cp = ch.codePointAt(0);
-    if (cp <= 0xFFFF) {
-      const lo = cp & 0xFF;
-      const hi = (cp >> 8) & 0xFF;
-      hex += lo.toString(16).padStart(2, '0') + hi.toString(16).padStart(2, '0');
-    } else {
-      // Surrogate pair for characters outside BMP
-      const v = cp - 0x10000;
-      const hiS = 0xD800 + ((v >> 10) & 0x3FF);
-      const loS = 0xDC00 + (v & 0x3FF);
-      hex += (hiS & 0xFF).toString(16).padStart(2, '0') + 
-             ((hiS >> 8) & 0xFF).toString(16).padStart(2, '0');
-      hex += (loS & 0xFF).toString(16).padStart(2, '0') + 
-             ((loS >> 8) & 0xFF).toString(16).padStart(2, '0');
-    }
-  }
-  return hex.toUpperCase();
+	if (!str) return "";
+	let hex = "";
+	for (const ch of str) {
+		const cp = ch.codePointAt(0);
+		if (cp <= 0xffff) {
+			const lo = cp & 0xff;
+			const hi = (cp >> 8) & 0xff;
+			hex +=
+				lo.toString(16).padStart(2, "0") + hi.toString(16).padStart(2, "0");
+		} else {
+			// Surrogate pair for characters outside BMP
+			const v = cp - 0x10000;
+			const hiS = 0xd800 + ((v >> 10) & 0x3ff);
+			const loS = 0xdc00 + (v & 0x3ff);
+			hex +=
+				(hiS & 0xff).toString(16).padStart(2, "0") +
+				((hiS >> 8) & 0xff).toString(16).padStart(2, "0");
+			hex +=
+				(loS & 0xff).toString(16).padStart(2, "0") +
+				((loS >> 8) & 0xff).toString(16).padStart(2, "0");
+		}
+	}
+	return hex.toUpperCase();
 }
 
 /**
@@ -93,15 +102,15 @@ export function utf16leHex(str) {
  * @returns {string} - Decoded string
  */
 export function decodeUtf16le(u8) {
-  let s = '';
-  for (let i = 0; i + 1 < u8.length; i += 2) {
-    const lo = u8[i];
-    const hi = u8[i + 1];
-    const code = (hi << 8) | lo;
-    if (code === 0) continue;
-    s += String.fromCharCode(code);
-  }
-  return s;
+	let s = "";
+	for (let i = 0; i + 1 < u8.length; i += 2) {
+		const lo = u8[i];
+		const hi = u8[i + 1];
+		const code = (hi << 8) | lo;
+		if (code === 0) continue;
+		s += String.fromCharCode(code);
+	}
+	return s;
 }
 
 /**
@@ -111,13 +120,13 @@ export function decodeUtf16le(u8) {
  * @param {number} minBytes - Minimum payload bytes (for padding)
  * @returns {Uint8Array} - Complete command bytes with CRC
  */
-export function buildCommand(tag, payloadHex = '', minBytes = PADDING.DEFAULT) {
-  const p = (payloadHex || '').replace(/\s+/g, '').toUpperCase();
-  const minLen = Math.max(0, (minBytes | 0) * 2);
-  const padded = p.length < minLen ? p + '0'.repeat(minLen - p.length) : p;
-  const base = tag.toUpperCase() + padded;
-  const crcValue = crc8(hexToBytes(base));
-  return hexToBytes(base + crcValue);
+export function buildCommand(tag, payloadHex = "", minBytes = PADDING.DEFAULT) {
+	const p = (payloadHex || "").replace(/\s+/g, "").toUpperCase();
+	const minLen = Math.max(0, (minBytes | 0) * 2);
+	const padded = p.length < minLen ? p + "0".repeat(minLen - p.length) : p;
+	const base = tag.toUpperCase() + padded;
+	const crcValue = crc8(hexToBytes(base));
+	return hexToBytes(base + crcValue);
 }
 
 /**
@@ -126,15 +135,15 @@ export function buildCommand(tag, payloadHex = '', minBytes = PADDING.DEFAULT) {
  * @returns {string} - ASCII string (printable chars only)
  */
 export function getAsciiFromHex(hexString) {
-  const clean = hexString.replace(/[^0-9A-F]/gi, '');
-  const u8 = hexToBytes(clean);
-  let out = '';
-  for (const b of u8) {
-    if (b >= 32 && b <= 126) {
-      out += String.fromCharCode(b);
-    }
-  }
-  return out.trim();
+	const clean = hexString.replace(/[^0-9A-F]/gi, "");
+	const u8 = hexToBytes(clean);
+	let out = "";
+	for (const b of u8) {
+		if (b >= 32 && b <= 126) {
+			out += String.fromCharCode(b);
+		}
+	}
+	return out.trim();
 }
 
 /**
@@ -143,19 +152,19 @@ export function getAsciiFromHex(hexString) {
  * @returns {Object} - {nameHex, nameLenHex, fullPayload}
  */
 export function buildFilenamePayload(name) {
-  if (!name || !name.trim()) {
-    return {
-      nameHex: '',
-      nameLenHex: '00',
-      fullPayload: '00',
-    };
-  }
-  
-  const nameHex = utf16leHex(name.trim());
-  const nameLenHex = intToHex((nameHex.length / 2) + 2, 1);
-  const fullPayload = nameLenHex + PROTOCOL_MARKERS.FILENAME + nameHex;
-  
-  return { nameHex, nameLenHex, fullPayload };
+	if (!name?.trim()) {
+		return {
+			nameHex: "",
+			nameLenHex: "00",
+			fullPayload: "00",
+		};
+	}
+
+	const nameHex = utf16leHex(name.trim());
+	const nameLenHex = intToHex(nameHex.length / 2 + 2, 1);
+	const fullPayload = nameLenHex + PROTOCOL_MARKERS.FILENAME + nameHex;
+
+	return { nameHex, nameLenHex, fullPayload };
 }
 
 /**
@@ -166,9 +175,11 @@ export function buildFilenamePayload(name) {
  * @returns {string} - Hex string
  */
 export function chunkToHex(u8, offset, length) {
-  const end = Math.min(offset + length, u8.length);
-  const chunk = u8.subarray(offset, end);
-  return Array.from(chunk, b => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+	const end = Math.min(offset + length, u8.length);
+	const chunk = u8.subarray(offset, end);
+	return Array.from(chunk, (b) =>
+		b.toString(16).toUpperCase().padStart(2, "0"),
+	).join("");
 }
 
 /**
@@ -179,7 +190,7 @@ export function chunkToHex(u8, offset, length) {
  * @returns {number} - Clamped value
  */
 export function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, Number(n) || 0));
+	return Math.max(min, Math.min(max, Number(n) || 0));
 }
 
 /**
@@ -188,7 +199,7 @@ export function clamp(n, min, max) {
  * @returns {Promise<void>}
  */
 export function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -197,12 +208,16 @@ export function sleep(ms) {
  * @returns {string} - Escaped string
  */
 export function escapeHtml(s) {
-  return s.replace(/[&<>"]/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;'
-  }[c]));
+	return s.replace(
+		/[&<>"]/g,
+		(c) =>
+			({
+				"&": "&amp;",
+				"<": "&lt;",
+				">": "&gt;",
+				'"': "&quot;",
+			})[c],
+	);
 }
 
 /**
@@ -211,7 +226,7 @@ export function escapeHtml(s) {
  * @returns {string} - Normalized name
  */
 export function normalizeDeviceName(s) {
-  return (s || '').trim().toLowerCase();
+	return (s || "").trim().toLowerCase();
 }
 
 /**
@@ -222,14 +237,14 @@ export function normalizeDeviceName(s) {
  * @returns {number} - Speed value for UI (0-254)
  */
 export function deviceSpeedToUI(deviceSpeed) {
-  const speed = parseInt(deviceSpeed, 10);
-  // Device speed 255 is fastest (same as 0), map to UI 254
-  if (speed === 255) {
-    return 254;
-  }
-  // Invert: device 0 (fast) -> UI 254 (fast)
-  //         device 254 (slow) -> UI 0 (slow)
-  return 254 - speed;
+	const speed = parseInt(deviceSpeed, 10);
+	// Device speed 255 is fastest (same as 0), map to UI 254
+	if (speed === 255) {
+		return 254;
+	}
+	// Invert: device 0 (fast) -> UI 254 (fast)
+	//         device 254 (slow) -> UI 0 (slow)
+	return 254 - speed;
 }
 
 /**
@@ -240,8 +255,8 @@ export function deviceSpeedToUI(deviceSpeed) {
  * @returns {number} - Speed value for device (0-255)
  */
 export function uiSpeedToDevice(uiSpeed) {
-  const speed = clamp(uiSpeed, 0, 254);
-  // Invert: UI 254 (fast) -> device 0 (fast)
-  //         UI 0 (slow) -> device 254 (slow)
-  return 254 - speed;
+	const speed = clamp(uiSpeed, 0, 254);
+	// Invert: UI 254 (fast) -> device 0 (fast)
+	//         UI 0 (slow) -> device 254 (slow)
+	return 254 - speed;
 }

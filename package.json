@@ -1,0 +1,28 @@
+{
+  "name": "skellyultrawebcontroller",
+  "version": "1.0.0",
+  "description": "A modern web-based Bluetooth controller for Home Depot's 6.5 ft Ultra Skelly animatronic skeleton or 7 ft Lethal Lily animated witch. Control lights, sounds, animations, and file management directly from your browser using Web Bluetooth API.",
+  "main": "app-bundled.js",
+  "scripts": {
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "check:staged": "biome check --staged --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martinecker/SkellyUltraWebController.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/martinecker/SkellyUltraWebController/issues"
+  },
+  "homepage": "https://github.com/martinecker/SkellyUltraWebController#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13"
+  }
+}
