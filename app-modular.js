@@ -2418,32 +2418,27 @@ class SkellyApp {
 
 		// Disable table during active fetch
 		const table = $("#filesTable");
+		const tableWrap = $("#filesTableWrap");
+		const spinnerWrap = $("#filesSpinnerWrap");
 		const isRefreshing = this.state.files.activeFetch;
+		const hasItems = this.state.files.items.size > 0;
+
+		// Show centered spinner only when fetching with no items yet
+		if (spinnerWrap)
+			spinnerWrap.classList.toggle("hidden", !(isRefreshing && !hasItems));
+		if (tableWrap)
+			tableWrap.classList.toggle("hidden", isRefreshing && !hasItems);
+
+		// Fade table while re-fetching over existing items
 		if (table) {
-			if (isRefreshing) {
-				table.style.opacity = "0.5";
-				table.style.pointerEvents = "none";
-			} else {
-				table.style.opacity = "1";
-				table.style.pointerEvents = "auto";
-			}
+			table.style.opacity = isRefreshing && hasItems ? "0.5" : "1";
+			table.style.pointerEvents = isRefreshing ? "none" : "auto";
 		}
 
 		tbody.innerHTML = "";
 
-		// Show refreshing message if no files yet and currently fetching
-		if (isRefreshing && this.state.files.items.size === 0) {
-			const tr = document.createElement("tr");
-			const td = document.createElement("td");
-			td.colSpan = 10; // Span all columns
-			td.textContent = "Refreshing...";
-			td.style.textAlign = "center";
-			td.style.fontStyle = "italic";
-			td.style.color = "#888";
-			tr.appendChild(td);
-			tbody.appendChild(tr);
-			return;
-		}
+		// Nothing to render while initial fetch is in progress
+		if (isRefreshing && !hasItems) return;
 
 		const query = ($("#filesFilter")?.value || "").toLowerCase().trim();
 

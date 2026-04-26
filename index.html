@@ -79,6 +79,11 @@
     .dropdown label { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:12px; color:#d1d5db; }
     .dropdown input[type=checkbox] { width:auto; }
 
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid #28303a; border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; }
+    .spinner-lg { width:40px; height:40px; border-width:3px; }
+
     /* Progress */
     .progress { height: 10px; background:#0f1318; border:1px solid #28303a; border-radius:999px; overflow:hidden; }
     .bar { height:100%; width:0%; background: linear-gradient(90deg, #22d3ee, #10b981); transition: width .15s; }
@@ -1056,7 +1061,10 @@
         <input id="filesFilter" placeholder="Filter by name…" style="max-width:200px" />
       </div>
       <div class="spacer"></div>
-      <div class="tablewrap">
+      <div id="filesSpinnerWrap" class="hidden" style="display:flex;align-items:center;justify-content:center;padding:48px 0;">
+        <span class="spinner spinner-lg"></span>
+      </div>
+      <div class="tablewrap" id="filesTableWrap">
         <table id="filesTable">
           <thead>
             <tr>
