@@ -54,6 +54,7 @@ def main():
         ('js/file-manager.js', 'File Manager'),
         ('js/protocol-parser.js', 'Protocol Parser'),
         ('js/edit-modal.js', 'Edit Modal Manager'),
+        ('js/transfer-modal.js', 'Transfer Modal Manager'),
         ('js/elevenlabs.js', 'ElevenLabs TTS Client'),
         ('app-modular.js', 'Main Application'),
     ]

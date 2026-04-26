@@ -1,6 +1,6 @@
 # Skelly Ultra Web Controller
 
-A modern web-based Bluetooth controller for Home Depot's 6.5 ft Ultra Skelly animatronic skeleton or 7 ft Lethal Lily animated witch. Control lights, sounds, animations, and file management directly from your browser using Web Bluetooth API.
+A modern web-based Bluetooth controller for Home Depot's 6.5 ft Ultra Skelly animatronic skeleton and 7 ft Lethal Lily animatronic witch. Control lights, sounds, animations, and file management directly from your browser using Web Bluetooth API.
 
 A live version of this project is hosted here https://martinecker.github.io/SkellyUltraWebController/
 
@@ -34,11 +34,17 @@ This project also has a [REST Server](https://github.com/martinecker/SkellyUltra
 
 ### 🎭 Appearance & Animation
 
-- **Eye Icons**: Choose from multiple eye designs to display on the device
+- **Eye Icons**: Choose from multiple eye designs to display on the Ultra Skelly (not available for Lethal Lily)
 - **Movement Control**: Enable/disable movement animations for:
-  - Head movements
-  - Arm movements
-  - Torso movements
+  - Ultra Skelly:
+    - Head movements
+    - Arm movements
+    - Torso movements
+  - Lethal Lily:
+    - Head movements
+    - Wrist movements
+    - Elbow movements
+    - Eye movements
   - All movements (combined control)
 
 ### 🎮 Live Mode Controls
@@ -128,6 +134,7 @@ Use the [Skelly Ultra REST Server](https://github.com/martinecker/SkellyUltra/tr
 - `protocol-parser.js`: Protocol parsing and command building
 - `rest-proxy.js`: Handles communication with the REST server used as BLE proxy
 - `state-manager.js`: Centralized application state
+- `transfer-modal.js`: File transfer and TTS interface logic
 
 ## 🔐 Safety
 
