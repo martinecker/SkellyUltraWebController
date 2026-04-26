@@ -522,10 +522,8 @@ class SkellyApp {
 	 */
 	initializeConnectionModal() {
 		const connectModal = $("#connectModal");
-		const connectNameFilter = $("#connectNameFilter");
 		const connectFilterDefault = $("#connectFilterDefault");
 		const connectDefaultDevice = $("#connectDefaultDevice");
-		const connectFilterByName = $("#connectFilterByName");
 		const connectAllDevices = $("#connectAllDevices");
 		const connectionTypeDirect = $("#connectionTypeDirect");
 		const connectionTypeRest = $("#connectionTypeRest");
@@ -583,16 +581,13 @@ class SkellyApp {
 		connectionTypeDirect?.addEventListener("change", updateConnectionTypeUI);
 		connectionTypeRest?.addEventListener("change", updateConnectionTypeUI);
 
-		// Enable/disable filter inputs based on radio selection
+		// Enable/disable device dropdown based on radio selection
 		const updateFilterState = () => {
 			const isDefault = connectFilterDefault?.checked;
-			const isCustom = connectFilterByName?.checked;
 			if (connectDefaultDevice) connectDefaultDevice.disabled = !isDefault;
-			if (connectNameFilter) connectNameFilter.disabled = !isCustom;
 		};
 
 		connectFilterDefault?.addEventListener("change", updateFilterState);
-		connectFilterByName?.addEventListener("change", updateFilterState);
 		connectAllDevices?.addEventListener("change", updateFilterState);
 
 		// Initialize state
@@ -642,16 +637,6 @@ class SkellyApp {
 					deviceType = selectedOption;
 					nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
 				}
-			} else if (connectFilterByName?.checked) {
-				// Custom name — try to auto-detect device type from the name
-				nameFilter = connectNameFilter?.value || "";
-				const nameLower = nameFilter.toLowerCase();
-				if (nameLower.includes("lily")) {
-					deviceType = DEVICE_TYPES.LILY;
-				} else if (nameLower.includes("skelly")) {
-					deviceType = DEVICE_TYPES.SKELLY;
-				}
-				// else keep last persisted deviceType
 			}
 			// All devices: nameFilter stays '', deviceType stays last persisted
 
