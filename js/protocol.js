@@ -162,7 +162,7 @@ export function buildFilenamePayload(name) {
 
 	const nameHex = utf16leHex(name.trim());
 	const nameLenHex = intToHex(nameHex.length / 2 + 2, 1);
-	const fullPayload = nameLenHex + PROTOCOL_MARKERS.FILENAME + nameHex;
+	const fullPayload = PROTOCOL_MARKERS.FILENAME + nameHex;
 
 	return { nameHex, nameLenHex, fullPayload };
 }
