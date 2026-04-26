@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Main Application Entry Point
  * Orchestrates all modules and initializes the application
  *
@@ -1213,15 +1213,15 @@ class SkellyApp {
 			this.logger.log(`Set Light 1 brightness to ${brightness}`);
 		};
 
-		if (headBriRange && headBriNum) {
-			headBriRange.addEventListener("input", (e) => {
-				headBriNum.value = e.target.value;
-				sendHeadBrightness(e.target.value);
+		if (light1BriRange && light1BriNum) {
+			light1BriRange.addEventListener("input", (e) => {
+				light1BriNum.value = e.target.value;
+				sendLight1Brightness(e.target.value);
 			});
-			headBriNum.addEventListener("input", (e) => {
+			light1BriNum.addEventListener("input", (e) => {
 				const clamped = clamp(e.target.value, 0, 255);
-				headBriRange.value = clamped;
-				sendHeadBrightness(clamped);
+				light1BriRange.value = clamped;
+				sendLight1Brightness(clamped);
 			});
 		}
 
@@ -1244,15 +1244,15 @@ class SkellyApp {
 			this.logger.log(`Set ${this.light0Label} brightness to ${brightness}`);
 		};
 
-		if (torsoBriRange && torsoBriNum) {
-			torsoBriRange.addEventListener("input", (e) => {
-				torsoBriNum.value = e.target.value;
-				sendTorsoBrightness(e.target.value);
+		if (light0BriRange && light0BriNum) {
+			light0BriRange.addEventListener("input", (e) => {
+				light0BriNum.value = e.target.value;
+				sendLight0Brightness(e.target.value);
 			});
-			torsoBriNum.addEventListener("input", (e) => {
+			light0BriNum.addEventListener("input", (e) => {
 				const clamped = clamp(e.target.value, 0, 255);
-				torsoBriRange.value = clamped;
-				sendTorsoBrightness(clamped);
+				light0BriRange.value = clamped;
+				sendLight0Brightness(clamped);
 			});
 		}
 
@@ -1296,22 +1296,22 @@ class SkellyApp {
 		};
 
 		// Sync color picker with RGB inputs and send immediately
-		if (headColorPick && headRInput && headGInput && headBInput) {
-			headColorPick.addEventListener("input", (e) => {
+		if (light1ColorPick && light1RInput && light1GInput && light1BInput) {
+			light1ColorPick.addEventListener("input", (e) => {
 				const hex = e.target.value;
-				headRInput.value = parseInt(hex.substring(1, 3), 16);
-				headGInput.value = parseInt(hex.substring(3, 5), 16);
-				headBInput.value = parseInt(hex.substring(5, 7), 16);
-				sendHeadColor(true); // Disable cycle when user picks a color
+				light1RInput.value = parseInt(hex.substring(1, 3), 16);
+				light1GInput.value = parseInt(hex.substring(3, 5), 16);
+				light1BInput.value = parseInt(hex.substring(5, 7), 16);
+				sendLight1Color(true); // Disable cycle when user picks a color
 			});
 
-			[headRInput, headGInput, headBInput].forEach((inp) => {
+			[light1RInput, light1GInput, light1BInput].forEach((inp) => {
 				inp?.addEventListener("input", () => {
-					const r = clamp(headRInput.value, 0, 255);
-					const g = clamp(headGInput.value, 0, 255);
-					const b = clamp(headBInput.value, 0, 255);
-					headColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-					sendHeadColor(true); // Disable cycle when user changes RGB values
+					const r = clamp(light1RInput.value, 0, 255);
+					const g = clamp(light1GInput.value, 0, 255);
+					const b = clamp(light1BInput.value, 0, 255);
+					light1ColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+					sendLight1Color(true); // Disable cycle when user changes RGB values
 				});
 			});
 		}
@@ -1356,22 +1356,22 @@ class SkellyApp {
 		};
 
 		// Sync color picker with RGB inputs and send immediately
-		if (torsoColorPick && torsoRInput && torsoGInput && torsoBInput) {
-			torsoColorPick.addEventListener("input", (e) => {
+		if (light0ColorPick && light0RInput && light0GInput && light0BInput) {
+			light0ColorPick.addEventListener("input", (e) => {
 				const hex = e.target.value;
-				torsoRInput.value = parseInt(hex.substring(1, 3), 16);
-				torsoGInput.value = parseInt(hex.substring(3, 5), 16);
-				torsoBInput.value = parseInt(hex.substring(5, 7), 16);
-				sendTorsoColor(true); // Disable cycle when user picks a color
+				light0RInput.value = parseInt(hex.substring(1, 3), 16);
+				light0GInput.value = parseInt(hex.substring(3, 5), 16);
+				light0BInput.value = parseInt(hex.substring(5, 7), 16);
+				sendLight0Color(true); // Disable cycle when user picks a color
 			});
 
-			[torsoRInput, torsoGInput, torsoBInput].forEach((inp) => {
+			[light0RInput, light0GInput, light0BInput].forEach((inp) => {
 				inp?.addEventListener("input", () => {
-					const r = clamp(torsoRInput.value, 0, 255);
-					const g = clamp(torsoGInput.value, 0, 255);
-					const b = clamp(torsoBInput.value, 0, 255);
-					torsoColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-					sendTorsoColor(true); // Disable cycle when user changes RGB values
+					const r = clamp(light0RInput.value, 0, 255);
+					const g = clamp(light0GInput.value, 0, 255);
+					const b = clamp(light0BInput.value, 0, 255);
+					light0ColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+					sendLight0Color(true); // Disable cycle when user changes RGB values
 				});
 			});
 		}
@@ -1439,15 +1439,15 @@ class SkellyApp {
 			);
 		};
 
-		if (headEffectSpeedRange && headEffectSpeedNum) {
-			headEffectSpeedRange.addEventListener("input", (e) => {
-				headEffectSpeedNum.value = e.target.value;
-				sendHeadSpeed(e.target.value);
+		if (light1EffectSpeedRange && light1EffectSpeedNum) {
+			light1EffectSpeedRange.addEventListener("input", (e) => {
+				light1EffectSpeedNum.value = e.target.value;
+				sendLight1Speed(e.target.value);
 			});
-			headEffectSpeedNum.addEventListener("input", (e) => {
+			light1EffectSpeedNum.addEventListener("input", (e) => {
 				const clamped = clamp(e.target.value, 0, 254);
-				headEffectSpeedRange.value = clamped;
-				sendHeadSpeed(clamped);
+				light1EffectSpeedRange.value = clamped;
+				sendLight1Speed(clamped);
 			});
 		}
 
@@ -1470,15 +1470,15 @@ class SkellyApp {
 			);
 		};
 
-		if (torsoEffectSpeedRange && torsoEffectSpeedNum) {
-			torsoEffectSpeedRange.addEventListener("input", (e) => {
-				torsoEffectSpeedNum.value = e.target.value;
-				sendTorsoSpeed(e.target.value);
+		if (light0EffectSpeedRange && light0EffectSpeedNum) {
+			light0EffectSpeedRange.addEventListener("input", (e) => {
+				light0EffectSpeedNum.value = e.target.value;
+				sendLight0Speed(e.target.value);
 			});
-			torsoEffectSpeedNum.addEventListener("input", (e) => {
+			light0EffectSpeedNum.addEventListener("input", (e) => {
 				const clamped = clamp(e.target.value, 0, 254);
-				torsoEffectSpeedRange.value = clamped;
-				sendTorsoSpeed(clamped);
+				light0EffectSpeedRange.value = clamped;
+				sendLight0Speed(clamped);
 			});
 		}
 
@@ -3029,16 +3029,17 @@ class SkellyApp {
 
 				// Effect speed (show/hide speed block based on mode)
 				const light1EffectSpeedBlock = $("#light1EffectSpeedBlock");
-				if (headEffectSpeedBlock) {
-					headEffectSpeedBlock.classList.toggle(
+				if (light1EffectSpeedBlock) {
+					light1EffectSpeedBlock.classList.toggle(
 						"hidden",
-						headLight.effectMode === 1,
+						light1.effectMode === 1,
 					);
 				}
-				const headUISpeed = deviceSpeedToUI(headLight.effectSpeed);
-				if ($("#headEffectSpeed")) $("#headEffectSpeed").value = headUISpeed;
-				if ($("#headEffectSpeedRange"))
-					$("#headEffectSpeedRange").value = headUISpeed;
+				const light1UISpeed = deviceSpeedToUI(light1.effectSpeed);
+				if ($("#light1EffectSpeed"))
+					$("#light1EffectSpeed").value = light1UISpeed;
+				if ($("#light1EffectSpeedRange"))
+					$("#light1EffectSpeedRange").value = light1UISpeed;
 			}
 
 			// Light 0 (index 0)
@@ -3075,16 +3076,17 @@ class SkellyApp {
 
 				// Effect speed (show/hide speed block based on mode)
 				const light0EffectSpeedBlock = $("#light0EffectSpeedBlock");
-				if (torsoEffectSpeedBlock) {
-					torsoEffectSpeedBlock.classList.toggle(
+				if (light0EffectSpeedBlock) {
+					light0EffectSpeedBlock.classList.toggle(
 						"hidden",
-						torsoLight.effectMode === 1,
+						light0.effectMode === 1,
 					);
 				}
-				const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed);
-				if ($("#torsoEffectSpeed")) $("#torsoEffectSpeed").value = torsoUISpeed;
-				if ($("#torsoEffectSpeedRange"))
-					$("#torsoEffectSpeedRange").value = torsoUISpeed;
+				const light0UISpeed = deviceSpeedToUI(light0.effectSpeed);
+				if ($("#light0EffectSpeed"))
+					$("#light0EffectSpeed").value = light0UISpeed;
+				if ($("#light0EffectSpeedRange"))
+					$("#light0EffectSpeedRange").value = light0UISpeed;
 			}
 		}
 	}
@@ -3166,28 +3168,28 @@ class SkellyApp {
 			const eyeImgIdx = file.eye;
 
 			// Generate Light 1 color indicator (lights[1])
-			const light1ColorHtml = "";
+			let light1ColorHtml = "";
 			if (file.lights?.[1]) {
-				const headLight = file.lights[1];
-				if (headLight.colorCycle) {
-					headColorHtml =
+				const light1 = file.lights[1];
+				if (light1.colorCycle) {
+					light1ColorHtml =
 						'<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
 				} else {
-					const rgb = `rgb(${headLight.r}, ${headLight.g}, ${headLight.b})`;
-					headColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${headLight.r},${headLight.g},${headLight.b})"></div>`;
+					const rgb = `rgb(${light1.r}, ${light1.g}, ${light1.b})`;
+					light1ColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${light1.r},${light1.g},${light1.b})"></div>`;
 				}
 			}
 
 			// Generate Light 0 color indicator (lights[0])
-			const light0ColorHtml = "";
+			let light0ColorHtml = "";
 			if (file.lights?.[0]) {
-				const torsoLight = file.lights[0];
-				if (torsoLight.colorCycle) {
-					torsoColorHtml =
+				const light0 = file.lights[0];
+				if (light0.colorCycle) {
+					light0ColorHtml =
 						'<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
 				} else {
-					const rgb = `rgb(${torsoLight.r}, ${torsoLight.g}, ${torsoLight.b})`;
-					torsoColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${torsoLight.r},${torsoLight.g},${torsoLight.b})"></div>`;
+					const rgb = `rgb(${light0.r}, ${light0.g}, ${light0.b})`;
+					light0ColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${light0.r},${light0.g},${light0.b})"></div>`;
 				}
 			}
 
