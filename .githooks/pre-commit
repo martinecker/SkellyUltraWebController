@@ -1,5 +1,13 @@
 #!/bin/sh
 # Auto-format staged JS/HTML files with Biome before committing.
-# Re-stages any files Biome modifies so the formatted version is committed.
+# Re-stages only the originally-staged files so partial commits work correctly.
+
+# Capture which files were staged before Biome runs
+STAGED=$(git diff --name-only --cached)
+
 npx @biomejs/biome check --staged --write --no-errors-on-unmatched
-git add -u
+
+# Re-stage only those files (not everything in the working tree)
+if [ -n "$STAGED" ]; then
+  echo "$STAGED" | xargs git add
+fi
