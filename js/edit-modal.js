@@ -444,6 +444,17 @@ export class EditModalManager {
 					"Delete confirmed, refreshing file list...",
 					LOG_CLASSES.WARNING,
 				);
+				// If the deleted file was in the play order, remove it and resubmit
+				// before refreshing (files are still in local state so names are available)
+				const currentOrder = JSON.parse(this.state.device?.order || "[]");
+				if (currentOrder.includes(serial)) {
+					const newOrder = currentOrder.filter((s) => s !== serial);
+					this.log(
+						`Removing serial ${serial} from play order → ${JSON.stringify(newOrder)}`,
+						LOG_CLASSES.INFO,
+					);
+					await this.fileManager.updateFileOrder(newOrder);
+				}
 				// Refresh the file list
 				await this.fileManager.startFetchFiles();
 				this.close();

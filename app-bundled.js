@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T20:29:03.297725
+ * Generated: 2026-04-25T21:10:49.015748
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3712,6 +3712,17 @@ class EditModalManager {
 					"Delete confirmed, refreshing file list...",
 					LOG_CLASSES.WARNING,
 				);
+				// If the deleted file was in the play order, remove it and resubmit
+				// before refreshing (files are still in local state so names are available)
+				const currentOrder = JSON.parse(this.state.device?.order || "[]");
+				if (currentOrder.includes(serial)) {
+					const newOrder = currentOrder.filter((s) => s !== serial);
+					this.log(
+						`Removing serial ${serial} from play order → ${JSON.stringify(newOrder)}`,
+						LOG_CLASSES.INFO,
+					);
+					await this.fileManager.updateFileOrder(newOrder);
+				}
 				// Refresh the file list
 				await this.fileManager.startFetchFiles();
 				this.close();
@@ -5896,9 +5907,12 @@ class SkellyApp {
 		if (!apiKeyInput) return;
 
 		// Restore persisted values
-		const savedKey = localStorage.getItem(STORAGE_KEYS.ELEVENLABS_API_KEY) || "";
-		const savedModel = localStorage.getItem(STORAGE_KEYS.ELEVENLABS_MODEL) || "";
-		const savedVoice = localStorage.getItem(STORAGE_KEYS.ELEVENLABS_VOICE) || "";
+		const savedKey =
+			localStorage.getItem(STORAGE_KEYS.ELEVENLABS_API_KEY) || "";
+		const savedModel =
+			localStorage.getItem(STORAGE_KEYS.ELEVENLABS_MODEL) || "";
+		const savedVoice =
+			localStorage.getItem(STORAGE_KEYS.ELEVENLABS_VOICE) || "";
 
 		if (savedKey) apiKeyInput.value = savedKey;
 		if (savedModel && modelSelect) modelSelect.value = savedModel;
@@ -5919,7 +5933,8 @@ class SkellyApp {
 			apiKeyInput.value = "";
 			localStorage.removeItem(STORAGE_KEYS.ELEVENLABS_API_KEY);
 			if (voiceSelect) {
-				voiceSelect.innerHTML = '<option value="">— enter API key to load voices —</option>';
+				voiceSelect.innerHTML =
+					'<option value="">— enter API key to load voices —</option>';
 				voiceSelect.disabled = true;
 			}
 			if (voiceStatus) voiceStatus.textContent = "";
@@ -5930,11 +5945,17 @@ class SkellyApp {
 		let debounceTimer = null;
 		const triggerFetch = () => {
 			clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => this.fetchElevenLabsVoices(savedVoice), 600);
+			debounceTimer = setTimeout(
+				() => this.fetchElevenLabsVoices(savedVoice),
+				600,
+			);
 		};
 
 		apiKeyInput.addEventListener("input", () => {
-			localStorage.setItem(STORAGE_KEYS.ELEVENLABS_API_KEY, apiKeyInput.value.trim());
+			localStorage.setItem(
+				STORAGE_KEYS.ELEVENLABS_API_KEY,
+				apiKeyInput.value.trim(),
+			);
 			invalidateCache();
 			triggerFetch();
 		});
@@ -5949,7 +5970,9 @@ class SkellyApp {
 		$("#elText")?.addEventListener("input", invalidateCache);
 
 		// Preview button
-		$("#btnPreviewTTS")?.addEventListener("click", () => this.handleTTSPreview());
+		$("#btnPreviewTTS")?.addEventListener("click", () =>
+			this.handleTTSPreview(),
+		);
 
 		// Save button
 		$("#btnSaveTTS")?.addEventListener("click", () => this.handleTTSSave());
@@ -5981,11 +6004,14 @@ class SkellyApp {
 		const text = $("#elText")?.value?.trim();
 
 		if (!apiKey || !voiceId || !text) {
-			this.logger.log("Fill in API key, voice, and text to preview.", LOG_CLASSES.WARNING);
+			this.logger.log(
+				"Fill in API key, voice, and text to preview.",
+				LOG_CLASSES.WARNING,
+			);
 			return;
 		}
 
-		let rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
+		const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
 		if (!rawMp3) return;
 
 		const blob = new Blob([rawMp3], { type: "audio/mpeg" });
@@ -6025,14 +6051,22 @@ class SkellyApp {
 		const text = $("#elText")?.value?.trim();
 
 		if (!apiKey || !voiceId || !text) {
-			this.logger.log("Fill in API key, voice, and text to save.", LOG_CLASSES.WARNING);
+			this.logger.log(
+				"Fill in API key, voice, and text to save.",
+				LOG_CLASSES.WARNING,
+			);
 			return;
 		}
 
 		const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
 		if (!rawMp3) return;
 
-		const slug = text.slice(0, 30).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "tts";
+		const slug =
+			text
+				.slice(0, 30)
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "_")
+				.replace(/^_|_$/g, "") || "tts";
 		const suggestedName = `${slug}.mp3`;
 
 		const blob = new Blob([rawMp3], { type: "audio/mpeg" });
@@ -6056,11 +6090,19 @@ class SkellyApp {
 
 		this.logger.log("Synthesizing speech via ElevenLabs…");
 		try {
-			const bytes = await this.elevenLabs.synthesize(apiKey, voiceId, modelId, text);
+			const bytes = await this.elevenLabs.synthesize(
+				apiKey,
+				voiceId,
+				modelId,
+				text,
+			);
 			this.elCache = { key: cacheKey, bytes };
 			return bytes;
 		} catch (error) {
-			this.logger.log(`ElevenLabs error: ${error.message}`, LOG_CLASSES.WARNING);
+			this.logger.log(
+				`ElevenLabs error: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
 			return null;
 		}
 	}
@@ -6096,8 +6138,14 @@ class SkellyApp {
 				voiceSelect.disabled = false;
 
 				// Restore previously selected voice if still available
-				const toRestore = restoreVoiceId || localStorage.getItem(STORAGE_KEYS.ELEVENLABS_VOICE) || "";
-				if (toRestore && voiceSelect.querySelector(`option[value="${CSS.escape(toRestore)}"]`)) {
+				const toRestore =
+					restoreVoiceId ||
+					localStorage.getItem(STORAGE_KEYS.ELEVENLABS_VOICE) ||
+					"";
+				if (
+					toRestore &&
+					voiceSelect.querySelector(`option[value="${CSS.escape(toRestore)}"]`)
+				) {
 					voiceSelect.value = toRestore;
 				}
 			}
@@ -6105,7 +6153,10 @@ class SkellyApp {
 			if (voiceStatus) voiceStatus.textContent = `(${voices.length} voices)`;
 		} catch (error) {
 			if (voiceStatus) voiceStatus.textContent = "(error)";
-			this.logger.log(`ElevenLabs voice fetch failed: ${error.message}`, LOG_CLASSES.WARNING);
+			this.logger.log(
+				`ElevenLabs voice fetch failed: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
 		}
 	}
 
@@ -6731,23 +6782,35 @@ class SkellyApp {
 			const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
 			if (!rawMp3) return;
 
-			const slug = text.slice(0, 30).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "tts";
+			const slug =
+				text
+					.slice(0, 30)
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, "_")
+					.replace(/^_|_$/g, "") || "tts";
 			const rawName = `${slug}.mp3`;
 
 			if ($("#chkConvert")?.checked) {
 				const kbps = $("#chkBitrateOverride")?.checked
 					? parseInt($("#mp3Kbps")?.value || "32", 10)
 					: 32;
-				this.logger.log(`Converting ElevenLabs audio to 8 kHz mono (${kbps} kbps)…`);
+				this.logger.log(
+					`Converting ElevenLabs audio to 8 kHz mono (${kbps} kbps)…`,
+				);
 				const file = new File([rawMp3], rawName, { type: "audio/mpeg" });
 				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
 				fileBytes = result.u8;
 				fileName = result.name;
-				this.logger.log(`Converted: ${fileName} (${fileBytes.length} bytes)`, LOG_CLASSES.WARNING);
+				this.logger.log(
+					`Converted: ${fileName} (${fileBytes.length} bytes)`,
+					LOG_CLASSES.WARNING,
+				);
 			} else {
 				fileBytes = rawMp3;
 				fileName = rawName;
-				this.logger.log(`ElevenLabs audio: ${fileName} (${fileBytes.length} bytes)`);
+				this.logger.log(
+					`ElevenLabs audio: ${fileName} (${fileBytes.length} bytes)`,
+				);
 			}
 
 			// Auto-fill device filename if empty
