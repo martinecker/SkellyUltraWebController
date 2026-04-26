@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T21:10:49.015748
+ * Generated: 2026-04-25T21:17:39.843188
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -49,7 +49,7 @@ const DEVICE_TYPES = {
 // Device Profiles — per-device UI configuration
 const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
-		defaultBleName: "Animated Skelly",
+		defaultBleName: "Ultra Skelly v2",
 		uiName: "Ultra Skelly",
 		hasEyes: true,
 		movements: [
@@ -4900,8 +4900,14 @@ class SkellyApp {
 				// Default name filter — device type comes directly from the dropdown
 				const selectedOption =
 					connectDefaultDevice?.value || DEVICE_TYPES.SKELLY;
-				deviceType = selectedOption;
-				nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
+				// "skelly_old" is the legacy "Animated Skelly" BLE name; treat as skelly device type
+				if (selectedOption === "skelly_old") {
+					deviceType = DEVICE_TYPES.SKELLY;
+					nameFilter = "Animated Skelly";
+				} else {
+					deviceType = selectedOption;
+					nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
+				}
 			} else if (connectFilterByName?.checked) {
 				// Custom name — try to auto-detect device type from the name
 				nameFilter = connectNameFilter?.value || "";

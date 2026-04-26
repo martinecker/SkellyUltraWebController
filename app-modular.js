@@ -634,8 +634,14 @@ class SkellyApp {
 				// Default name filter — device type comes directly from the dropdown
 				const selectedOption =
 					connectDefaultDevice?.value || DEVICE_TYPES.SKELLY;
-				deviceType = selectedOption;
-				nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
+				// "skelly_old" is the legacy "Animated Skelly" BLE name; treat as skelly device type
+				if (selectedOption === "skelly_old") {
+					deviceType = DEVICE_TYPES.SKELLY;
+					nameFilter = "Animated Skelly";
+				} else {
+					deviceType = selectedOption;
+					nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
+				}
 			} else if (connectFilterByName?.checked) {
 				// Custom name — try to auto-detect device type from the name
 				nameFilter = connectNameFilter?.value || "";

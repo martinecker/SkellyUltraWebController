@@ -19,7 +19,7 @@ export const DEVICE_TYPES = {
 // Device Profiles — per-device UI configuration
 export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
-		defaultBleName: "Animated Skelly",
+		defaultBleName: "Ultra Skelly v2",
 		uiName: "Ultra Skelly",
 		hasEyes: true,
 		movements: [
