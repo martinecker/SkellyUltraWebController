@@ -933,9 +933,47 @@
       <div class="small muted" style="margin:6px 0 10px">
         Once the file has been uploaded you will be able to modify its settings (either here or in the official app).
       </div>
-      <label>Choose file</label>
-      <input id="fileInput" type="file" />
-      <div style="display:flex; align-items:center; gap:16px; margin-top:8px; flex-wrap:wrap">
+
+      <!-- Source selector -->
+      <label for="sourceSelect">Source</label>
+      <select id="sourceSelect">
+        <option value="local">Local file</option>
+        <option value="elevenlabs">ElevenLabs TTS</option>
+      </select>
+
+      <!-- Local file panel -->
+      <div id="panelLocalFile">
+        <label style="margin-top:10px">Choose file</label>
+        <input id="fileInput" type="file" />
+      </div>
+
+      <!-- ElevenLabs TTS panel -->
+      <div id="panelElevenLabs" class="hidden">
+        <label style="margin-top:10px">ElevenLabs API key</label>
+        <div style="display:flex; gap:8px; align-items:center">
+          <input id="elApiKey" type="password" placeholder="sk_…" style="flex:1" autocomplete="off" />
+          <button type="button" class="btn small" id="btnClearElApiKey">Clear key</button>
+        </div>
+        <label style="margin-top:10px">Model</label>
+        <select id="elModel">
+          <option value="eleven_turbo_v2_5">Turbo v2.5 (fast)</option>
+          <option value="eleven_multilingual_v2">Multilingual v2 (high quality)</option>
+          <option value="eleven_flash_v2_5">Flash v2.5 (fastest)</option>
+        </select>
+        <label style="margin-top:10px">Voice <span id="elVoiceStatus" class="small muted"></span></label>
+        <select id="elVoice" disabled>
+          <option value="">— enter API key to load voices —</option>
+        </select>
+        <label style="margin-top:10px">Text</label>
+        <textarea id="elText" rows="4" placeholder="Type what the device should say…" style="width:100%; box-sizing:border-box; resize:vertical"></textarea>
+        <div style="margin-top:8px">
+          <button type="button" class="btn small" id="btnPreviewTTS">🔊 Preview</button>
+          <button type="button" class="btn small" id="btnSaveTTS">💾 Save…</button>
+        </div>
+      </div>
+
+      <!-- Shared: convert + bitrate -->
+      <div style="display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap">
         <label class="small checkline" style="margin:0">
           <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3, 8 kHz mono)
         </label>
@@ -952,10 +990,10 @@
         </div>
       </div>
 
-
-      <label>Device filename <span class="small muted">(using an existing filename will replace that file)</span></label>
+      <!-- Shared: filename -->
+      <label style="margin-top:10px">Device filename <span class="small muted">(using an existing filename will replace that file)</span></label>
       <input id="fileName" placeholder="example.mp3" />
-      
+
       <div class="spacer"></div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
         <label class="small checkline" style="margin:0">

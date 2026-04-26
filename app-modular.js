@@ -15,6 +15,7 @@ import {
 	STORAGE_KEYS,
 } from "./js/constants.js";
 import { EditModalManager } from "./js/edit-modal.js";
+import { ElevenLabsClient } from "./js/elevenlabs.js";
 import { AudioConverter, FileManager } from "./js/file-manager.js";
 import {
 	buildCommand,
@@ -127,6 +128,12 @@ class SkellyApp {
 			);
 			console.log("Audio converter created");
 
+			// Initialize ElevenLabs client
+			this.elevenLabs = new ElevenLabsClient();
+			// Cache for last synthesized TTS: { key, bytes }
+			this.elCache = { key: null, bytes: null };
+			// Currently playing preview audio element
+			this.elPreviewAudio = null;
 			// Initialize edit modal manager (before parser so we can pass callback)
 			this.editModal = new EditModalManager(
 				this.connection,
@@ -1569,6 +1576,8 @@ class SkellyApp {
 	 * Initialize file controls
 	 */
 	initializeFileControls() {
+		this.initializeSourceSelector();
+		this.initializeElevenLabsControls();
 		this.initializeFileListControls();
 		this.initializeBitrateControls();
 		this.initializeChunkSizeControls();
@@ -1592,6 +1601,297 @@ class SkellyApp {
 		$("#fileInput")?.addEventListener("change", async (e) => {
 			await this.handleFileSelection(e.target.files?.[0]);
 		});
+	}
+
+	/**
+	 * Toggle File Transfer source panels (local file vs ElevenLabs TTS)
+	 */
+	initializeSourceSelector() {
+		const select = $("#sourceSelect");
+		if (!select) return;
+
+		const showSource = (value) => {
+			$("#panelLocalFile")?.classList.toggle("hidden", value !== "local");
+			$("#panelElevenLabs")?.classList.toggle("hidden", value !== "elevenlabs");
+		};
+
+		// Restore persisted selection
+		const saved = localStorage.getItem(STORAGE_KEYS.FILE_SOURCE);
+		if (saved) select.value = saved;
+
+		showSource(select.value);
+
+		select.addEventListener("change", (e) => {
+			localStorage.setItem(STORAGE_KEYS.FILE_SOURCE, e.target.value);
+			showSource(e.target.value);
+		});
+	}
+
+	/**
+	 * Initialize ElevenLabs controls: API key persistence, model/voice persistence,
+	 * and auto-fetch voices when the key changes.
+	 */
+	initializeElevenLabsControls() {
+		const apiKeyInput = $("#elApiKey");
+		const modelSelect = $("#elModel");
+		const voiceSelect = $("#elVoice");
+		const voiceStatus = $("#elVoiceStatus");
+		const btnClear = $("#btnClearElApiKey");
+
+		if (!apiKeyInput) return;
+
+		// Restore persisted values
+		const savedKey =
+			localStorage.getItem(STORAGE_KEYS.ELEVENLABS_API_KEY) || "";
+		const savedModel =
+			localStorage.getItem(STORAGE_KEYS.ELEVENLABS_MODEL) || "";
+		const savedVoice =
+			localStorage.getItem(STORAGE_KEYS.ELEVENLABS_VOICE) || "";
+
+		if (savedKey) apiKeyInput.value = savedKey;
+		if (savedModel && modelSelect) modelSelect.value = savedModel;
+
+		// Invalidate TTS cache whenever any synthesis input changes
+		const invalidateCache = () => {
+			this.elCache = { key: null, bytes: null };
+		};
+
+		// Persist model selection + invalidate cache
+		modelSelect?.addEventListener("change", (e) => {
+			localStorage.setItem(STORAGE_KEYS.ELEVENLABS_MODEL, e.target.value);
+			invalidateCache();
+		});
+
+		// Clear key
+		btnClear?.addEventListener("click", () => {
+			apiKeyInput.value = "";
+			localStorage.removeItem(STORAGE_KEYS.ELEVENLABS_API_KEY);
+			if (voiceSelect) {
+				voiceSelect.innerHTML =
+					'<option value="">— enter API key to load voices —</option>';
+				voiceSelect.disabled = true;
+			}
+			if (voiceStatus) voiceStatus.textContent = "";
+			invalidateCache();
+		});
+
+		// Auto-fetch voices (debounced) when API key changes
+		let debounceTimer = null;
+		const triggerFetch = () => {
+			clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(
+				() => this.fetchElevenLabsVoices(savedVoice),
+				600,
+			);
+		};
+
+		apiKeyInput.addEventListener("input", () => {
+			localStorage.setItem(
+				STORAGE_KEYS.ELEVENLABS_API_KEY,
+				apiKeyInput.value.trim(),
+			);
+			invalidateCache();
+			triggerFetch();
+		});
+
+		// Persist voice selection + invalidate cache
+		voiceSelect?.addEventListener("change", (e) => {
+			localStorage.setItem(STORAGE_KEYS.ELEVENLABS_VOICE, e.target.value);
+			invalidateCache();
+		});
+
+		// Invalidate cache when text changes
+		$("#elText")?.addEventListener("input", invalidateCache);
+
+		// Preview button
+		$("#btnPreviewTTS")?.addEventListener("click", () =>
+			this.handleTTSPreview(),
+		);
+
+		// Save button
+		$("#btnSaveTTS")?.addEventListener("click", () => this.handleTTSSave());
+
+		// Fetch on load if key is already saved
+		if (savedKey) {
+			this.fetchElevenLabsVoices(savedVoice);
+		}
+	}
+
+	/**
+	 * Preview ElevenLabs TTS audio in the browser.
+	 * Uses cached bytes when available; stops any currently playing preview.
+	 */
+	async handleTTSPreview() {
+		const btn = $("#btnPreviewTTS");
+
+		// If already playing, stop it
+		if (this.elPreviewAudio) {
+			this.elPreviewAudio.pause();
+			this.elPreviewAudio = null;
+			if (btn) btn.textContent = "🔊 Preview";
+			return;
+		}
+
+		const apiKey = $("#elApiKey")?.value?.trim();
+		const voiceId = $("#elVoice")?.value;
+		const modelId = $("#elModel")?.value;
+		const text = $("#elText")?.value?.trim();
+
+		if (!apiKey || !voiceId || !text) {
+			this.logger.log(
+				"Fill in API key, voice, and text to preview.",
+				LOG_CLASSES.WARNING,
+			);
+			return;
+		}
+
+		const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
+		if (!rawMp3) return;
+
+		const blob = new Blob([rawMp3], { type: "audio/mpeg" });
+		const url = URL.createObjectURL(blob);
+		const audio = new Audio(url);
+		this.elPreviewAudio = audio;
+		if (btn) btn.textContent = "⏹ Stop";
+
+		audio.addEventListener("ended", () => {
+			URL.revokeObjectURL(url);
+			this.elPreviewAudio = null;
+			if (btn) btn.textContent = "🔊 Preview";
+		});
+		audio.addEventListener("error", () => {
+			URL.revokeObjectURL(url);
+			this.elPreviewAudio = null;
+			if (btn) btn.textContent = "🔊 Preview";
+			this.logger.log("Audio playback error.", LOG_CLASSES.WARNING);
+		});
+
+		audio.play().catch((err) => {
+			URL.revokeObjectURL(url);
+			this.elPreviewAudio = null;
+			if (btn) btn.textContent = "🔊 Preview";
+			this.logger.log(`Preview failed: ${err.message}`, LOG_CLASSES.WARNING);
+		});
+	}
+
+	/**
+	 * Save ElevenLabs TTS audio to disk as an MP3 file.
+	 * Synthesizes (or reuses cache) and triggers a browser download.
+	 */
+	async handleTTSSave() {
+		const apiKey = $("#elApiKey")?.value?.trim();
+		const voiceId = $("#elVoice")?.value;
+		const modelId = $("#elModel")?.value;
+		const text = $("#elText")?.value?.trim();
+
+		if (!apiKey || !voiceId || !text) {
+			this.logger.log(
+				"Fill in API key, voice, and text to save.",
+				LOG_CLASSES.WARNING,
+			);
+			return;
+		}
+
+		const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
+		if (!rawMp3) return;
+
+		const slug =
+			text
+				.slice(0, 30)
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "_")
+				.replace(/^_|_$/g, "") || "tts";
+		const suggestedName = `${slug}.mp3`;
+
+		const blob = new Blob([rawMp3], { type: "audio/mpeg" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = suggestedName;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	/**
+	 * @returns {Promise<Uint8Array|null>}
+	 */
+	async getElTTSBytes(apiKey, voiceId, modelId, text) {
+		const cacheKey = `${apiKey}||${voiceId}||${modelId}||${text}`;
+		if (this.elCache.key === cacheKey && this.elCache.bytes) {
+			this.logger.log("Using cached ElevenLabs audio.");
+			return this.elCache.bytes;
+		}
+
+		this.logger.log("Synthesizing speech via ElevenLabs…");
+		try {
+			const bytes = await this.elevenLabs.synthesize(
+				apiKey,
+				voiceId,
+				modelId,
+				text,
+			);
+			this.elCache = { key: cacheKey, bytes };
+			return bytes;
+		} catch (error) {
+			this.logger.log(
+				`ElevenLabs error: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			return null;
+		}
+	}
+
+	/**
+	 * Fetch voice list from ElevenLabs and populate the dropdown
+	 * @param {string} restoreVoiceId - Voice ID to re-select after populating
+	 */
+	async fetchElevenLabsVoices(restoreVoiceId = "") {
+		const apiKeyInput = $("#elApiKey");
+		const voiceSelect = $("#elVoice");
+		const voiceStatus = $("#elVoiceStatus");
+
+		const apiKey = apiKeyInput?.value?.trim();
+		if (!apiKey || !voiceSelect) return;
+
+		if (voiceStatus) voiceStatus.textContent = "(loading…)";
+
+		try {
+			const voices = await this.elevenLabs.fetchVoices(apiKey);
+
+			voiceSelect.innerHTML = "";
+			if (voices.length === 0) {
+				voiceSelect.innerHTML = '<option value="">— no voices found —</option>';
+				voiceSelect.disabled = true;
+			} else {
+				for (const v of voices) {
+					const opt = document.createElement("option");
+					opt.value = v.id;
+					opt.textContent = v.name;
+					voiceSelect.appendChild(opt);
+				}
+				voiceSelect.disabled = false;
+
+				// Restore previously selected voice if still available
+				const toRestore =
+					restoreVoiceId ||
+					localStorage.getItem(STORAGE_KEYS.ELEVENLABS_VOICE) ||
+					"";
+				if (
+					toRestore &&
+					voiceSelect.querySelector(`option[value="${CSS.escape(toRestore)}"]`)
+				) {
+					voiceSelect.value = toRestore;
+				}
+			}
+
+			if (voiceStatus) voiceStatus.textContent = `(${voices.length} voices)`;
+		} catch (error) {
+			if (voiceStatus) voiceStatus.textContent = "(error)";
+			this.logger.log(
+				`ElevenLabs voice fetch failed: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+		}
 	}
 
 	/**
@@ -2188,48 +2488,112 @@ class SkellyApp {
 			return;
 		}
 
-		const pickerData = this.fileManager.getFilePickerData();
-		if (!pickerData.file && !pickerData.fileBytes) {
-			this.logger.log("Pick a file first.", LOG_CLASSES.WARNING);
-			return;
-		}
+		const source = $("#sourceSelect")?.value || "local";
 
-		let fileBytes = pickerData.fileBytes;
-		let fileName = pickerData.fileName;
+		let fileBytes;
+		let fileName;
 
-		// If user toggled "Convert" AFTER selecting the file, convert now
-		try {
-			if ($("#chkConvert")?.checked && pickerData.file) {
+		if (source === "elevenlabs") {
+			// --- ElevenLabs TTS path ---
+			const apiKey = $("#elApiKey")?.value?.trim();
+			const voiceId = $("#elVoice")?.value;
+			const modelId = $("#elModel")?.value;
+			const text = $("#elText")?.value?.trim();
+
+			if (!apiKey) {
+				this.logger.log("Enter your ElevenLabs API key.", LOG_CLASSES.WARNING);
+				return;
+			}
+			if (!voiceId) {
+				this.logger.log("Select a voice.", LOG_CLASSES.WARNING);
+				return;
+			}
+			if (!text) {
+				this.logger.log("Enter the text to synthesize.", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
+			if (!rawMp3) return;
+
+			const slug =
+				text
+					.slice(0, 30)
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, "_")
+					.replace(/^_|_$/g, "") || "tts";
+			const rawName = `${slug}.mp3`;
+
+			if ($("#chkConvert")?.checked) {
 				const kbps = $("#chkBitrateOverride")?.checked
 					? parseInt($("#mp3Kbps")?.value || "32", 10)
-					: 32; // Use default 32 kbps if not overriding
+					: 32;
 				this.logger.log(
-					`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`,
+					`Converting ElevenLabs audio to 8 kHz mono (${kbps} kbps)…`,
 				);
-				const result = await this.audioConverter.convertToDeviceMp3(
-					pickerData.file,
-					kbps,
-				);
+				const file = new File([rawMp3], rawName, { type: "audio/mpeg" });
+				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
 				fileBytes = result.u8;
-				// If the filename box is empty or still matches the previous base, prefer .mp3
-				const typed = ($("#fileName")?.value || "").trim();
-				if (!typed || typed === pickerData.fileName) {
-					$("#fileName").value = result.name;
-				}
 				fileName = result.name;
-			} else if (!$("#chkConvert")?.checked && pickerData.originalBytes) {
-				// Ensure we're using the original bytes if convert is off
-				fileBytes = pickerData.originalBytes;
-				fileName = pickerData.file?.name || pickerData.fileName;
+				this.logger.log(
+					`Converted: ${fileName} (${fileBytes.length} bytes)`,
+					LOG_CLASSES.WARNING,
+				);
+			} else {
+				fileBytes = rawMp3;
+				fileName = rawName;
+				this.logger.log(
+					`ElevenLabs audio: ${fileName} (${fileBytes.length} bytes)`,
+				);
 			}
-		} catch (error) {
-			this.logger.log(
-				`Convert error: ${error.message} — sending original file`,
-				LOG_CLASSES.WARNING,
-			);
-			if (pickerData.originalBytes) {
-				fileBytes = pickerData.originalBytes;
-				fileName = pickerData.file?.name || pickerData.fileName;
+
+			// Auto-fill device filename if empty
+			if (!$("#fileName")?.value) {
+				$("#fileName").value = fileName;
+			}
+		} else {
+			// --- Local file path ---
+			const pickerData = this.fileManager.getFilePickerData();
+			if (!pickerData.file && !pickerData.fileBytes) {
+				this.logger.log("Pick a file first.", LOG_CLASSES.WARNING);
+				return;
+			}
+
+			fileBytes = pickerData.fileBytes;
+			fileName = pickerData.fileName;
+
+			// If user toggled "Convert" AFTER selecting the file, convert now
+			try {
+				if ($("#chkConvert")?.checked && pickerData.file) {
+					const kbps = $("#chkBitrateOverride")?.checked
+						? parseInt($("#mp3Kbps")?.value || "32", 10)
+						: 32;
+					this.logger.log(
+						`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`,
+					);
+					const result = await this.audioConverter.convertToDeviceMp3(
+						pickerData.file,
+						kbps,
+					);
+					fileBytes = result.u8;
+					const typed = ($("#fileName")?.value || "").trim();
+					if (!typed || typed === pickerData.fileName) {
+						$("#fileName").value = result.name;
+					}
+					fileName = result.name;
+				} else if (!$("#chkConvert")?.checked && pickerData.originalBytes) {
+					fileBytes = pickerData.originalBytes;
+					fileName = pickerData.file?.name || pickerData.fileName;
+				}
+			} catch (error) {
+				this.logger.log(
+					`Convert error: ${error.message} — sending original file`,
+					LOG_CLASSES.WARNING,
+				);
+				if (pickerData.originalBytes) {
+					fileBytes = pickerData.originalBytes;
+					fileName = pickerData.file?.name || pickerData.fileName;
+				}
 			}
 		}
 
@@ -2247,7 +2611,6 @@ class SkellyApp {
 		// Check for filename conflict
 		const conflict = this.checkFileNameConflict(finalName);
 		if (conflict) {
-			// Show overwrite confirmation modal
 			const confirmed = await this.showOverwriteConfirmation(conflict.name);
 			if (!confirmed) {
 				this.logger.log("Upload cancelled by user", LOG_CLASSES.INFO);
