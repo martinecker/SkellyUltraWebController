@@ -2407,7 +2407,7 @@ class SkellyApp {
 			await this.connection.connect(connectionOptions);
 			console.log("Connected successfully");
 
-			// Query device state in sequence: live mode, params, volume, BT name
+			// Query device state in sequence: live mode, params, volume, BT name, version
 			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, "", 8));
 			setTimeout(
 				() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8)),
@@ -2421,11 +2421,15 @@ class SkellyApp {
 				() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8)),
 				150,
 			);
+			setTimeout(
+				() => this.connection.send(buildCommand(COMMANDS.QUERY_VERSION, "", 8)),
+				200,
+			);
 
 			// Start file list fetch - this will query capacity and order after files are received
 			setTimeout(() => {
 				this.fileManager.startFetchFiles();
-			}, 200);
+			}, 250);
 		} catch (error) {
 			console.error("Connection error:", error);
 			this.logger.log(
@@ -2525,6 +2529,8 @@ class SkellyApp {
 
 		// Update device info
 		if ($("#statName")) $("#statName").textContent = device.name || "—";
+		if ($("#statVersion"))
+			$("#statVersion").textContent = device.version ?? "—";
 		if ($("#statShowMode"))
 			$("#statShowMode").textContent = device.showMode ?? "—";
 		if ($("#statChannels")) {

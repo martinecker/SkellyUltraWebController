@@ -64,6 +64,12 @@ export class ProtocolParser {
 			return;
 		}
 
+		// Version (BBEE)
+		if (hex.startsWith(RESPONSES.VERSION)) {
+			this.parseVersion(hex);
+			return;
+		}
+
 		// Capacity (BBD2)
 		if (hex.startsWith(RESPONSES.CAPACITY)) {
 			this.parseCapacity(hex);
@@ -204,6 +210,21 @@ export class ProtocolParser {
 		const volume = parseInt(hex.slice(4, 6), 16);
 		this.state.updateDevice({ volume });
 		this.log(`Parsed Volume: ${volume}`);
+	}
+
+	/**
+	 * Parse version (BBEE)
+	 * Response format: BBEE<v1hi><v1lo><v2hi><v2lo>...
+	 * e.g. BBEE18001800... → first version word 0x1800 → nibbles 1.8.0.0
+	 */
+	parseVersion(hex) {
+		const nibbles = hex
+			.slice(4, 8)
+			.split("")
+			.map((n) => parseInt(n, 16));
+		const version = nibbles.join(".");
+		this.state.updateDevice({ version });
+		this.log(`Parsed Version: ${version}`);
 	}
 
 	/**

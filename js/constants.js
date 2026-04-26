@@ -212,6 +212,7 @@ export const RESPONSES = {
 	FILE_INFO: "BBD0", // File info response
 	VOLUME: "BBE5", // Volume response
 	BT_NAME: "BBE6", // BT name response
+	VERSION: "BBEE", // Version response
 	ENABLE_CLASSIC_BT: "BBFD", // Enable classic BT response
 
 	TRANSFER_START: "BBC0", // Transfer start ACK

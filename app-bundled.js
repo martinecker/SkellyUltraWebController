@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T17:15:35.210638
+ * Generated: 2026-04-25T18:02:58.778008
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -241,6 +241,7 @@ const RESPONSES = {
 	FILE_INFO: "BBD0", // File info response
 	VOLUME: "BBE5", // Volume response
 	BT_NAME: "BBE6", // BT name response
+	VERSION: "BBEE", // Version response
 	ENABLE_CLASSIC_BT: "BBFD", // Enable classic BT response
 
 	TRANSFER_START: "BBC0", // Transfer start ACK
@@ -582,6 +583,7 @@ class StateManager {
 			btName: "",
 			connected: false,
 			showMode: null,
+			version: null,
 			channels: [],
 			volume: null,
 			capacity: null,
@@ -907,6 +909,7 @@ class StateManager {
 			btName: "",
 			connected: false,
 			showMode: null,
+			version: null,
 			channels: [],
 			volume: null,
 			capacity: null,
@@ -2873,6 +2876,12 @@ class ProtocolParser {
 			return;
 		}
 
+		// Version (BBEE)
+		if (hex.startsWith(RESPONSES.VERSION)) {
+			this.parseVersion(hex);
+			return;
+		}
+
 		// Capacity (BBD2)
 		if (hex.startsWith(RESPONSES.CAPACITY)) {
 			this.parseCapacity(hex);
@@ -3013,6 +3022,18 @@ class ProtocolParser {
 		const volume = parseInt(hex.slice(4, 6), 16);
 		this.state.updateDevice({ volume });
 		this.log(`Parsed Volume: ${volume}`);
+	}
+
+	/**
+	 * Parse version (BBEE)
+	 * Response format: BBEE<v1hi><v1lo><v2hi><v2lo>...
+	 * e.g. BBEE18001800... → first version word 0x1800 → nibbles 1.8.0.0
+	 */
+	parseVersion(hex) {
+		const nibbles = hex.slice(4, 8).split("").map((n) => parseInt(n, 16));
+		const version = nibbles.join(".");
+		this.state.updateDevice({ version });
+		this.log(`Parsed Version: ${version}`);
 	}
 
 	/**
@@ -6570,7 +6591,7 @@ class SkellyApp {
 			await this.connection.connect(connectionOptions);
 			console.log("Connected successfully");
 
-			// Query device state in sequence: live mode, params, volume, BT name
+			// Query device state in sequence: live mode, params, volume, BT name, version
 			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, "", 8));
 			setTimeout(
 				() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8)),
@@ -6584,11 +6605,15 @@ class SkellyApp {
 				() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8)),
 				150,
 			);
+			setTimeout(
+				() => this.connection.send(buildCommand(COMMANDS.QUERY_VERSION, "", 8)),
+				200,
+			);
 
 			// Start file list fetch - this will query capacity and order after files are received
 			setTimeout(() => {
 				this.fileManager.startFetchFiles();
-			}, 200);
+			}, 250);
 		} catch (error) {
 			console.error("Connection error:", error);
 			this.logger.log(
@@ -6688,6 +6713,8 @@ class SkellyApp {
 
 		// Update device info
 		if ($("#statName")) $("#statName").textContent = device.name || "—";
+		if ($("#statVersion"))
+			$("#statVersion").textContent = device.version ?? "—";
 		if ($("#statShowMode"))
 			$("#statShowMode").textContent = device.showMode ?? "—";
 		if ($("#statChannels")) {
