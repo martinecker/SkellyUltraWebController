@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T21:37:01.859362
+ * Generated: 2026-04-25T21:44:14.297724
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3086,7 +3086,7 @@ class ProtocolParser {
 		const ordersAsString = JSON.stringify(orders);
 
 		this.state.updateDevice({ order: ordersAsString });
-		this.log(`File Order: ${ordersAsString}`);
+		this.log(`File Order by Serial: ${ordersAsString}`);
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
@@ -5426,6 +5426,14 @@ class SkellyApp {
 		);
 	}
 
+	/** Returns the display label for the torso/body light zone of the active profile. */
+	get torsoLightLabel() {
+		const profile =
+			DEVICE_PROFILES[this.state.deviceType] ||
+			DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+		return profile.lights.find((l) => l.id === "torso")?.label ?? "Torso Light";
+	}
+
 	/**
 	 * Send media command
 	 */
@@ -5495,7 +5503,7 @@ class SkellyApp {
 			await this.connection.send(
 				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
 			);
-			this.logger.log(`Set torso light brightness to ${brightness}`);
+			this.logger.log(`Set ${this.torsoLightLabel} brightness to ${brightness}`);
 		};
 
 		if (torsoBriRange && torsoBriNum) {
@@ -5605,7 +5613,7 @@ class SkellyApp {
 				),
 			);
 			this.logger.log(
-				`Set torso light color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? "ON" : "OFF"}`,
+				`Set ${this.torsoLightLabel} color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? "ON" : "OFF"}`,
 			);
 		};
 
@@ -5669,7 +5677,7 @@ class SkellyApp {
 					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
 				);
 				this.logger.log(
-					`Set torso light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
+					`Set ${this.torsoLightLabel} mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
 				);
 			});
 		}
@@ -5720,7 +5728,7 @@ class SkellyApp {
 				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
 			);
 			this.logger.log(
-				`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`,
+				`Set ${this.torsoLightLabel} speed to ${uiSpeed} (device: ${deviceSpeed})`,
 			);
 		};
 

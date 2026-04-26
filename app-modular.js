@@ -1164,6 +1164,14 @@ class SkellyApp {
 		);
 	}
 
+	/** Returns the display label for the torso/body light zone of the active profile. */
+	get torsoLightLabel() {
+		const profile =
+			DEVICE_PROFILES[this.state.deviceType] ||
+			DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+		return profile.lights.find((l) => l.id === "torso")?.label ?? "Torso Light";
+	}
+
 	/**
 	 * Send media command
 	 */
@@ -1233,7 +1241,7 @@ class SkellyApp {
 			await this.connection.send(
 				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
 			);
-			this.logger.log(`Set torso light brightness to ${brightness}`);
+			this.logger.log(`Set ${this.torsoLightLabel} brightness to ${brightness}`);
 		};
 
 		if (torsoBriRange && torsoBriNum) {
@@ -1343,7 +1351,7 @@ class SkellyApp {
 				),
 			);
 			this.logger.log(
-				`Set torso light color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? "ON" : "OFF"}`,
+				`Set ${this.torsoLightLabel} color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? "ON" : "OFF"}`,
 			);
 		};
 
@@ -1407,7 +1415,7 @@ class SkellyApp {
 					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
 				);
 				this.logger.log(
-					`Set torso light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
+					`Set ${this.torsoLightLabel} mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
 				);
 			});
 		}
@@ -1458,7 +1466,7 @@ class SkellyApp {
 				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
 			);
 			this.logger.log(
-				`Set torso light speed to ${uiSpeed} (device: ${deviceSpeed})`,
+				`Set ${this.torsoLightLabel} speed to ${uiSpeed} (device: ${deviceSpeed})`,
 			);
 		};
 
