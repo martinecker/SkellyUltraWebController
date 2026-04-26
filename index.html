@@ -511,10 +511,112 @@
 </div>
 
   <!-- Edit file modal -->
+  <!-- Transfer Modal -->
+  <div id="transferModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle" style="z-index:10000">
+    <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;width:min(680px,92vw)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 id="transferModalTitle" style="margin:0;color:#e5e7eb">Add File</h3>
+        <button type="button" class="btn" id="btnCloseTransferModal" style="padding:4px 10px">✕</button>
+      </div>
+
+      <div id="transferModalLockNotice" class="small muted hidden" style="margin-bottom:10px;padding:6px 10px;background:rgba(59,130,246,.1);border-radius:6px;border:1px solid rgba(59,130,246,.3)">
+        🔒 Filename is locked — uploading will replace the existing file.
+      </div>
+
+      <!-- Source selector -->
+      <label for="sourceSelect">Source</label>
+      <select id="sourceSelect">
+        <option value="local">Local file</option>
+        <option value="elevenlabs">ElevenLabs TTS</option>
+      </select>
+
+      <!-- Local file panel -->
+      <div id="panelLocalFile">
+        <label style="margin-top:10px">Choose file</label>
+        <input id="fileInput" type="file" />
+      </div>
+
+      <!-- ElevenLabs TTS panel -->
+      <div id="panelElevenLabs" class="hidden">
+        <label style="margin-top:10px">ElevenLabs API key</label>
+        <div style="display:flex; gap:8px; align-items:center">
+          <input id="elApiKey" type="password" placeholder="sk_…" style="flex:1" autocomplete="off" />
+          <button type="button" class="btn small" id="btnClearElApiKey">Clear key</button>
+        </div>
+        <label style="margin-top:10px">Model</label>
+        <select id="elModel">
+          <option value="eleven_turbo_v2_5">Turbo v2.5 (fast)</option>
+          <option value="eleven_multilingual_v2">Multilingual v2 (high quality)</option>
+          <option value="eleven_flash_v2_5">Flash v2.5 (fastest)</option>
+        </select>
+        <label style="margin-top:10px">Voice <span id="elVoiceStatus" class="small muted"></span></label>
+        <select id="elVoice" disabled>
+          <option value="">— enter API key to load voices —</option>
+        </select>
+        <label style="margin-top:10px">Text</label>
+        <textarea id="elText" rows="4" placeholder="Type what the device should say…" style="width:100%; box-sizing:border-box; resize:vertical"></textarea>
+        <div style="margin-top:8px">
+          <button type="button" class="btn small" id="btnPreviewTTS">🔊 Preview</button>
+          <button type="button" class="btn small" id="btnSaveTTS">💾 Save…</button>
+        </div>
+      </div>
+
+      <!-- Shared: convert + bitrate -->
+      <div style="display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap">
+        <label class="small checkline" style="margin:0">
+          <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3, 8 kHz mono)
+        </label>
+        <label class="small checkline" style="margin:0">
+          <input id="chkBitrateOverride" type="checkbox"> Override bitrate
+        </label>
+        <div id="convertOpts" class="hidden" style="display:flex; align-items:center; gap:8px">
+          <select id="mp3Kbps" aria-label="MP3 bitrate">
+            <option value="16">16 kbps</option>
+            <option value="24">24 kbps</option>
+            <option value="32" selected>32 kbps</option>
+            <option value="64">64 kbps</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Shared: filename -->
+      <label style="margin-top:10px">Device filename</label>
+      <input id="fileName" placeholder="example.mp3" />
+
+      <div class="spacer"></div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+        <label class="small checkline" style="margin:0">
+          <input id="chkChunkOverride" type="checkbox"> Override chunk size
+        </label>
+        <div id="chunkOverrideOpts" class="hidden" style="display:flex; align-items:center; gap:10px; flex:1; min-width:300px">
+          <input id="chunkSizeSlider" type="range" min="50" max="500" value="250" step="10" style="flex:1; min-width:150px" />
+          <span class="small" style="white-space:nowrap"><span id="chunkSizeValue">250</span> bytes</span>
+        </div>
+      </div>
+      <div class="small muted" style="margin-top:6px">
+        ⚠️ If transfers fail frequently, try reducing the chunk size. Larger values may be faster but less reliable.
+      </div>
+
+      <div class="spacer"></div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="btnSendFile">Send to Device</button>
+        <button type="button" class="btn danger" id="btnCancelFile" disabled>Cancel</button>
+        <button type="button" class="btn" id="btnCloseTransferModalBottom">Close</button>
+      </div>
+      <div class="capsule">
+        <div>Progress: <span id="progText">0 / 0</span></div>
+        <div id="progPct">0%</div>
+      </div>
+      <div class="progress"><div id="progBar" class="bar"></div></div>
+    </div>
+  </div>
+
   <div id="editModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="editTitle">
     <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;">
-      <h3 id="editTitle">Edit File</h3>
-      
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 id="editTitle" style="margin:0;color:#e5e7eb">Edit File</h3>
+        <button type="button" class="btn" id="edCloseTop" style="padding:4px 10px">✕</button>
+      </div>
       <div class="row">
         <div style="flex:2">
           <label>File name</label>
@@ -640,32 +742,9 @@
     </div>
 
       <div class="spacer"></div>
-      <label>Upload new file (replace)</label>
-      <input id="edUploadFile" type="file" />
-      <label class="small checkline mt-8">
-        <input id="edChkConvert" type="checkbox" checked>
-        Convert to device format (MP3, 8 kHz mono)
-      </label>
-      <div id="edConvertOpts" class="row hidden" style="align-items:center">
-        <select id="edMp3Kbps" aria-label="MP3 bitrate (edit)">
-          <option value="16">16 kbps</option>
-          <option value="24">24 kbps</option>
-          <option value="32" selected>32 kbps</option>
-          <option value="64">64 kbps</option>
-        </select>
-        <span class="small muted">Converts input before uploading.</span>
-      </div>
-
       <div class="actions">
-        <button type="button" class="btn primary" id="edUploadBtn">Upload & Replace</button>
+        <button type="button" class="btn" id="btnReplaceFile">Replace File</button>
       </div>
-      <div class="capsule">
-        <div>Progress: <span id="edProgText">0 / 0</span></div>
-        <div id="edProgPct">0%</div>
-      </div>
-      <div class="progress"><div id="edProgBar" class="bar"></div></div>
-      
-      <div class="spacer"></div>
       
       <div class="spacer"></div>
       <label>Log</label>
@@ -928,98 +1007,7 @@
 
     <!-- RIGHT COLUMN -->
     <div class="col-right">
-      <!-- File Transfer -->
-      <section class="card area-transfer">
-      <h2>File Transfer</h2>
-      <div class="small muted" style="margin:6px 0 10px">
-        Once the file has been uploaded you will be able to modify its settings (either here or in the official app).
-      </div>
-
-      <!-- Source selector -->
-      <label for="sourceSelect">Source</label>
-      <select id="sourceSelect">
-        <option value="local">Local file</option>
-        <option value="elevenlabs">ElevenLabs TTS</option>
-      </select>
-
-      <!-- Local file panel -->
-      <div id="panelLocalFile">
-        <label style="margin-top:10px">Choose file</label>
-        <input id="fileInput" type="file" />
-      </div>
-
-      <!-- ElevenLabs TTS panel -->
-      <div id="panelElevenLabs" class="hidden">
-        <label style="margin-top:10px">ElevenLabs API key</label>
-        <div style="display:flex; gap:8px; align-items:center">
-          <input id="elApiKey" type="password" placeholder="sk_…" style="flex:1" autocomplete="off" />
-          <button type="button" class="btn small" id="btnClearElApiKey">Clear key</button>
-        </div>
-        <label style="margin-top:10px">Model</label>
-        <select id="elModel">
-          <option value="eleven_turbo_v2_5">Turbo v2.5 (fast)</option>
-          <option value="eleven_multilingual_v2">Multilingual v2 (high quality)</option>
-          <option value="eleven_flash_v2_5">Flash v2.5 (fastest)</option>
-        </select>
-        <label style="margin-top:10px">Voice <span id="elVoiceStatus" class="small muted"></span></label>
-        <select id="elVoice" disabled>
-          <option value="">— enter API key to load voices —</option>
-        </select>
-        <label style="margin-top:10px">Text</label>
-        <textarea id="elText" rows="4" placeholder="Type what the device should say…" style="width:100%; box-sizing:border-box; resize:vertical"></textarea>
-        <div style="margin-top:8px">
-          <button type="button" class="btn small" id="btnPreviewTTS">🔊 Preview</button>
-          <button type="button" class="btn small" id="btnSaveTTS">💾 Save…</button>
-        </div>
-      </div>
-
-      <!-- Shared: convert + bitrate -->
-      <div style="display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap">
-        <label class="small checkline" style="margin:0">
-          <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3, 8 kHz mono)
-        </label>
-        <label class="small checkline" style="margin:0">
-          <input id="chkBitrateOverride" type="checkbox"> Override bitrate
-        </label>
-        <div id="convertOpts" class="hidden" style="display:flex; align-items:center; gap:8px">
-          <select id="mp3Kbps" aria-label="MP3 bitrate">
-            <option value="16">16 kbps</option>
-            <option value="24">24 kbps</option>
-            <option value="32" selected>32 kbps</option>
-            <option value="64">64 kbps</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Shared: filename -->
-      <label style="margin-top:10px">Device filename <span class="small muted">(using an existing filename will replace that file)</span></label>
-      <input id="fileName" placeholder="example.mp3" />
-
-      <div class="spacer"></div>
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
-        <label class="small checkline" style="margin:0">
-          <input id="chkChunkOverride" type="checkbox"> Override chunk size
-        </label>
-        <div id="chunkOverrideOpts" class="hidden" style="display:flex; align-items:center; gap:10px; flex:1; min-width:300px">
-          <input id="chunkSizeSlider" type="range" min="50" max="500" value="250" step="10" style="flex:1; min-width:150px" />
-          <span class="small" style="white-space:nowrap"><span id="chunkSizeValue">250</span> bytes</span>
-        </div>
-      </div>
-      <div class="small muted" style="margin-top:6px">
-        ⚠️ If transfers fail frequently, try reducing the chunk size. Larger values may be faster but less reliable.
-      </div>
-
-      <div class="spacer"></div>
-      <div class="actions">
-        <button type="button" class="btn primary" id="btnSendFile">Send to Device</button>
-        <button type="button" class="btn danger" id="btnCancelFile" disabled>Cancel</button>
-      </div>
-      <div class="capsule">
-        <div>Progress: <span id="progText">0 / 0</span></div>
-        <div id="progPct">0%</div>
-      </div>
-      <div class="progress"><div id="progBar" class="bar"></div></div>
-      </section>
+      <!-- File Transfer (removed – now in #transferModal) -->
 
       <!-- Text to Speech (bottom) -->
       <section class="card area-empty" hidden>
@@ -1060,6 +1048,7 @@
       <h2>Files on Device</h2>
       <div class="actions">
         <button type="button" class="btn" id="btnRefreshFiles">Refresh List</button>
+        <button type="button" class="btn primary" id="btnAddFile">Add File</button>
         <div style="display:flex; flex-direction:column; gap:2px;">
           <span class="small muted" id="filesSummary">—</span>
           <span class="small muted" id="filesLastRefresh"></span>

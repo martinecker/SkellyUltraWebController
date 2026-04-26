@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T22:17:08.210965
+ * Generated: 2026-04-25T22:43:43.262513
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3285,11 +3285,10 @@ const $ = (selector) => document.querySelector(selector);
  * Edit Modal Manager Class
  */
 class EditModalManager {
-	constructor(bleManager, stateManager, fileManager, audioConverter, logger) {
+	constructor(bleManager, stateManager, fileManager, logger) {
 		this.connection = bleManager;
 		this.state = stateManager;
 		this.fileManager = fileManager;
-		this.audioConverter = audioConverter;
 		this.mainLogger = logger;
 
 		// Current edit state
@@ -3315,9 +3314,6 @@ class EditModalManager {
 		this.modal = $("#editModal");
 		this.eyeGrid = $("#eyeGrid");
 		this.logElement = $("#edLog");
-		this.progText = $("#edProgText");
-		this.progPct = $("#edProgPct");
-		this.progBar = $("#edProgBar");
 
 		if (!this.modal) {
 			console.warn("Edit modal not found in DOM");
@@ -3331,16 +3327,6 @@ class EditModalManager {
 		this.initializeEyeGrid();
 		this.initializeFileControls();
 		this.initializeActionButtons();
-	}
-
-	/**
-	 * Update edit modal progress bar
-	 */
-	setProgress(current, total) {
-		const pct = total ? Math.round((current / total) * 100) : 0;
-		if (this.progText) this.progText.textContent = `${current} / ${total}`;
-		if (this.progPct) this.progPct.textContent = `${pct}%`;
-		if (this.progBar) this.progBar.style.width = `${pct}%`;
 	}
 
 	/**
@@ -3617,20 +3603,20 @@ class EditModalManager {
 			this.checkFileNameConflict(name);
 		});
 
-		// File upload for replacement
-		const _edUploadFile = $("#edUploadFile");
-		const edUploadBtn = $("#edUploadBtn");
-
-		if (edUploadBtn) {
-			edUploadBtn.addEventListener("click", async () => {
-				await this.handleFileUpload();
-			});
-		}
-
-		// Convert checkbox toggle
-		$("#edChkConvert")?.addEventListener("change", (e) => {
-			$("#edConvertOpts")?.classList.toggle("hidden", !e.target.checked);
+		// Replace File button
+		$("#btnReplaceFile")?.addEventListener("click", () => {
+			if (this._onReplaceFile) {
+				this._onReplaceFile(this.currentFile.name);
+			}
 		});
+	}
+
+	/**
+	 * Set the callback invoked when user clicks Replace File.
+	 * @param {function(string):void} fn - receives the current filename
+	 */
+	setReplaceFileHandler(fn) {
+		this._onReplaceFile = fn;
 	}
 
 	/**
@@ -3639,13 +3625,18 @@ class EditModalManager {
 	initializeActionButtons() {
 		// Close button
 		$("#edClose")?.addEventListener("click", () => this.close());
+		$("#edCloseTop")?.addEventListener("click", () => this.close());
 
-		// Escape key to close modal
+		// Escape key to close modal (but not when transfer modal is on top)
 		document.addEventListener("keydown", (e) => {
 			if (
 				e.key === "Escape" &&
 				this.modal &&
-				!this.modal.classList.contains("hidden")
+				!this.modal.classList.contains("hidden") &&
+				(document
+					.querySelector("#transferModal")
+					?.classList.contains("hidden") ??
+					true)
 			) {
 				this.close();
 			}
@@ -3946,92 +3937,6 @@ class EditModalManager {
 	}
 
 	/**
-	 * Handle file upload/replacement
-	 */
-	async handleFileUpload() {
-		if (!this.connection.isConnected()) {
-			this.log("Not connected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const edUploadFile = $("#edUploadFile");
-		const file = edUploadFile?.files?.[0];
-
-		if (!file) {
-			this.log("No file selected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const fileName = ($("#edName")?.value || "").trim();
-		if (!fileName) {
-			this.log("File name is required", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		// Confirm overwrite
-		if (
-			!confirm(
-				`Replace "${fileName}" with the selected file? This cannot be undone.`,
-			)
-		) {
-			return;
-		}
-
-		try {
-			let bytes;
-
-			// Convert if checkbox is checked
-			const shouldConvert = $("#edChkConvert")?.checked;
-			if (shouldConvert) {
-				const kbps = parseInt($("#edMp3Kbps")?.value || "32", 10);
-				this.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
-
-				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
-				bytes = result.u8;
-
-				this.log(`Converted to ${(bytes.length / 1024).toFixed(1)} KB MP3`);
-			} else {
-				// Read file as bytes
-				const arrayBuffer = await file.arrayBuffer();
-				bytes = new Uint8Array(arrayBuffer);
-			}
-
-			// Temporarily override FileManager's progress callback to use edit modal's progress bar
-			const originalProgressCallback = this.fileManager.onProgress;
-			this.fileManager.onProgress = (current, total) =>
-				this.setProgress(current, total);
-
-			try {
-				// Upload via FileManager - MUST use exact same filename as before
-				this.log(
-					`Uploading ${fileName} (${(bytes.length / 1024).toFixed(1)} KB)...`,
-				);
-				this.setProgress(0, 0); // Reset progress bar
-
-				await this.fileManager.uploadFile(bytes, fileName);
-
-				this.log(
-					`File "${fileName}" uploaded successfully ✓`,
-					LOG_CLASSES.SUCCESS,
-				);
-			} finally {
-				// Restore original progress callback
-				this.fileManager.onProgress = originalProgressCallback;
-			}
-
-			// Clear the file input
-			if (edUploadFile) edUploadFile.value = "";
-
-			// Refresh file list
-			setTimeout(() => {
-				this.fileManager.startFetchFiles();
-			}, 500);
-		} catch (error) {
-			this.log(`Upload failed: ${error.message}`, LOG_CLASSES.WARNING);
-		}
-	}
-
-	/**
 	 * Open the edit modal for a specific file
 	 */
 	open(file) {
@@ -4198,9 +4103,6 @@ class EditModalManager {
 		if (this.logElement) {
 			this.logElement.innerHTML = "";
 		}
-
-		// Reset progress bar
-		this.setProgress(0, 0);
 
 		// Show modal
 		this.modal?.classList.remove("hidden");
@@ -4402,14 +4304,19 @@ class SkellyApp {
 			this.elCache = { key: null, bytes: null };
 			// Currently playing preview audio element
 			this.elPreviewAudio = null;
+			// Transfer modal state
+			this._transferMode = null;
+			this._transferLockedFilename = "";
 			// Initialize edit modal manager (before parser so we can pass callback)
 			this.editModal = new EditModalManager(
 				this.connection,
 				this.state,
 				this.fileManager,
-				this.audioConverter,
 				this.logger.log.bind(this.logger),
 			);
+			this.editModal.setReplaceFileHandler((filename) => {
+				this.openTransferModal("replace", filename);
+			});
 			console.log("Edit modal manager created");
 
 			// Initialize protocol parser with callbacks
@@ -6286,16 +6193,96 @@ class SkellyApp {
 	}
 
 	/**
-	 * Initialize file transfer controls (send/cancel)
+	 * Initialize file transfer controls (send/cancel) and transfer modal
 	 */
 	initializeFileTransferControls() {
 		$("#btnSendFile")?.addEventListener("click", async () => {
-			await this.handleFileSend();
+			const success = await this.handleFileSend();
+			if (success) {
+				const wasReplace = this._transferMode === "replace";
+				this.closeTransferModal();
+				if (wasReplace) this.editModal.close();
+			}
 		});
 
 		$("#btnCancelFile")?.addEventListener("click", async () => {
 			await this.fileManager.cancelTransfer();
 		});
+
+		// Transfer modal close buttons (top X and bottom Close)
+		$("#btnCloseTransferModal")?.addEventListener("click", () => {
+			if (!this.state.transfer.inProgress) this.closeTransferModal();
+		});
+		$("#btnCloseTransferModalBottom")?.addEventListener("click", () => {
+			if (!this.state.transfer.inProgress) this.closeTransferModal();
+		});
+
+		// Escape key closes transfer modal (higher priority than edit modal handler)
+		document.addEventListener("keydown", (e) => {
+			if (
+				e.key === "Escape" &&
+				!$("#transferModal")?.classList.contains("hidden") &&
+				!this.state.transfer.inProgress
+			) {
+				this.closeTransferModal();
+			}
+		});
+
+		// "Add File" button in Files on Device section
+		$("#btnAddFile")?.addEventListener("click", () => {
+			this.openTransferModal("add");
+		});
+	}
+
+	/**
+	 * Open the File Transfer modal.
+	 * @param {"add"|"replace"} mode
+	 * @param {string} [lockedFilename] - Required when mode is "replace"
+	 */
+	openTransferModal(mode, lockedFilename = "") {
+		this._transferMode = mode;
+		this._transferLockedFilename = lockedFilename;
+
+		// Reset file picker and progress
+		this.fileManager.clearFilePickerData();
+		const fileInput = $("#fileInput");
+		if (fileInput) fileInput.value = "";
+		if ($("#progText")) $("#progText").textContent = "0 / 0";
+		if ($("#progPct")) $("#progPct").textContent = "0%";
+		if ($("#progBar")) $("#progBar").style.width = "0%";
+
+		const fileNameEl = $("#fileName");
+		const lockNotice = $("#transferModalLockNotice");
+		const title = $("#transferModalTitle");
+		if (mode === "replace") {
+			if (fileNameEl) {
+				fileNameEl.value = lockedFilename;
+				fileNameEl.readOnly = true;
+			}
+			if (lockNotice) lockNotice.classList.remove("hidden");
+			if (title) title.textContent = "Replace File";
+		} else {
+			if (fileNameEl) {
+				fileNameEl.value = "";
+				fileNameEl.readOnly = false;
+			}
+			if (lockNotice) lockNotice.classList.add("hidden");
+			if (title) title.textContent = "Add File";
+		}
+
+		$("#transferModal")?.classList.remove("hidden");
+	}
+
+	/**
+	 * Close and reset the File Transfer modal.
+	 */
+	closeTransferModal() {
+		$("#transferModal")?.classList.add("hidden");
+		this._transferMode = null;
+		this._transferLockedFilename = "";
+		this.fileManager.clearFilePickerData();
+		const fileInput = $("#fileInput");
+		if (fileInput) fileInput.value = "";
 	}
 
 	/**
@@ -6745,7 +6732,7 @@ class SkellyApp {
 	async handleFileSend() {
 		if (!this.connection.isConnected()) {
 			this.logger.log("Not connected", LOG_CLASSES.WARNING);
-			return;
+			return false;
 		}
 
 		const source = $("#sourceSelect")?.value || "local";
@@ -6762,19 +6749,19 @@ class SkellyApp {
 
 			if (!apiKey) {
 				this.logger.log("Enter your ElevenLabs API key.", LOG_CLASSES.WARNING);
-				return;
+				return false;
 			}
 			if (!voiceId) {
 				this.logger.log("Select a voice.", LOG_CLASSES.WARNING);
-				return;
+				return false;
 			}
 			if (!text) {
 				this.logger.log("Enter the text to synthesize.", LOG_CLASSES.WARNING);
-				return;
+				return false;
 			}
 
 			const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
-			if (!rawMp3) return;
+			if (!rawMp3) return false;
 
 			const slug =
 				text
@@ -6816,7 +6803,7 @@ class SkellyApp {
 			const pickerData = this.fileManager.getFilePickerData();
 			if (!pickerData.file && !pickerData.fileBytes) {
 				this.logger.log("Pick a file first.", LOG_CLASSES.WARNING);
-				return;
+				return false;
 			}
 
 			fileBytes = pickerData.fileBytes;
@@ -6857,24 +6844,31 @@ class SkellyApp {
 			}
 		}
 
-		// Filename to send (auto .mp3 if converting)
-		let finalName = ($("#fileName")?.value || fileName || "skelly.bin").trim();
-		if ($("#chkConvert")?.checked && !/\.mp3$/i.test(finalName)) {
-			finalName = `${finalName.replace(/\.\w+$/, "")}.mp3`;
-			$("#fileName").value = finalName;
+		// Filename to send (auto .mp3 if converting; locked in replace mode)
+		let finalName =
+			this._transferMode === "replace"
+				? this._transferLockedFilename
+				: ($("#fileName")?.value || fileName || "skelly.bin").trim();
+		if (this._transferMode !== "replace") {
+			if ($("#chkConvert")?.checked && !/\.mp3$/i.test(finalName)) {
+				finalName = `${finalName.replace(/\.\w+$/, "")}.mp3`;
+				$("#fileName").value = finalName;
+			}
 		}
 		if (!finalName) {
 			this.logger.log("Provide a device filename.", LOG_CLASSES.WARNING);
-			return;
+			return false;
 		}
 
-		// Check for filename conflict
-		const conflict = this.checkFileNameConflict(finalName);
-		if (conflict) {
-			const confirmed = await this.showOverwriteConfirmation(conflict.name);
-			if (!confirmed) {
-				this.logger.log("Upload cancelled by user", LOG_CLASSES.INFO);
-				return;
+		// Check for filename conflict (skipped in replace mode — intentional overwrite)
+		if (this._transferMode !== "replace") {
+			const conflict = this.checkFileNameConflict(finalName);
+			if (conflict) {
+				const confirmed = await this.showOverwriteConfirmation(conflict.name);
+				if (!confirmed) {
+					this.logger.log("Upload cancelled by user", LOG_CLASSES.INFO);
+					return false;
+				}
 			}
 		}
 
@@ -6892,8 +6886,10 @@ class SkellyApp {
 				finalName,
 				chunkSizeOverride,
 			);
+			return true;
 		} catch (error) {
 			this.logger.log(`Upload error: ${error.message}`, LOG_CLASSES.WARNING);
+			return false;
 		}
 	}
 

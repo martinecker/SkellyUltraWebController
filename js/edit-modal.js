@@ -21,11 +21,10 @@ const $ = (selector) => document.querySelector(selector);
  * Edit Modal Manager Class
  */
 export class EditModalManager {
-	constructor(bleManager, stateManager, fileManager, audioConverter, logger) {
+	constructor(bleManager, stateManager, fileManager, logger) {
 		this.connection = bleManager;
 		this.state = stateManager;
 		this.fileManager = fileManager;
-		this.audioConverter = audioConverter;
 		this.mainLogger = logger;
 
 		// Current edit state
@@ -51,9 +50,6 @@ export class EditModalManager {
 		this.modal = $("#editModal");
 		this.eyeGrid = $("#eyeGrid");
 		this.logElement = $("#edLog");
-		this.progText = $("#edProgText");
-		this.progPct = $("#edProgPct");
-		this.progBar = $("#edProgBar");
 
 		if (!this.modal) {
 			console.warn("Edit modal not found in DOM");
@@ -67,16 +63,6 @@ export class EditModalManager {
 		this.initializeEyeGrid();
 		this.initializeFileControls();
 		this.initializeActionButtons();
-	}
-
-	/**
-	 * Update edit modal progress bar
-	 */
-	setProgress(current, total) {
-		const pct = total ? Math.round((current / total) * 100) : 0;
-		if (this.progText) this.progText.textContent = `${current} / ${total}`;
-		if (this.progPct) this.progPct.textContent = `${pct}%`;
-		if (this.progBar) this.progBar.style.width = `${pct}%`;
 	}
 
 	/**
@@ -353,20 +339,20 @@ export class EditModalManager {
 			this.checkFileNameConflict(name);
 		});
 
-		// File upload for replacement
-		const _edUploadFile = $("#edUploadFile");
-		const edUploadBtn = $("#edUploadBtn");
-
-		if (edUploadBtn) {
-			edUploadBtn.addEventListener("click", async () => {
-				await this.handleFileUpload();
-			});
-		}
-
-		// Convert checkbox toggle
-		$("#edChkConvert")?.addEventListener("change", (e) => {
-			$("#edConvertOpts")?.classList.toggle("hidden", !e.target.checked);
+		// Replace File button
+		$("#btnReplaceFile")?.addEventListener("click", () => {
+			if (this._onReplaceFile) {
+				this._onReplaceFile(this.currentFile.name);
+			}
 		});
+	}
+
+	/**
+	 * Set the callback invoked when user clicks Replace File.
+	 * @param {function(string):void} fn - receives the current filename
+	 */
+	setReplaceFileHandler(fn) {
+		this._onReplaceFile = fn;
 	}
 
 	/**
@@ -375,13 +361,18 @@ export class EditModalManager {
 	initializeActionButtons() {
 		// Close button
 		$("#edClose")?.addEventListener("click", () => this.close());
+		$("#edCloseTop")?.addEventListener("click", () => this.close());
 
-		// Escape key to close modal
+		// Escape key to close modal (but not when transfer modal is on top)
 		document.addEventListener("keydown", (e) => {
 			if (
 				e.key === "Escape" &&
 				this.modal &&
-				!this.modal.classList.contains("hidden")
+				!this.modal.classList.contains("hidden") &&
+				(document
+					.querySelector("#transferModal")
+					?.classList.contains("hidden") ??
+					true)
 			) {
 				this.close();
 			}
@@ -682,92 +673,6 @@ export class EditModalManager {
 	}
 
 	/**
-	 * Handle file upload/replacement
-	 */
-	async handleFileUpload() {
-		if (!this.connection.isConnected()) {
-			this.log("Not connected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const edUploadFile = $("#edUploadFile");
-		const file = edUploadFile?.files?.[0];
-
-		if (!file) {
-			this.log("No file selected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const fileName = ($("#edName")?.value || "").trim();
-		if (!fileName) {
-			this.log("File name is required", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		// Confirm overwrite
-		if (
-			!confirm(
-				`Replace "${fileName}" with the selected file? This cannot be undone.`,
-			)
-		) {
-			return;
-		}
-
-		try {
-			let bytes;
-
-			// Convert if checkbox is checked
-			const shouldConvert = $("#edChkConvert")?.checked;
-			if (shouldConvert) {
-				const kbps = parseInt($("#edMp3Kbps")?.value || "32", 10);
-				this.log(`Converting to MP3 8 kHz mono (${kbps} kbps)…`);
-
-				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
-				bytes = result.u8;
-
-				this.log(`Converted to ${(bytes.length / 1024).toFixed(1)} KB MP3`);
-			} else {
-				// Read file as bytes
-				const arrayBuffer = await file.arrayBuffer();
-				bytes = new Uint8Array(arrayBuffer);
-			}
-
-			// Temporarily override FileManager's progress callback to use edit modal's progress bar
-			const originalProgressCallback = this.fileManager.onProgress;
-			this.fileManager.onProgress = (current, total) =>
-				this.setProgress(current, total);
-
-			try {
-				// Upload via FileManager - MUST use exact same filename as before
-				this.log(
-					`Uploading ${fileName} (${(bytes.length / 1024).toFixed(1)} KB)...`,
-				);
-				this.setProgress(0, 0); // Reset progress bar
-
-				await this.fileManager.uploadFile(bytes, fileName);
-
-				this.log(
-					`File "${fileName}" uploaded successfully ✓`,
-					LOG_CLASSES.SUCCESS,
-				);
-			} finally {
-				// Restore original progress callback
-				this.fileManager.onProgress = originalProgressCallback;
-			}
-
-			// Clear the file input
-			if (edUploadFile) edUploadFile.value = "";
-
-			// Refresh file list
-			setTimeout(() => {
-				this.fileManager.startFetchFiles();
-			}, 500);
-		} catch (error) {
-			this.log(`Upload failed: ${error.message}`, LOG_CLASSES.WARNING);
-		}
-	}
-
-	/**
 	 * Open the edit modal for a specific file
 	 */
 	open(file) {
@@ -934,9 +839,6 @@ export class EditModalManager {
 		if (this.logElement) {
 			this.logElement.innerHTML = "";
 		}
-
-		// Reset progress bar
-		this.setProgress(0, 0);
 
 		// Show modal
 		this.modal?.classList.remove("hidden");
