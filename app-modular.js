@@ -364,27 +364,27 @@ class SkellyApp {
 			if (el) el.style.display = hasEyes ? "" : "none";
 		}
 
-		// Show/hide head light groups
-		const hasHead = profile.lights.some((l) => l.id === "head");
-		for (const id of ["liveHeadLightGroup", "editHeadLightGroup"]) {
+		// Show/hide Light 1 group
+		const hasLight1 = profile.lights.length > 1;
+		for (const id of ["liveLight1Group", "editLight1Group"]) {
 			const el = $(`#${id}`);
-			if (el) el.style.display = hasHead ? "" : "none";
+			if (el) el.style.display = hasLight1 ? "" : "none";
 		}
 
-		// Update torso light zone label
-		const torsoLight = profile.lights.find((l) => l.id === "torso");
-		const torsoLabel = torsoLight ? torsoLight.label : "Torso Light";
-		for (const id of ["liveTorsoLightLabel", "editTorsoLightLabel"]) {
+		// Update Light 0 label
+		const light0 = profile.lights[0];
+		const light0Label = light0 ? light0.label : "Light";
+		for (const id of ["liveLight0Label", "editLight0Label"]) {
 			const el = $(`#${id}`);
-			if (el) el.textContent = torsoLabel;
+			if (el) el.textContent = light0Label;
 		}
 
 		// Repopulate effect mode selects
 		const modeSelects = [
-			"headEffectMode",
-			"torsoEffectMode",
-			"edHeadEffectMode",
-			"edTorsoEffectMode",
+			"light1EffectMode",
+			"light0EffectMode",
+			"edLight1EffectMode",
+			"edLight0EffectMode",
 		];
 		for (const selectId of modeSelects) {
 			const sel = $(`#${selectId}`);
@@ -403,14 +403,14 @@ class SkellyApp {
 		}
 
 		// Update files table column visibility and labels
-		const filesHeadCol = $("#filesHeadLightCol");
-		if (filesHeadCol) filesHeadCol.style.display = hasHead ? "" : "none";
+		const filesLight1Col = $("#filesLight1Col");
+		if (filesLight1Col) filesLight1Col.style.display = hasLight1 ? "" : "none";
 
 		const filesEyeCol = $("#filesEyeCol");
 		if (filesEyeCol) filesEyeCol.style.display = hasEyes ? "" : "none";
 
-		const filesTorsoCol = $("#filesTorsoLightCol");
-		if (filesTorsoCol) filesTorsoCol.textContent = torsoLabel;
+		const filesLight0Col = $("#filesLight0Col");
+		if (filesLight0Col) filesLight0Col.textContent = light0Label;
 
 		// Keep body cell classes in sync — add/remove display style via dynamic <style>
 		let dynStyle = document.getElementById("_profileColStyle");
@@ -420,7 +420,7 @@ class SkellyApp {
 			document.head.appendChild(dynStyle);
 		}
 		const rules = [];
-		if (!hasHead) rules.push("td.col-head-light { display: none; }");
+		if (!hasLight1) rules.push("td.col-light1 { display: none; }");
 		if (!hasEyes) rules.push("td.col-eye { display: none; }");
 		dynStyle.textContent = rules.join("\n");
 	}
@@ -1164,12 +1164,12 @@ class SkellyApp {
 		);
 	}
 
-	/** Returns the display label for the torso/body light zone of the active profile. */
-	get torsoLightLabel() {
+	/** Returns the display label for the primary (light0) zone of the active profile. */
+	get light0Label() {
 		const profile =
 			DEVICE_PROFILES[this.state.deviceType] ||
 			DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
-		return profile.lights.find((l) => l.id === "torso")?.label ?? "Torso Light";
+		return profile.lights[0]?.label ?? "Light";
 	}
 
 	/**
@@ -1191,16 +1191,16 @@ class SkellyApp {
 		this.buildLiveEyeGrid();
 
 		// Track color cycle state for each light
-		this.headColorCycleEnabled = false;
-		this.torsoColorCycleEnabled = false;
+		this.light1ColorCycleEnabled = false;
+		this.light0ColorCycleEnabled = false;
 
-		// Head Light - Brightness control (immediate)
-		const headBriRange = $("#headBrightnessRange");
-		const headBriNum = $("#headBrightness");
+		// Light 1 - Brightness control (immediate)
+		const light1BriRange = $("#light1BrightnessRange");
+		const light1BriNum = $("#light1Brightness");
 
-		const sendHeadBrightness = async (value) => {
+		const sendLight1Brightness = async (value) => {
 			if (!this.connection.isConnected()) return;
-			const ch = "01"; // Head light is channel 1
+			const ch = "01"; // Light 1 is channel 1
 			const brightness = parseInt(value, 10);
 			const brightnessHex = brightness
 				.toString(16)
@@ -1210,7 +1210,7 @@ class SkellyApp {
 			await this.connection.send(
 				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
 			);
-			this.logger.log(`Set head light brightness to ${brightness}`);
+			this.logger.log(`Set Light 1 brightness to ${brightness}`);
 		};
 
 		if (headBriRange && headBriNum) {
@@ -1225,13 +1225,13 @@ class SkellyApp {
 			});
 		}
 
-		// Torso Light - Brightness control (immediate)
-		const torsoBriRange = $("#torsoBrightnessRange");
-		const torsoBriNum = $("#torsoBrightness");
+		// Light 0 - Brightness control (immediate)
+		const light0BriRange = $("#light0BrightnessRange");
+		const light0BriNum = $("#light0Brightness");
 
-		const sendTorsoBrightness = async (value) => {
+		const sendLight0Brightness = async (value) => {
 			if (!this.connection.isConnected()) return;
-			const ch = "00"; // Torso light is channel 0
+			const ch = "00"; // Light 0 is channel 0
 			const brightness = parseInt(value, 10);
 			const brightnessHex = brightness
 				.toString(16)
@@ -1241,7 +1241,7 @@ class SkellyApp {
 			await this.connection.send(
 				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
 			);
-			this.logger.log(`Set ${this.torsoLightLabel} brightness to ${brightness}`);
+			this.logger.log(`Set ${this.light0Label} brightness to ${brightness}`);
 		};
 
 		if (torsoBriRange && torsoBriNum) {
@@ -1256,29 +1256,29 @@ class SkellyApp {
 			});
 		}
 
-		// Head Light - Color/RGB control (immediate)
-		const headColorPick = $("#headColorPick");
-		const headRInput = $("#headR");
-		const headGInput = $("#headG");
-		const headBInput = $("#headB");
+		// Light 1 - Color/RGB control (immediate)
+		const light1ColorPick = $("#light1ColorPick");
+		const light1RInput = $("#light1R");
+		const light1GInput = $("#light1G");
+		const light1BInput = $("#light1B");
 
-		const sendHeadColor = async (disableCycle = false) => {
+		const sendLight1Color = async (disableCycle = false) => {
 			if (!this.connection.isConnected()) return;
 
 			// If user is setting a new color (not from cycle button), disable cycle
-			if (disableCycle && this.headColorCycleEnabled) {
-				this.headColorCycleEnabled = false;
-				const btnHeadColorCycle = $("#btnHeadColorCycle");
-				if (btnHeadColorCycle) {
-					btnHeadColorCycle.classList.remove("selected");
+			if (disableCycle && this.light1ColorCycleEnabled) {
+				this.light1ColorCycleEnabled = false;
+				const btnLight1ColorCycle = $("#btnLight1ColorCycle");
+				if (btnLight1ColorCycle) {
+					btnLight1ColorCycle.classList.remove("selected");
 				}
 			}
 
-			const ch = "01"; // Head light is channel 1
-			const r = parseInt(headRInput?.value || "255", 10);
-			const g = parseInt(headGInput?.value || "0", 10);
-			const b = parseInt(headBInput?.value || "0", 10);
-			const cycle = this.headColorCycleEnabled ? "01" : "00";
+			const ch = "01"; // Light 1 is channel 1
+			const r = parseInt(light1RInput?.value || "255", 10);
+			const g = parseInt(light1GInput?.value || "0", 10);
+			const b = parseInt(light1BInput?.value || "0", 10);
+			const cycle = this.light1ColorCycleEnabled ? "01" : "00";
 			const rHex = r.toString(16).padStart(2, "0").toUpperCase();
 			const gHex = g.toString(16).padStart(2, "0").toUpperCase();
 			const bHex = b.toString(16).padStart(2, "0").toUpperCase();
@@ -1291,7 +1291,7 @@ class SkellyApp {
 				),
 			);
 			this.logger.log(
-				`Set head light color to RGB(${r}, ${g}, ${b}) with cycle ${this.headColorCycleEnabled ? "ON" : "OFF"}`,
+				`Set Light 1 color to RGB(${r}, ${g}, ${b}) with cycle ${this.light1ColorCycleEnabled ? "ON" : "OFF"}`,
 			);
 		};
 
@@ -1316,29 +1316,29 @@ class SkellyApp {
 			});
 		}
 
-		// Torso Light - Color/RGB control (immediate)
-		const torsoColorPick = $("#torsoColorPick");
-		const torsoRInput = $("#torsoR");
-		const torsoGInput = $("#torsoG");
-		const torsoBInput = $("#torsoB");
+		// Light 0 - Color/RGB control (immediate)
+		const light0ColorPick = $("#light0ColorPick");
+		const light0RInput = $("#light0R");
+		const light0GInput = $("#light0G");
+		const light0BInput = $("#light0B");
 
-		const sendTorsoColor = async (disableCycle = false) => {
+		const sendLight0Color = async (disableCycle = false) => {
 			if (!this.connection.isConnected()) return;
 
 			// If user is setting a new color (not from cycle button), disable cycle
-			if (disableCycle && this.torsoColorCycleEnabled) {
-				this.torsoColorCycleEnabled = false;
-				const btnTorsoColorCycle = $("#btnTorsoColorCycle");
-				if (btnTorsoColorCycle) {
-					btnTorsoColorCycle.classList.remove("selected");
+			if (disableCycle && this.light0ColorCycleEnabled) {
+				this.light0ColorCycleEnabled = false;
+				const btnLight0ColorCycle = $("#btnLight0ColorCycle");
+				if (btnLight0ColorCycle) {
+					btnLight0ColorCycle.classList.remove("selected");
 				}
 			}
 
-			const ch = "00"; // Torso light is channel 0
-			const r = parseInt(torsoRInput?.value || "255", 10);
-			const g = parseInt(torsoGInput?.value || "0", 10);
-			const b = parseInt(torsoBInput?.value || "0", 10);
-			const cycle = this.torsoColorCycleEnabled ? "01" : "00";
+			const ch = "00"; // Light 0 is channel 0
+			const r = parseInt(light0RInput?.value || "255", 10);
+			const g = parseInt(light0GInput?.value || "0", 10);
+			const b = parseInt(light0BInput?.value || "0", 10);
+			const cycle = this.light0ColorCycleEnabled ? "01" : "00";
 			const rHex = r.toString(16).padStart(2, "0").toUpperCase();
 			const gHex = g.toString(16).padStart(2, "0").toUpperCase();
 			const bHex = b.toString(16).padStart(2, "0").toUpperCase();
@@ -1351,7 +1351,7 @@ class SkellyApp {
 				),
 			);
 			this.logger.log(
-				`Set ${this.torsoLightLabel} color to RGB(${r}, ${g}, ${b}) with cycle ${this.torsoColorCycleEnabled ? "ON" : "OFF"}`,
+				`Set ${this.light0Label} color to RGB(${r}, ${g}, ${b}) with cycle ${this.light0ColorCycleEnabled ? "ON" : "OFF"}`,
 			);
 		};
 
@@ -1376,57 +1376,57 @@ class SkellyApp {
 			});
 		}
 
-		// Head Light - Effect mode (immediate)
-		const headEffectMode = $("#headEffectMode");
-		const headEffectSpeedBlock = $("#headEffectSpeedBlock");
+		// Light 1 - Effect mode (immediate)
+		const light1EffectMode = $("#light1EffectMode");
+		const light1EffectSpeedBlock = $("#light1EffectSpeedBlock");
 
-		if (headEffectMode && headEffectSpeedBlock) {
-			headEffectMode.addEventListener("change", async () => {
-				const v = parseInt(headEffectMode.value, 10);
-				headEffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
+		if (light1EffectMode && light1EffectSpeedBlock) {
+			light1EffectMode.addEventListener("change", async () => {
+				const v = parseInt(light1EffectMode.value, 10);
+				light1EffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
 
 				if (!this.connection.isConnected()) return;
-				const ch = "01"; // Head light is channel 1
+				const ch = "01"; // Light 1 is channel 1
 				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
 				const cluster = "00000000";
 				await this.connection.send(
 					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 9),
 				);
 				this.logger.log(
-					`Set head light mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
+					`Set Light 1 mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
 				);
 			});
 		}
 
-		// Torso Light - Effect mode (immediate)
-		const torsoEffectMode = $("#torsoEffectMode");
-		const torsoEffectSpeedBlock = $("#torsoEffectSpeedBlock");
+		// Light 0 - Effect mode (immediate)
+		const light0EffectMode = $("#light0EffectMode");
+		const light0EffectSpeedBlock = $("#light0EffectSpeedBlock");
 
-		if (torsoEffectMode && torsoEffectSpeedBlock) {
-			torsoEffectMode.addEventListener("change", async () => {
-				const v = parseInt(torsoEffectMode.value, 10);
-				torsoEffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
+		if (light0EffectMode && light0EffectSpeedBlock) {
+			light0EffectMode.addEventListener("change", async () => {
+				const v = parseInt(light0EffectMode.value, 10);
+				light0EffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
 
 				if (!this.connection.isConnected()) return;
-				const ch = "00"; // Torso light is channel 0
+				const ch = "00"; // Light 0 is channel 0
 				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
 				const cluster = "00000000";
 				await this.connection.send(
 					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
 				);
 				this.logger.log(
-					`Set ${this.torsoLightLabel} mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
+					`Set ${this.light0Label} mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
 				);
 			});
 		}
 
-		// Head Light - Effect speed control (immediate)
-		const headEffectSpeedRange = $("#headEffectSpeedRange");
-		const headEffectSpeedNum = $("#headEffectSpeed");
+		// Light 1 - Effect speed control (immediate)
+		const light1EffectSpeedRange = $("#light1EffectSpeedRange");
+		const light1EffectSpeedNum = $("#light1EffectSpeed");
 
-		const sendHeadSpeed = async (value) => {
+		const sendLight1Speed = async (value) => {
 			if (!this.connection.isConnected()) return;
-			const ch = "01"; // Head light is channel 1
+			const ch = "01"; // Light 1 is channel 1
 			const uiSpeed = parseInt(value, 10);
 			const deviceSpeed = uiSpeedToDevice(uiSpeed);
 			const speedHex = deviceSpeed.toString(16).padStart(2, "0").toUpperCase();
@@ -1435,7 +1435,7 @@ class SkellyApp {
 				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
 			);
 			this.logger.log(
-				`Set head light speed to ${uiSpeed} (device: ${deviceSpeed})`,
+				`Set Light 1 speed to ${uiSpeed} (device: ${deviceSpeed})`,
 			);
 		};
 
@@ -1451,13 +1451,13 @@ class SkellyApp {
 			});
 		}
 
-		// Torso Light - Effect speed control (immediate)
-		const torsoEffectSpeedRange = $("#torsoEffectSpeedRange");
-		const torsoEffectSpeedNum = $("#torsoEffectSpeed");
+		// Light 0 - Effect speed control (immediate)
+		const light0EffectSpeedRange = $("#light0EffectSpeedRange");
+		const light0EffectSpeedNum = $("#light0EffectSpeed");
 
-		const sendTorsoSpeed = async (value) => {
+		const sendLight0Speed = async (value) => {
 			if (!this.connection.isConnected()) return;
-			const ch = "00"; // Torso light is channel 0
+			const ch = "00"; // Light 0 is channel 0
 			const uiSpeed = parseInt(value, 10);
 			const deviceSpeed = uiSpeedToDevice(uiSpeed);
 			const speedHex = deviceSpeed.toString(16).padStart(2, "0").toUpperCase();
@@ -1466,7 +1466,7 @@ class SkellyApp {
 				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
 			);
 			this.logger.log(
-				`Set ${this.torsoLightLabel} speed to ${uiSpeed} (device: ${deviceSpeed})`,
+				`Set ${this.light0Label} speed to ${uiSpeed} (device: ${deviceSpeed})`,
 			);
 		};
 
@@ -1484,37 +1484,37 @@ class SkellyApp {
 
 		// Movement controls — handled by bindMovementGrid (called from applyDeviceProfile)
 
-		// Head Light - Color cycle button (toggles cycle state)
-		const btnHeadColorCycle = $("#btnHeadColorCycle");
-		if (btnHeadColorCycle) {
-			btnHeadColorCycle.addEventListener("click", async () => {
+		// Light 1 - Color cycle button (toggles cycle state)
+		const btnLight1ColorCycle = $("#btnLight1ColorCycle");
+		if (btnLight1ColorCycle) {
+			btnLight1ColorCycle.addEventListener("click", async () => {
 				if (!this.connection.isConnected()) {
 					this.logger.log("Not connected", LOG_CLASSES.WARNING);
 					return;
 				}
-				this.headColorCycleEnabled = !this.headColorCycleEnabled;
-				btnHeadColorCycle.classList.toggle(
+				this.light1ColorCycleEnabled = !this.light1ColorCycleEnabled;
+				btnLight1ColorCycle.classList.toggle(
 					"selected",
-					this.headColorCycleEnabled,
+					this.light1ColorCycleEnabled,
 				);
-				await sendHeadColor();
+				await sendLight1Color();
 			});
 		}
 
-		// Torso Light - Color cycle button (toggles cycle state)
-		const btnTorsoColorCycle = $("#btnTorsoColorCycle");
-		if (btnTorsoColorCycle) {
-			btnTorsoColorCycle.addEventListener("click", async () => {
+		// Light 0 - Color cycle button (toggles cycle state)
+		const btnLight0ColorCycle = $("#btnLight0ColorCycle");
+		if (btnLight0ColorCycle) {
+			btnLight0ColorCycle.addEventListener("click", async () => {
 				if (!this.connection.isConnected()) {
 					this.logger.log("Not connected", LOG_CLASSES.WARNING);
 					return;
 				}
-				this.torsoColorCycleEnabled = !this.torsoColorCycleEnabled;
-				btnTorsoColorCycle.classList.toggle(
+				this.light0ColorCycleEnabled = !this.light0ColorCycleEnabled;
+				btnLight0ColorCycle.classList.toggle(
 					"selected",
-					this.torsoColorCycleEnabled,
+					this.light0ColorCycleEnabled,
 				);
-				await sendTorsoColor();
+				await sendLight0Color();
 			});
 		}
 
@@ -2995,40 +2995,40 @@ class SkellyApp {
 
 		// Update light settings from live.lights array
 		if (live.lights && Array.isArray(live.lights)) {
-			// Head light (index 1)
+			// Light 1 (index 1)
 			if (live.lights[1]) {
-				const headLight = live.lights[1];
+				const light1 = live.lights[1];
 
 				// Brightness
-				if ($("#headBrightness"))
-					$("#headBrightness").value = headLight.brightness;
-				if ($("#headBrightnessRange"))
-					$("#headBrightnessRange").value = headLight.brightness;
+				if ($("#light1Brightness"))
+					$("#light1Brightness").value = light1.brightness;
+				if ($("#light1BrightnessRange"))
+					$("#light1BrightnessRange").value = light1.brightness;
 
 				// Color (RGB)
-				if ($("#headR")) $("#headR").value = headLight.r;
-				if ($("#headG")) $("#headG").value = headLight.g;
-				if ($("#headB")) $("#headB").value = headLight.b;
-				const headHex = `#${headLight.r.toString(16).padStart(2, "0")}${headLight.g.toString(16).padStart(2, "0")}${headLight.b.toString(16).padStart(2, "0")}`;
-				if ($("#headColorPick")) $("#headColorPick").value = headHex;
+				if ($("#light1R")) $("#light1R").value = light1.r;
+				if ($("#light1G")) $("#light1G").value = light1.g;
+				if ($("#light1B")) $("#light1B").value = light1.b;
+				const light1Hex = `#${light1.r.toString(16).padStart(2, "0")}${light1.g.toString(16).padStart(2, "0")}${light1.b.toString(16).padStart(2, "0")}`;
+				if ($("#light1ColorPick")) $("#light1ColorPick").value = light1Hex;
 
 				// Color cycle state
-				this.headColorCycleEnabled = headLight.colorCycle === 1;
-				const headCycleBtn = $("#btnHeadColorCycle");
-				if (headCycleBtn) {
-					if (this.headColorCycleEnabled) {
-						headCycleBtn.classList.add("selected");
+				this.light1ColorCycleEnabled = light1.colorCycle === 1;
+				const light1CycleBtn = $("#btnLight1ColorCycle");
+				if (light1CycleBtn) {
+					if (this.light1ColorCycleEnabled) {
+						light1CycleBtn.classList.add("selected");
 					} else {
-						headCycleBtn.classList.remove("selected");
+						light1CycleBtn.classList.remove("selected");
 					}
 				}
 
 				// Effect mode
-				if ($("#headEffectMode"))
-					$("#headEffectMode").value = headLight.effectMode;
+				if ($("#light1EffectMode"))
+					$("#light1EffectMode").value = light1.effectMode;
 
 				// Effect speed (show/hide speed block based on mode)
-				const headEffectSpeedBlock = $("#headEffectSpeedBlock");
+				const light1EffectSpeedBlock = $("#light1EffectSpeedBlock");
 				if (headEffectSpeedBlock) {
 					headEffectSpeedBlock.classList.toggle(
 						"hidden",
@@ -3041,40 +3041,40 @@ class SkellyApp {
 					$("#headEffectSpeedRange").value = headUISpeed;
 			}
 
-			// Torso light (index 0)
+			// Light 0 (index 0)
 			if (live.lights[0]) {
-				const torsoLight = live.lights[0];
+				const light0 = live.lights[0];
 
 				// Brightness
-				if ($("#torsoBrightness"))
-					$("#torsoBrightness").value = torsoLight.brightness;
-				if ($("#torsoBrightnessRange"))
-					$("#torsoBrightnessRange").value = torsoLight.brightness;
+				if ($("#light0Brightness"))
+					$("#light0Brightness").value = light0.brightness;
+				if ($("#light0BrightnessRange"))
+					$("#light0BrightnessRange").value = light0.brightness;
 
 				// Color (RGB)
-				if ($("#torsoR")) $("#torsoR").value = torsoLight.r;
-				if ($("#torsoG")) $("#torsoG").value = torsoLight.g;
-				if ($("#torsoB")) $("#torsoB").value = torsoLight.b;
-				const torsoHex = `#${torsoLight.r.toString(16).padStart(2, "0")}${torsoLight.g.toString(16).padStart(2, "0")}${torsoLight.b.toString(16).padStart(2, "0")}`;
-				if ($("#torsoColorPick")) $("#torsoColorPick").value = torsoHex;
+				if ($("#light0R")) $("#light0R").value = light0.r;
+				if ($("#light0G")) $("#light0G").value = light0.g;
+				if ($("#light0B")) $("#light0B").value = light0.b;
+				const light0Hex = `#${light0.r.toString(16).padStart(2, "0")}${light0.g.toString(16).padStart(2, "0")}${light0.b.toString(16).padStart(2, "0")}`;
+				if ($("#light0ColorPick")) $("#light0ColorPick").value = light0Hex;
 
 				// Color cycle state
-				this.torsoColorCycleEnabled = torsoLight.colorCycle === 1;
-				const torsoCycleBtn = $("#btnTorsoColorCycle");
-				if (torsoCycleBtn) {
-					if (this.torsoColorCycleEnabled) {
-						torsoCycleBtn.classList.add("selected");
+				this.light0ColorCycleEnabled = light0.colorCycle === 1;
+				const light0CycleBtn = $("#btnLight0ColorCycle");
+				if (light0CycleBtn) {
+					if (this.light0ColorCycleEnabled) {
+						light0CycleBtn.classList.add("selected");
 					} else {
-						torsoCycleBtn.classList.remove("selected");
+						light0CycleBtn.classList.remove("selected");
 					}
 				}
 
 				// Effect mode
-				if ($("#torsoEffectMode"))
-					$("#torsoEffectMode").value = torsoLight.effectMode;
+				if ($("#light0EffectMode"))
+					$("#light0EffectMode").value = light0.effectMode;
 
 				// Effect speed (show/hide speed block based on mode)
-				const torsoEffectSpeedBlock = $("#torsoEffectSpeedBlock");
+				const light0EffectSpeedBlock = $("#light0EffectSpeedBlock");
 				if (torsoEffectSpeedBlock) {
 					torsoEffectSpeedBlock.classList.toggle(
 						"hidden",
@@ -3165,8 +3165,8 @@ class SkellyApp {
 			const tr = document.createElement("tr");
 			const eyeImgIdx = file.eye;
 
-			// Generate Head color indicator (lights[1])
-			let headColorHtml = "";
+			// Generate Light 1 color indicator (lights[1])
+			const light1ColorHtml = "";
 			if (file.lights?.[1]) {
 				const headLight = file.lights[1];
 				if (headLight.colorCycle) {
@@ -3178,8 +3178,8 @@ class SkellyApp {
 				}
 			}
 
-			// Generate Torso color indicator (lights[0])
-			let torsoColorHtml = "";
+			// Generate Light 0 color indicator (lights[0])
+			const light0ColorHtml = "";
 			if (file.lights?.[0]) {
 				const torsoLight = file.lights[0];
 				if (torsoLight.colorCycle) {
@@ -3238,8 +3238,8 @@ class SkellyApp {
         <td>${rowIndex}</td>
         <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? "checked" : ""} /></td>
         <td>${escapeHtml(file.name || "")}</td>
-        <td class="col-head-light">${headColorHtml}</td>
-        <td>${torsoColorHtml}</td>
+        <td class="col-light1">${light1ColorHtml}</td>
+        <td>${light0ColorHtml}</td>
         <td>${movementIcons}</td>
         <td class="col-eye"><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ""}</td>
         <td class="detail-column">${file.serial}</td>

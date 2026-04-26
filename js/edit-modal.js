@@ -103,83 +103,83 @@ export class EditModalManager {
 	 * Initialize lighting type and speed controls
 	 */
 	initializeLightingControls() {
-		// Head light brightness controls
-		const edHeadBrightnessRange = $("#edHeadBrightnessRange");
-		const edHeadBrightnessNum = $("#edHeadBrightness");
+		// Light 1 brightness controls
+		const edLight1BrightnessRange = $("#edLight1BrightnessRange");
+		const edLight1BrightnessNum = $("#edLight1Brightness");
 
-		// Sync head brightness inputs
-		if (edHeadBrightnessRange && edHeadBrightnessNum) {
-			edHeadBrightnessRange.addEventListener(
+		// Sync Light 1 brightness inputs
+		if (edLight1BrightnessRange && edLight1BrightnessNum) {
+			edLight1BrightnessRange.addEventListener(
 				"input",
-				(e) => (edHeadBrightnessNum.value = e.target.value),
+				(e) => (edLight1BrightnessNum.value = e.target.value),
 			);
-			edHeadBrightnessNum.addEventListener(
+			edLight1BrightnessNum.addEventListener(
 				"input",
-				(e) => (edHeadBrightnessRange.value = clamp(e.target.value, 0, 255)),
+				(e) => (edLight1BrightnessRange.value = clamp(e.target.value, 0, 255)),
 			);
 		}
 
-		// Head light effect controls
-		const edHeadEffectMode = $("#edHeadEffectMode");
-		const edHeadEffectSpeedBlock = $("#edHeadEffectSpeedBlock");
-		const edHeadEffectSpeedRange = $("#edHeadEffectSpeedRange");
-		const edHeadEffectSpeedNum = $("#edHeadEffectSpeed");
+		// Light 1 effect controls
+		const edLight1EffectMode = $("#edLight1EffectMode");
+		const edLight1EffectSpeedBlock = $("#edLight1EffectSpeedBlock");
+		const edLight1EffectSpeedRange = $("#edLight1EffectSpeedRange");
+		const edLight1EffectSpeedNum = $("#edLight1EffectSpeed");
 
-		// Toggle head speed UI for Static vs Strobe/Pulsing
-		edHeadEffectMode?.addEventListener("change", () => {
-			const v = parseInt(edHeadEffectMode.value, 10);
-			edHeadEffectSpeedBlock?.classList.toggle("hidden", v === 1); // hide when Static
+		// Toggle Light 1 speed UI for Static vs Strobe/Pulsing
+		edLight1EffectMode?.addEventListener("change", () => {
+			const v = parseInt(edLight1EffectMode.value, 10);
+			edLight1EffectSpeedBlock?.classList.toggle("hidden", v === 1); // hide when Static
 		});
 
-		// Sync head speed inputs
-		if (edHeadEffectSpeedRange && edHeadEffectSpeedNum) {
-			edHeadEffectSpeedRange.addEventListener(
+		// Sync Light 1 speed inputs
+		if (edLight1EffectSpeedRange && edLight1EffectSpeedNum) {
+			edLight1EffectSpeedRange.addEventListener(
 				"input",
-				(e) => (edHeadEffectSpeedNum.value = e.target.value),
+				(e) => (edLight1EffectSpeedNum.value = e.target.value),
 			);
-			edHeadEffectSpeedNum.addEventListener(
+			edLight1EffectSpeedNum.addEventListener(
 				"input",
-				(e) => (edHeadEffectSpeedRange.value = clamp(e.target.value, 0, 254)),
-			);
-		}
-
-		// Torso light brightness controls
-		const edTorsoBrightnessRange = $("#edTorsoBrightnessRange");
-		const edTorsoBrightnessNum = $("#edTorsoBrightness");
-
-		// Sync torso brightness inputs
-		if (edTorsoBrightnessRange && edTorsoBrightnessNum) {
-			edTorsoBrightnessRange.addEventListener(
-				"input",
-				(e) => (edTorsoBrightnessNum.value = e.target.value),
-			);
-			edTorsoBrightnessNum.addEventListener(
-				"input",
-				(e) => (edTorsoBrightnessRange.value = clamp(e.target.value, 0, 255)),
+				(e) => (edLight1EffectSpeedRange.value = clamp(e.target.value, 0, 254)),
 			);
 		}
 
-		// Torso light effect controls
-		const edTorsoEffectMode = $("#edTorsoEffectMode");
-		const edTorsoEffectSpeedBlock = $("#edTorsoEffectSpeedBlock");
-		const edTorsoEffectSpeedRange = $("#edTorsoEffectSpeedRange");
-		const edTorsoEffectSpeedNum = $("#edTorsoEffectSpeed");
+		// Light 0 brightness controls
+		const edLight0BrightnessRange = $("#edLight0BrightnessRange");
+		const edLight0BrightnessNum = $("#edLight0Brightness");
 
-		// Toggle torso speed UI for Static vs Strobe/Pulsing
-		edTorsoEffectMode?.addEventListener("change", () => {
-			const v = parseInt(edTorsoEffectMode.value, 10);
-			edTorsoEffectSpeedBlock?.classList.toggle("hidden", v === 1); // hide when Static
+		// Sync Light 0 brightness inputs
+		if (edLight0BrightnessRange && edLight0BrightnessNum) {
+			edLight0BrightnessRange.addEventListener(
+				"input",
+				(e) => (edLight0BrightnessNum.value = e.target.value),
+			);
+			edLight0BrightnessNum.addEventListener(
+				"input",
+				(e) => (edLight0BrightnessRange.value = clamp(e.target.value, 0, 255)),
+			);
+		}
+
+		// Light 0 effect controls
+		const edLight0EffectMode = $("#edLight0EffectMode");
+		const edLight0EffectSpeedBlock = $("#edLight0EffectSpeedBlock");
+		const edLight0EffectSpeedRange = $("#edLight0EffectSpeedRange");
+		const edLight0EffectSpeedNum = $("#edLight0EffectSpeed");
+
+		// Toggle Light 0 speed UI for Static vs Strobe/Pulsing
+		edLight0EffectMode?.addEventListener("change", () => {
+			const v = parseInt(edLight0EffectMode.value, 10);
+			edLight0EffectSpeedBlock?.classList.toggle("hidden", v === 1); // hide when Static
 		});
 
-		// Sync torso speed inputs
-		if (edTorsoEffectSpeedRange && edTorsoEffectSpeedNum) {
-			edTorsoEffectSpeedRange.addEventListener(
+		// Sync Light 0 speed inputs
+		if (edLight0EffectSpeedRange && edLight0EffectSpeedNum) {
+			edLight0EffectSpeedRange.addEventListener(
 				"input",
-				(e) => (edTorsoEffectSpeedNum.value = e.target.value),
+				(e) => (edLight0EffectSpeedNum.value = e.target.value),
 			);
-			edTorsoEffectSpeedNum.addEventListener(
+			edLight0EffectSpeedNum.addEventListener(
 				"input",
-				(e) => (edTorsoEffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+				(e) => (edLight0EffectSpeedRange.value = clamp(e.target.value, 0, 254)),
 			);
 		}
 	}
@@ -223,71 +223,71 @@ export class EditModalManager {
 	 * Initialize color/RGB controls
 	 */
 	initializeColorControls() {
-		// Head color sync
-		const edHeadColorPick = $("#edHeadColorPick");
-		const edHeadR = $("#edHeadR");
-		const edHeadG = $("#edHeadG");
-		const edHeadB = $("#edHeadB");
+		// Light 1 color sync
+		const edLight1ColorPick = $("#edLight1ColorPick");
+		const edLight1R = $("#edLight1R");
+		const edLight1G = $("#edLight1G");
+		const edLight1B = $("#edLight1B");
 
-		// Sync Head RGB inputs to color picker
-		[edHeadR, edHeadG, edHeadB].forEach((inp) => {
+		// Sync Light 1 RGB inputs to color picker
+		[edLight1R, edLight1G, edLight1B].forEach((inp) => {
 			inp?.addEventListener("input", () => {
-				const r = clamp(edHeadR.value, 0, 255);
-				const g = clamp(edHeadG.value, 0, 255);
-				const b = clamp(edHeadB.value, 0, 255);
+				const r = clamp(edLight1R.value, 0, 255);
+				const g = clamp(edLight1G.value, 0, 255);
+				const b = clamp(edLight1B.value, 0, 255);
 				const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-				if (edHeadColorPick && edHeadColorPick.value !== hex) {
-					edHeadColorPick.value = hex;
+				if (edLight1ColorPick && edLight1ColorPick.value !== hex) {
+					edLight1ColorPick.value = hex;
 				}
 			});
 		});
 
-		// Sync Head color picker to RGB inputs
-		edHeadColorPick?.addEventListener("input", () => {
-			const v = edHeadColorPick.value.replace("#", "");
+		// Sync Light 1 color picker to RGB inputs
+		edLight1ColorPick?.addEventListener("input", () => {
+			const v = edLight1ColorPick.value.replace("#", "");
 			if (v.length === 6) {
-				edHeadR.value = parseInt(v.slice(0, 2), 16);
-				edHeadG.value = parseInt(v.slice(2, 4), 16);
-				edHeadB.value = parseInt(v.slice(4, 6), 16);
+				edLight1R.value = parseInt(v.slice(0, 2), 16);
+				edLight1G.value = parseInt(v.slice(2, 4), 16);
+				edLight1B.value = parseInt(v.slice(4, 6), 16);
 			}
 		});
 
-		// Head color cycle button (toggle visual state only)
-		$("#edHeadColorCycle")?.addEventListener("click", (e) => {
+		// Light 1 color cycle button (toggle visual state only)
+		$("#edLight1ColorCycle")?.addEventListener("click", (e) => {
 			e.currentTarget.classList.toggle("selected");
 		});
 
-		// Torso color sync
-		const edTorsoColorPick = $("#edTorsoColorPick");
-		const edTorsoR = $("#edTorsoR");
-		const edTorsoG = $("#edTorsoG");
-		const edTorsoB = $("#edTorsoB");
+		// Light 0 color sync
+		const edLight0ColorPick = $("#edLight0ColorPick");
+		const edLight0R = $("#edLight0R");
+		const edLight0G = $("#edLight0G");
+		const edLight0B = $("#edLight0B");
 
-		// Sync Torso RGB inputs to color picker
-		[edTorsoR, edTorsoG, edTorsoB].forEach((inp) => {
+		// Sync Light 0 RGB inputs to color picker
+		[edLight0R, edLight0G, edLight0B].forEach((inp) => {
 			inp?.addEventListener("input", () => {
-				const r = clamp(edTorsoR.value, 0, 255);
-				const g = clamp(edTorsoG.value, 0, 255);
-				const b = clamp(edTorsoB.value, 0, 255);
+				const r = clamp(edLight0R.value, 0, 255);
+				const g = clamp(edLight0G.value, 0, 255);
+				const b = clamp(edLight0B.value, 0, 255);
 				const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-				if (edTorsoColorPick && edTorsoColorPick.value !== hex) {
-					edTorsoColorPick.value = hex;
+				if (edLight0ColorPick && edLight0ColorPick.value !== hex) {
+					edLight0ColorPick.value = hex;
 				}
 			});
 		});
 
-		// Sync Torso color picker to RGB inputs
-		edTorsoColorPick?.addEventListener("input", () => {
-			const v = edTorsoColorPick.value.replace("#", "");
+		// Sync Light 0 color picker to RGB inputs
+		edLight0ColorPick?.addEventListener("input", () => {
+			const v = edLight0ColorPick.value.replace("#", "");
 			if (v.length === 6) {
-				edTorsoR.value = parseInt(v.slice(0, 2), 16);
-				edTorsoG.value = parseInt(v.slice(2, 4), 16);
-				edTorsoB.value = parseInt(v.slice(4, 6), 16);
+				edLight0R.value = parseInt(v.slice(0, 2), 16);
+				edLight0G.value = parseInt(v.slice(2, 4), 16);
+				edLight0B.value = parseInt(v.slice(4, 6), 16);
 			}
 		});
 
-		// Torso color cycle button (toggle visual state only)
-		$("#edTorsoColorCycle")?.addEventListener("click", (e) => {
+		// Light 0 color cycle button (toggle visual state only)
+		$("#edLight0ColorCycle")?.addEventListener("click", (e) => {
 			e.currentTarget.classList.toggle("selected");
 		});
 
@@ -519,135 +519,138 @@ export class EditModalManager {
 			await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
 			this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
 
-			// 3. Set Head Light Brightness (F3)
-			const headBrightness = clamp(
-				$("#edHeadBrightness")?.value || 200,
+			// 3. Set Light 1 Brightness (F3)
+			const light1Brightness = clamp(
+				$("#edLight1Brightness")?.value || 200,
 				0,
 				255,
 			);
-			const headBrightnessHex = headBrightness
+			const light1BrightnessHex = light1Brightness
 				.toString(16)
 				.padStart(2, "0")
 				.toUpperCase();
-			const headBrightnessPayload = buildPayload(`01${headBrightnessHex}`);
+			const light1BrightnessPayload = buildPayload(`01${light1BrightnessHex}`);
 			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, headBrightnessPayload, 8),
+				buildCommand(COMMANDS.SET_BRIGHTNESS, light1BrightnessPayload, 8),
 			);
-			this.log(`✓ Set Head Brightness (F3) brightness=${headBrightness}`);
+			this.log(`✓ Set Light 1 Brightness (F3) brightness=${light1Brightness}`);
 
-			// 4. Set Head Light Effect Mode (F2)
-			const headMode = parseInt($("#edHeadEffectMode")?.value || "1", 10);
-			const headModeHex = headMode.toString(16).padStart(2, "0").toUpperCase();
-			const headModePayload = buildPayload(`01${headModeHex}`);
+			// 4. Set Light 1 Effect Mode (F2)
+			const light1Mode = parseInt($("#edLight1EffectMode")?.value || "1", 10);
+			const light1ModeHex = light1Mode
+				.toString(16)
+				.padStart(2, "0")
+				.toUpperCase();
+			const light1ModePayload = buildPayload(`01${light1ModeHex}`);
 			await this.connection.send(
-				buildCommand(COMMANDS.SET_MODE, headModePayload, 8),
+				buildCommand(COMMANDS.SET_MODE, light1ModePayload, 8),
 			);
-			this.log(`✓ Set Head Effect Mode (F2) mode=${headMode}`);
+			this.log(`✓ Set Light 1 Effect Mode (F2) mode=${light1Mode}`);
 
-			// 5. Set Head Light Effect Speed (F6) - if not Static mode
-			if (headMode !== 1) {
-				const uiSpeed = clamp($("#edHeadEffectSpeed")?.value || 0, 0, 254);
+			// 5. Set Light 1 Effect Speed (F6) - if not Static mode
+			if (light1Mode !== 1) {
+				const uiSpeed = clamp($("#edLight1EffectSpeed")?.value || 0, 0, 254);
 				const deviceSpeed = uiSpeedToDevice(uiSpeed);
-				const headSpeedHex = deviceSpeed
+				const light1SpeedHex = deviceSpeed
 					.toString(16)
 					.padStart(2, "0")
 					.toUpperCase();
-				const headSpeedPayload = buildPayload(`01${headSpeedHex}`);
+				const light1SpeedPayload = buildPayload(`01${light1SpeedHex}`);
 				await this.connection.send(
-					buildCommand(COMMANDS.SET_SPEED, headSpeedPayload, 8),
+					buildCommand(COMMANDS.SET_SPEED, light1SpeedPayload, 8),
 				);
 				this.log(
-					`✓ Set Head Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
+					`✓ Set Light 1 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
 				);
 			}
 
-			// 6. Set Torso Light Brightness (F3)
-			const torsoBrightness = clamp(
-				$("#edTorsoBrightness")?.value || 200,
+			// 6. Set Light 0 Brightness (F3)
+			const light0Brightness = clamp(
+				$("#edLight0Brightness")?.value || 200,
 				0,
 				255,
 			);
-			const torsoBrightnessHex = torsoBrightness
+			const light0BrightnessHex = light0Brightness
 				.toString(16)
 				.padStart(2, "0")
 				.toUpperCase();
-			const torsoBrightnessPayload = buildPayload(`00${torsoBrightnessHex}`);
+			const light0BrightnessPayload = buildPayload(`00${light0BrightnessHex}`);
 			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, torsoBrightnessPayload, 8),
+				buildCommand(COMMANDS.SET_BRIGHTNESS, light0BrightnessPayload, 8),
 			);
-			this.log(`✓ Set Torso Brightness (F3) brightness=${torsoBrightness}`);
+			this.log(`✓ Set Light 0 Brightness (F3) brightness=${light0Brightness}`);
 
-			// 7. Set Torso Light Effect Mode (F2)
-			const torsoMode = parseInt($("#edTorsoEffectMode")?.value || "1", 10);
-			const torsoModeHex = torsoMode
+			// 7. Set Light 0 Effect Mode (F2)
+			const light0Mode = parseInt($("#edLight0EffectMode")?.value || "1", 10);
+			const light0ModeHex = light0Mode
 				.toString(16)
 				.padStart(2, "0")
 				.toUpperCase();
-			const torsoModePayload = buildPayload(`00${torsoModeHex}`);
+			const light0ModePayload = buildPayload(`00${light0ModeHex}`);
 			await this.connection.send(
-				buildCommand(COMMANDS.SET_MODE, torsoModePayload, 8),
+				buildCommand(COMMANDS.SET_MODE, light0ModePayload, 8),
 			);
-			this.log(`✓ Set Torso Effect Mode (F2) mode=${torsoMode}`);
+			this.log(`✓ Set Light 0 Effect Mode (F2) mode=${light0Mode}`);
 
-			// 8. Set Torso Light Effect Speed (F6) - if not Static mode
-			if (torsoMode !== 1) {
-				const uiSpeed = clamp($("#edTorsoEffectSpeed")?.value || 0, 0, 254);
+			// 8. Set Light 0 Effect Speed (F6) - if not Static mode
+			if (light0Mode !== 1) {
+				const uiSpeed = clamp($("#edLight0EffectSpeed")?.value || 0, 0, 254);
 				const deviceSpeed = uiSpeedToDevice(uiSpeed);
-				const torsoSpeedHex = deviceSpeed
+				const light0SpeedHex = deviceSpeed
 					.toString(16)
 					.padStart(2, "0")
 					.toUpperCase();
-				const torsoSpeedPayload = buildPayload(`00${torsoSpeedHex}`);
+				const light0SpeedPayload = buildPayload(`00${light0SpeedHex}`);
 				await this.connection.send(
-					buildCommand(COMMANDS.SET_SPEED, torsoSpeedPayload, 8),
+					buildCommand(COMMANDS.SET_SPEED, light0SpeedPayload, 8),
 				);
 				this.log(
-					`✓ Set Torso Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
+					`✓ Set Light 0 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
 				);
 			}
 
-			// 9. Set Head Light Color (F4)
-			const headR = clamp($("#edHeadR")?.value || 255, 0, 255);
-			const headG = clamp($("#edHeadG")?.value || 0, 0, 255);
-			const headB = clamp($("#edHeadB")?.value || 0, 0, 255);
-			const headColorCycle = $("#edHeadColorCycle")?.classList.contains(
+			// 9. Set Light 1 Color (F4)
+			const light1R = clamp($("#edLight1R")?.value || 255, 0, 255);
+			const light1G = clamp($("#edLight1G")?.value || 0, 0, 255);
+			const light1B = clamp($("#edLight1B")?.value || 0, 0, 255);
+			const light1ColorCycle = $("#edLight1ColorCycle")?.classList.contains(
 				"selected",
 			)
 				? "01"
 				: "00";
-			const headRHex = headR.toString(16).padStart(2, "0").toUpperCase();
-			const headGHex = headG.toString(16).padStart(2, "0").toUpperCase();
-			const headBHex = headB.toString(16).padStart(2, "0").toUpperCase();
-			const headPayload = buildPayload(
-				`01${headRHex}${headGHex}${headBHex}${headColorCycle}`,
+			const light1RHex = light1R.toString(16).padStart(2, "0").toUpperCase();
+			const light1GHex = light1G.toString(16).padStart(2, "0").toUpperCase();
+			const light1BHex = light1B.toString(16).padStart(2, "0").toUpperCase();
+			const light1Payload = buildPayload(
+				`01${light1RHex}${light1GHex}${light1BHex}${light1ColorCycle}`,
 			);
 			await this.connection.send(
-				buildCommand(COMMANDS.SET_RGB, headPayload, 8),
+				buildCommand(COMMANDS.SET_RGB, light1Payload, 8),
 			);
 			this.log(
-				`✓ Set Head Color (F4) rgb=${headR},${headG},${headB} cycle=${headColorCycle}`,
+				`✓ Set Light 1 Color (F4) rgb=${light1R},${light1G},${light1B} cycle=${light1ColorCycle}`,
 			);
 
-			// 10. Set Torso Light Color (F4)
-			const torsoR = clamp($("#edTorsoR")?.value || 0, 0, 255);
-			const torsoG = clamp($("#edTorsoG")?.value || 0, 0, 255);
-			const torsoB = clamp($("#edTorsoB")?.value || 255, 0, 255);
-			const torsoColorCycle = $("#edTorsoColorCycle")?.classList.contains(
+			// 10. Set Light 0 Color (F4)
+			const light0R = clamp($("#edLight0R")?.value || 0, 0, 255);
+			const light0G = clamp($("#edLight0G")?.value || 0, 0, 255);
+			const light0B = clamp($("#edLight0B")?.value || 255, 0, 255);
+			const light0ColorCycle = $("#edLight0ColorCycle")?.classList.contains(
 				"selected",
 			)
 				? "01"
 				: "00";
-			const torsoRHex = torsoR.toString(16).padStart(2, "0").toUpperCase();
-			const torsoGHex = torsoG.toString(16).padStart(2, "0").toUpperCase();
-			const torsoBHex = torsoB.toString(16).padStart(2, "0").toUpperCase();
-			const torsoPayload = buildPayload(
-				`00${torsoRHex}${torsoGHex}${torsoBHex}${torsoColorCycle}`,
+			const light0RHex = light0R.toString(16).padStart(2, "0").toUpperCase();
+			const light0GHex = light0G.toString(16).padStart(2, "0").toUpperCase();
+			const light0BHex = light0B.toString(16).padStart(2, "0").toUpperCase();
+			const light0Payload = buildPayload(
+				`00${light0RHex}${light0GHex}${light0BHex}${light0ColorCycle}`,
 			);
 			await this.connection.send(
-				buildCommand(COMMANDS.SET_RGB, torsoPayload, 8),
+				buildCommand(COMMANDS.SET_RGB, light0Payload, 8),
 			);
 			this.log(
-				`✓ Set Torso Color (F4) rgb=${torsoR},${torsoG},${torsoB} cycle=${torsoColorCycle}`,
+				`✓ Set Light 0 Color (F4) rgb=${light0R},${light0G},${light0B} cycle=${light0ColorCycle}`,
 			);
 
 			this.log(
@@ -782,116 +785,119 @@ export class EditModalManager {
 		if ($("#edName")) $("#edName").value = file.name || "";
 
 		// Populate lighting data from file if available
-		const headLight = file.lights?.[1];
-		const torsoLight = file.lights?.[0];
+		const light1 = file.lights?.[1];
+		const light0 = file.lights?.[0];
 
-		if (headLight) {
-			// Head brightness
-			if ($("#edHeadBrightness"))
-				$("#edHeadBrightness").value = headLight.brightness || 200;
-			if ($("#edHeadBrightnessRange"))
-				$("#edHeadBrightnessRange").value = headLight.brightness || 200;
+		if (light1) {
+			// Light 1 brightness
+			if ($("#edLight1Brightness"))
+				$("#edLight1Brightness").value = light1.brightness || 200;
+			if ($("#edLight1BrightnessRange"))
+				$("#edLight1BrightnessRange").value = light1.brightness || 200;
 
-			// Head effect mode
-			if ($("#edHeadEffectMode"))
-				$("#edHeadEffectMode").value = headLight.effectMode || 1;
+			// Light 1 effect mode
+			if ($("#edLight1EffectMode"))
+				$("#edLight1EffectMode").value = light1.effectMode || 1;
 
-			// Head effect speed
-			const headUISpeed = deviceSpeedToUI(headLight.effectSpeed || 0);
-			if ($("#edHeadEffectSpeed")) $("#edHeadEffectSpeed").value = headUISpeed;
-			if ($("#edHeadEffectSpeedRange"))
-				$("#edHeadEffectSpeedRange").value = headUISpeed;
-			$("#edHeadEffectSpeedBlock")?.classList.toggle(
+			// Light 1 effect speed
+			const light1UISpeed = deviceSpeedToUI(light1.effectSpeed || 0);
+			if ($("#edLight1EffectSpeed"))
+				$("#edLight1EffectSpeed").value = light1UISpeed;
+			if ($("#edLight1EffectSpeedRange"))
+				$("#edLight1EffectSpeedRange").value = light1UISpeed;
+			$("#edLight1EffectSpeedBlock")?.classList.toggle(
 				"hidden",
-				headLight.effectMode === 1,
+				light1.effectMode === 1,
 			);
 
-			// Head color
-			if ($("#edHeadR")) $("#edHeadR").value = headLight.r;
-			if ($("#edHeadG")) $("#edHeadG").value = headLight.g;
-			if ($("#edHeadB")) $("#edHeadB").value = headLight.b;
-			const headHex = `#${headLight.r.toString(16).padStart(2, "0")}${headLight.g.toString(16).padStart(2, "0")}${headLight.b.toString(16).padStart(2, "0")}`;
-			if ($("#edHeadColorPick")) $("#edHeadColorPick").value = headHex;
+			// Light 1 color
+			if ($("#edLight1R")) $("#edLight1R").value = light1.r;
+			if ($("#edLight1G")) $("#edLight1G").value = light1.g;
+			if ($("#edLight1B")) $("#edLight1B").value = light1.b;
+			const light1Hex = `#${light1.r.toString(16).padStart(2, "0")}${light1.g.toString(16).padStart(2, "0")}${light1.b.toString(16).padStart(2, "0")}`;
+			if ($("#edLight1ColorPick")) $("#edLight1ColorPick").value = light1Hex;
 
-			// Head color cycle
-			const edHeadColorCycle = $("#edHeadColorCycle");
-			if (edHeadColorCycle) {
-				if (headLight.colorCycle === 1) {
-					edHeadColorCycle.classList.add("selected");
+			// Light 1 color cycle
+			const edLight1ColorCycle = $("#edLight1ColorCycle");
+			if (edLight1ColorCycle) {
+				if (light1.colorCycle === 1) {
+					edLight1ColorCycle.classList.add("selected");
 				} else {
-					edHeadColorCycle.classList.remove("selected");
+					edLight1ColorCycle.classList.remove("selected");
 				}
 			}
 		} else {
-			// Defaults for head
-			if ($("#edHeadBrightness")) $("#edHeadBrightness").value = 200;
-			if ($("#edHeadBrightnessRange")) $("#edHeadBrightnessRange").value = 200;
-			if ($("#edHeadEffectMode")) $("#edHeadEffectMode").value = "1";
-			if ($("#edHeadEffectSpeed")) $("#edHeadEffectSpeed").value = 0;
-			if ($("#edHeadEffectSpeedRange")) $("#edHeadEffectSpeedRange").value = 0;
-			$("#edHeadEffectSpeedBlock")?.classList.add("hidden");
+			// Defaults for Light 1
+			if ($("#edLight1Brightness")) $("#edLight1Brightness").value = 200;
+			if ($("#edLight1BrightnessRange"))
+				$("#edLight1BrightnessRange").value = 200;
+			if ($("#edLight1EffectMode")) $("#edLight1EffectMode").value = "1";
+			if ($("#edLight1EffectSpeed")) $("#edLight1EffectSpeed").value = 0;
+			if ($("#edLight1EffectSpeedRange"))
+				$("#edLight1EffectSpeedRange").value = 0;
+			$("#edLight1EffectSpeedBlock")?.classList.add("hidden");
 
-			if ($("#edHeadR")) $("#edHeadR").value = 255;
-			if ($("#edHeadG")) $("#edHeadG").value = 0;
-			if ($("#edHeadB")) $("#edHeadB").value = 0;
-			if ($("#edHeadColorPick")) $("#edHeadColorPick").value = "#ff0000";
-			$("#edHeadColorCycle")?.classList.remove("selected");
+			if ($("#edLight1R")) $("#edLight1R").value = 255;
+			if ($("#edLight1G")) $("#edLight1G").value = 0;
+			if ($("#edLight1B")) $("#edLight1B").value = 0;
+			if ($("#edLight1ColorPick")) $("#edLight1ColorPick").value = "#ff0000";
+			$("#edLight1ColorCycle")?.classList.remove("selected");
 		}
 
-		if (torsoLight) {
-			// Torso brightness
-			if ($("#edTorsoBrightness"))
-				$("#edTorsoBrightness").value = torsoLight.brightness || 200;
-			if ($("#edTorsoBrightnessRange"))
-				$("#edTorsoBrightnessRange").value = torsoLight.brightness || 200;
+		if (light0) {
+			// Light 0 brightness
+			if ($("#edLight0Brightness"))
+				$("#edLight0Brightness").value = light0.brightness || 200;
+			if ($("#edLight0BrightnessRange"))
+				$("#edLight0BrightnessRange").value = light0.brightness || 200;
 
-			// Torso effect mode
-			if ($("#edTorsoEffectMode"))
-				$("#edTorsoEffectMode").value = torsoLight.effectMode || 1;
+			// Light 0 effect mode
+			if ($("#edLight0EffectMode"))
+				$("#edLight0EffectMode").value = light0.effectMode || 1;
 
-			// Torso effect speed
-			const torsoUISpeed = deviceSpeedToUI(torsoLight.effectSpeed || 0);
-			if ($("#edTorsoEffectSpeed"))
-				$("#edTorsoEffectSpeed").value = torsoUISpeed;
-			if ($("#edTorsoEffectSpeedRange"))
-				$("#edTorsoEffectSpeedRange").value = torsoUISpeed;
-			$("#edTorsoEffectSpeedBlock")?.classList.toggle(
+			// Light 0 effect speed
+			const light0UISpeed = deviceSpeedToUI(light0.effectSpeed || 0);
+			if ($("#edLight0EffectSpeed"))
+				$("#edLight0EffectSpeed").value = light0UISpeed;
+			if ($("#edLight0EffectSpeedRange"))
+				$("#edLight0EffectSpeedRange").value = light0UISpeed;
+			$("#edLight0EffectSpeedBlock")?.classList.toggle(
 				"hidden",
-				torsoLight.effectMode === 1,
+				light0.effectMode === 1,
 			);
 
-			// Torso color
-			if ($("#edTorsoR")) $("#edTorsoR").value = torsoLight.r;
-			if ($("#edTorsoG")) $("#edTorsoG").value = torsoLight.g;
-			if ($("#edTorsoB")) $("#edTorsoB").value = torsoLight.b;
-			const torsoHex = `#${torsoLight.r.toString(16).padStart(2, "0")}${torsoLight.g.toString(16).padStart(2, "0")}${torsoLight.b.toString(16).padStart(2, "0")}`;
-			if ($("#edTorsoColorPick")) $("#edTorsoColorPick").value = torsoHex;
+			// Light 0 color
+			if ($("#edLight0R")) $("#edLight0R").value = light0.r;
+			if ($("#edLight0G")) $("#edLight0G").value = light0.g;
+			if ($("#edLight0B")) $("#edLight0B").value = light0.b;
+			const light0Hex = `#${light0.r.toString(16).padStart(2, "0")}${light0.g.toString(16).padStart(2, "0")}${light0.b.toString(16).padStart(2, "0")}`;
+			if ($("#edLight0ColorPick")) $("#edLight0ColorPick").value = light0Hex;
 
-			// Torso color cycle
-			const edTorsoColorCycle = $("#edTorsoColorCycle");
-			if (edTorsoColorCycle) {
-				if (torsoLight.colorCycle === 1) {
-					edTorsoColorCycle.classList.add("selected");
+			// Light 0 color cycle
+			const edLight0ColorCycle = $("#edLight0ColorCycle");
+			if (edLight0ColorCycle) {
+				if (light0.colorCycle === 1) {
+					edLight0ColorCycle.classList.add("selected");
 				} else {
-					edTorsoColorCycle.classList.remove("selected");
+					edLight0ColorCycle.classList.remove("selected");
 				}
 			}
 		} else {
-			// Defaults for torso
-			if ($("#edTorsoBrightness")) $("#edTorsoBrightness").value = 200;
-			if ($("#edTorsoBrightnessRange"))
-				$("#edTorsoBrightnessRange").value = 200;
-			if ($("#edTorsoEffectMode")) $("#edTorsoEffectMode").value = "1";
-			if ($("#edTorsoEffectSpeed")) $("#edTorsoEffectSpeed").value = 0;
-			if ($("#edTorsoEffectSpeedRange"))
-				$("#edTorsoEffectSpeedRange").value = 0;
-			$("#edTorsoEffectSpeedBlock")?.classList.add("hidden");
+			// Defaults for Light 0
+			if ($("#edLight0Brightness")) $("#edLight0Brightness").value = 200;
+			if ($("#edLight0BrightnessRange"))
+				$("#edLight0BrightnessRange").value = 200;
+			if ($("#edLight0EffectMode")) $("#edLight0EffectMode").value = "1";
+			if ($("#edLight0EffectSpeed")) $("#edLight0EffectSpeed").value = 0;
+			if ($("#edLight0EffectSpeedRange"))
+				$("#edLight0EffectSpeedRange").value = 0;
+			$("#edLight0EffectSpeedBlock")?.classList.add("hidden");
 
-			if ($("#edTorsoR")) $("#edTorsoR").value = 0;
-			if ($("#edTorsoG")) $("#edTorsoG").value = 0;
-			if ($("#edTorsoB")) $("#edTorsoB").value = 255;
-			if ($("#edTorsoColorPick")) $("#edTorsoColorPick").value = "#0000ff";
-			$("#edTorsoColorCycle")?.classList.remove("selected");
+			if ($("#edLight0R")) $("#edLight0R").value = 0;
+			if ($("#edLight0G")) $("#edLight0G").value = 0;
+			if ($("#edLight0B")) $("#edLight0B").value = 255;
+			if ($("#edLight0ColorPick")) $("#edLight0ColorPick").value = "#0000ff";
+			$("#edLight0ColorCycle")?.classList.remove("selected");
 		}
 
 		// Populate movement from action field (bitfield: 0x01=head, 0x02=arm, 0x04=torso, 0xFF=all)

@@ -49,8 +49,8 @@ export const DEVICE_PROFILES = {
 			},
 		],
 		lights: [
-			{ id: "head", label: "Head Light", channel: "00" },
-			{ id: "torso", label: "Torso Light", channel: "01" },
+			{ label: "Torso Light", channel: "00" },
+			{ label: "Head Light", channel: "01" },
 		],
 		lightModes: [
 			{ value: 1, label: "Static" },
@@ -94,7 +94,7 @@ export const DEVICE_PROFILES = {
 				bit: 0x20,
 			},
 		],
-		lights: [{ id: "torso", label: "Lantern", channel: "01" }],
+		lights: [{ label: "Lantern", channel: "00" }],
 		lightModes: [
 			{ value: 1, label: "Flickering" },
 			{ value: 2, label: "Pulsing" },
