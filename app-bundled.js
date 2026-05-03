@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-04-25T23:06:05.025041
+ * Generated: 2026-05-02T20:35:51.391381
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -263,13 +263,6 @@ const RESPONSES = {
 	KEEPALIVE: "FEDC", // Keepalive packet
 };
 
-// Lighting Modes
-const LIGHTING_MODES = {
-	STATIC: 1,
-	STROBE: 2,
-	PULSING: 3,
-};
-
 // Warning Messages
 const WARNINGS = {
 	LONG_TRACK:
@@ -296,7 +289,7 @@ const DEFAULTS = {
 	COLOR_GREEN: 0,
 	COLOR_BLUE: 0,
 	EYE_ICON: 1,
-	LIGHTING_MODE: LIGHTING_MODES.STATIC,
+	LIGHTING_MODE: 1,
 	SPEED: 0,
 };
 
@@ -457,22 +450,17 @@ function getAsciiFromHex(hexString) {
 /**
  * Build filename payload with marker
  * @param {string} name - Filename
- * @returns {Object} - {nameHex, nameLenHex, fullPayload}
+ * @returns {Object} - {fullPayload}
  */
 function buildFilenamePayload(name) {
 	if (!name?.trim()) {
-		return {
-			nameHex: "",
-			nameLenHex: "00",
-			fullPayload: "00",
-		};
+		return { fullPayload: "00" };
 	}
 
 	const nameHex = utf16leHex(name.trim());
-	const nameLenHex = intToHex(nameHex.length / 2 + 2, 1);
 	const fullPayload = PROTOCOL_MARKERS.FILENAME + nameHex;
 
-	return { nameHex, nameLenHex, fullPayload };
+	return { fullPayload };
 }
 
 /**

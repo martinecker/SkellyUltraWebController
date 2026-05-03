@@ -232,13 +232,6 @@ export const RESPONSES = {
 	KEEPALIVE: "FEDC", // Keepalive packet
 };
 
-// Lighting Modes
-export const LIGHTING_MODES = {
-	STATIC: 1,
-	STROBE: 2,
-	PULSING: 3,
-};
-
 // Warning Messages
 export const WARNINGS = {
 	LONG_TRACK:
@@ -265,7 +258,7 @@ export const DEFAULTS = {
 	COLOR_GREEN: 0,
 	COLOR_BLUE: 0,
 	EYE_ICON: 1,
-	LIGHTING_MODE: LIGHTING_MODES.STATIC,
+	LIGHTING_MODE: 1,
 	SPEED: 0,
 };
 

@@ -149,22 +149,17 @@ export function getAsciiFromHex(hexString) {
 /**
  * Build filename payload with marker
  * @param {string} name - Filename
- * @returns {Object} - {nameHex, nameLenHex, fullPayload}
+ * @returns {Object} - {fullPayload}
  */
 export function buildFilenamePayload(name) {
 	if (!name?.trim()) {
-		return {
-			nameHex: "",
-			nameLenHex: "00",
-			fullPayload: "00",
-		};
+		return { fullPayload: "00" };
 	}
 
 	const nameHex = utf16leHex(name.trim());
-	const nameLenHex = intToHex(nameHex.length / 2 + 2, 1);
 	const fullPayload = PROTOCOL_MARKERS.FILENAME + nameHex;
 
-	return { nameHex, nameLenHex, fullPayload };
+	return { fullPayload };
 }
 
 /**
