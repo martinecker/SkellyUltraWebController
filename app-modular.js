@@ -403,8 +403,13 @@ class SkellyApp {
 		}
 
 		// Update files table column visibility and labels
+		const light1 = profile.lights[1];
+		const light1Label = light1 ? light1.label : "Light 1";
 		const filesLight1Col = $("#filesLight1Col");
-		if (filesLight1Col) filesLight1Col.style.display = hasLight1 ? "" : "none";
+		if (filesLight1Col) {
+			filesLight1Col.style.display = hasLight1 ? "" : "none";
+			filesLight1Col.textContent = light1Label;
+		}
 
 		const filesEyeCol = $("#filesEyeCol");
 		if (filesEyeCol) filesEyeCol.style.display = hasEyes ? "" : "none";
