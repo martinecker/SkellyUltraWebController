@@ -312,10 +312,49 @@ class SkellyApp {
 		deviceTypeSelect.value = saved;
 
 		deviceTypeSelect.addEventListener("change", () => {
-			const deviceType = deviceTypeSelect.value;
-			localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, deviceType);
-			this.state.setDeviceType(deviceType);
-			this.applyDeviceProfile(deviceType);
+			const newType = deviceTypeSelect.value;
+			const oldType = this.state.deviceType;
+			if (newType === oldType) return;
+
+			const apply = () => {
+				localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, newType);
+				this.state.setDeviceType(newType);
+				this.applyDeviceProfile(newType);
+			};
+
+			const modal = $("#deviceTypeChangeModal");
+			if (!modal) {
+				apply();
+				return;
+			}
+
+			const newName = DEVICE_PROFILES[newType]?.uiName ?? newType;
+			const oldName = DEVICE_PROFILES[oldType]?.uiName ?? oldType;
+			const msg = $("#deviceTypeChangeMsgDetail");
+			if (msg) {
+				msg.textContent = `You are switching from "${oldName}" to "${newName}".`;
+			}
+
+			modal.classList.remove("hidden");
+
+			const onConfirm = () => {
+				modal.classList.add("hidden");
+				cleanup();
+				apply();
+			};
+			const onCancel = () => {
+				modal.classList.add("hidden");
+				cleanup();
+				// Revert select back to the current type
+				deviceTypeSelect.value = oldType;
+			};
+			const cleanup = () => {
+				$("#deviceTypeChangeConfirm")?.removeEventListener("click", onConfirm);
+				$("#deviceTypeChangeCancel")?.removeEventListener("click", onCancel);
+			};
+
+			$("#deviceTypeChangeConfirm")?.addEventListener("click", onConfirm);
+			$("#deviceTypeChangeCancel")?.addEventListener("click", onCancel);
 		});
 	}
 
@@ -2070,6 +2109,19 @@ class SkellyApp {
 			await this.connection.connect(connectionOptions);
 			console.log("Connected successfully");
 
+			// Auto-detect device type from BLE name and apply matching profile
+			const connectedName = this.state.device.name || "";
+			const detectedType = this.detectDeviceTypeFromName(connectedName);
+			if (detectedType && detectedType !== this.state.deviceType) {
+				this.logger.log(
+					`Auto-detected device type: ${DEVICE_PROFILES[detectedType].uiName} (from "${connectedName}")`,
+					LOG_CLASSES.WARNING,
+				);
+				localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, detectedType);
+				this.state.setDeviceType(detectedType);
+				this.applyDeviceProfile(detectedType);
+			}
+
 			// Query device state in sequence: live mode, params, volume, BT name, version
 			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, "", 8));
 			setTimeout(
@@ -2100,6 +2152,28 @@ class SkellyApp {
 				LOG_CLASSES.WARNING,
 			);
 		}
+	}
+
+	/**
+	 * Detect device type from a BLE device name by matching against all profile defaultBleName values.
+	 * Returns the matching DEVICE_TYPES key, or null if no profile matches.
+	 * @param {string} deviceName
+	 * @returns {string|null}
+	 */
+	detectDeviceTypeFromName(deviceName) {
+		if (!deviceName) return null;
+		const lower = deviceName.toLowerCase();
+		// Check all profiles for a name match (prefix or contains)
+		for (const [type, profile] of Object.entries(DEVICE_PROFILES)) {
+			if (lower.includes(profile.defaultBleName.toLowerCase())) {
+				return type;
+			}
+		}
+		// Legacy "Animated Skelly" firmware maps to Skelly
+		if (lower.includes("animated skelly")) {
+			return DEVICE_TYPES.SKELLY;
+		}
+		return null;
 	}
 
 	/**
