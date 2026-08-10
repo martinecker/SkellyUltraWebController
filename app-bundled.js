@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-09T13:01:53.046045
+ * Generated: 2026-08-09T17:16:24.814263
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -296,6 +296,19 @@ const DEFAULTS = {
 // File name marker in protocol
 const PROTOCOL_MARKERS = {
 	FILENAME: "5C55", // UTF16LE filename marker
+};
+
+// Firmware versions that have been tested, keyed by device type then version string.
+// setCommandLengthPrefix: v66 Skelly sends a 1-byte length before the filename marker in
+// per-file SET commands; v68 Skelly and v24 Lily dropped that byte.
+const KNOWN_FIRMWARE = {
+	[DEVICE_TYPES.SKELLY]: {
+		v66: { setCommandLengthPrefix: true },
+		v68: { setCommandLengthPrefix: false },
+	},
+	[DEVICE_TYPES.LILY]: {
+		v24: { setCommandLengthPrefix: false },
+	},
 };
 
   // ============================================================
@@ -5253,6 +5266,7 @@ class SkellyApp {
 		}
 
 		this.initializeWarningModal();
+		this.initializeFirmwareWarningModal();
 		this.initializeConnectionModal();
 		this.initializeDeviceTypeControl();
 		this.initializeAdvancedMenu();
@@ -5556,6 +5570,12 @@ class SkellyApp {
 
 		$("#riskCancel")?.addEventListener("click", () => {
 			window.location.href = "about:blank";
+		});
+	}
+
+	initializeFirmwareWarningModal() {
+		$("#fwWarningOk")?.addEventListener("click", () => {
+			$("#fwWarningModal")?.classList.add("hidden");
 		});
 	}
 
@@ -7275,7 +7295,15 @@ class SkellyApp {
 		}
 		if ($("#statBtName")) $("#statBtName").textContent = device.btName || "—";
 
-		// Update volume slider when device volume changes
+		// Show warning if the detected firmware version hasn't been tested with this app
+		if (device.version && device.version !== this._warnedFwVersion) {
+			this._warnedFwVersion = device.version;
+			if (!KNOWN_FIRMWARE[this.state.deviceType]?.[device.version]) {
+				const el = $("#fwWarningVersion");
+				if (el) el.textContent = `${device.version} (${this.state.deviceType})`;
+				$("#fwWarningModal")?.classList.remove("hidden");
+			}
+		}
 		if (device.volume != null) {
 			const volRange = $("#volRange");
 			const volNum = $("#vol");
@@ -7540,7 +7568,7 @@ class SkellyApp {
 		let rowIndex = 1;
 		for (const file of files) {
 			const tr = document.createElement("tr");
-			const eyeImgIdx = file.eye;
+			const eyeImgIdx = file.eye || 0;
 
 			// Generate Light 1 color indicator (lights[1])
 			let light1ColorHtml = "";
@@ -7618,7 +7646,7 @@ class SkellyApp {
         <td class="col-light1">${light1ColorHtml}</td>
         <td>${light0ColorHtml}</td>
         <td>${movementIcons}</td>
-        <td class="col-eye"><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ""}</td>
+        <td class="col-eye">${eyeImgIdx ? `<img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${eyeImgIdx}" />${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>

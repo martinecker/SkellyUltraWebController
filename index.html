@@ -519,6 +519,19 @@
   </div>
 </div>
 
+<!-- Unknown firmware version warning -->
+<div id="fwWarningModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="fwWarningTitle">
+  <div class="modal-panel" style="background:#101318;border-color:#92400e;color:#fde68a;max-width:520px;">
+    <h3 id="fwWarningTitle">⚠️ Untested firmware version</h3>
+    <p>Connected firmware version <strong id="fwWarningVersion"></strong> has not been tested with this app.</p>
+    <p>Tested versions: <strong>Ultra Skelly v66, v68</strong> · <strong>Lethal Lily v24</strong>.</p>
+    <p>Per-file settings (lights, eye, movement) may not save correctly. Proceed with caution.</p>
+    <div class="modal-actions">
+      <button type="button" id="fwWarningOk" class="btn primary">OK, I understand</button>
+    </div>
+  </div>
+</div>
+
   <!-- Edit file modal -->
   <!-- Transfer Modal -->
   <div id="transferModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle" style="z-index:10000">

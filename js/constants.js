@@ -266,3 +266,16 @@ export const DEFAULTS = {
 export const PROTOCOL_MARKERS = {
 	FILENAME: "5C55", // UTF16LE filename marker
 };
+
+// Firmware versions that have been tested, keyed by device type then version string.
+// setCommandLengthPrefix: v66 Skelly sends a 1-byte length before the filename marker in
+// per-file SET commands; v68 Skelly and v24 Lily dropped that byte.
+export const KNOWN_FIRMWARE = {
+	[DEVICE_TYPES.SKELLY]: {
+		v66: { setCommandLengthPrefix: true },
+		v68: { setCommandLengthPrefix: false },
+	},
+	[DEVICE_TYPES.LILY]: {
+		v24: { setCommandLengthPrefix: false },
+	},
+};

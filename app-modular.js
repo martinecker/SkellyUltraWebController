@@ -11,6 +11,7 @@ import {
 	COMMANDS,
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
+	KNOWN_FIRMWARE,
 	LOG_CLASSES,
 	STORAGE_KEYS,
 } from "./js/constants.js";
@@ -255,6 +256,7 @@ class SkellyApp {
 		}
 
 		this.initializeWarningModal();
+		this.initializeFirmwareWarningModal();
 		this.initializeConnectionModal();
 		this.initializeDeviceTypeControl();
 		this.initializeAdvancedMenu();
@@ -558,6 +560,12 @@ class SkellyApp {
 
 		$("#riskCancel")?.addEventListener("click", () => {
 			window.location.href = "about:blank";
+		});
+	}
+
+	initializeFirmwareWarningModal() {
+		$("#fwWarningOk")?.addEventListener("click", () => {
+			$("#fwWarningModal")?.classList.add("hidden");
 		});
 	}
 
@@ -2277,7 +2285,15 @@ class SkellyApp {
 		}
 		if ($("#statBtName")) $("#statBtName").textContent = device.btName || "—";
 
-		// Update volume slider when device volume changes
+		// Show warning if the detected firmware version hasn't been tested with this app
+		if (device.version && device.version !== this._warnedFwVersion) {
+			this._warnedFwVersion = device.version;
+			if (!KNOWN_FIRMWARE[this.state.deviceType]?.[device.version]) {
+				const el = $("#fwWarningVersion");
+				if (el) el.textContent = `${device.version} (${this.state.deviceType})`;
+				$("#fwWarningModal")?.classList.remove("hidden");
+			}
+		}
 		if (device.volume != null) {
 			const volRange = $("#volRange");
 			const volNum = $("#vol");
@@ -2542,7 +2558,7 @@ class SkellyApp {
 		let rowIndex = 1;
 		for (const file of files) {
 			const tr = document.createElement("tr");
-			const eyeImgIdx = file.eye;
+			const eyeImgIdx = file.eye || 0;
 
 			// Generate Light 1 color indicator (lights[1])
 			let light1ColorHtml = "";
@@ -2620,7 +2636,7 @@ class SkellyApp {
         <td class="col-light1">${light1ColorHtml}</td>
         <td>${light0ColorHtml}</td>
         <td>${movementIcons}</td>
-        <td class="col-eye"><img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${file.eye}" />${file.eye ?? ""}</td>
+        <td class="col-eye">${eyeImgIdx ? `<img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${eyeImgIdx}" />${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>
