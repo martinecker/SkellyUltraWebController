@@ -658,6 +658,8 @@ export class EditModalManager {
 			// Refresh the file list to show updated data
 			this.log("Refreshing file list from device...");
 			await this.fileManager.startFetchFiles();
+
+			this.close();
 		});
 	}
 

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-11T14:14:35.696212
+ * Generated: 2026-08-11T14:17:51.512527
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3932,6 +3932,8 @@ class EditModalManager {
 			// Refresh the file list to show updated data
 			this.log("Refreshing file list from device...");
 			await this.fileManager.startFetchFiles();
+
+			this.close();
 		});
 	}
 
