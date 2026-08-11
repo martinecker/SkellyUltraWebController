@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-09T17:16:24.814263
+ * Generated: 2026-08-11T14:14:35.696212
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -52,7 +52,7 @@ const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		defaultBleName: "Ultra Skelly v2",
 		uiName: "Ultra Skelly",
-		hasEyes: true,
+		hasEyeImage: true,
 		movements: [
 			{
 				part: "all",
@@ -92,7 +92,7 @@ const DEVICE_PROFILES = {
 	[DEVICE_TYPES.LILY]: {
 		defaultBleName: "Lethal Lily",
 		uiName: "Lethal Lily",
-		hasEyes: false,
+		hasEyeImage: false,
 		movements: [
 			{
 				part: "all",
@@ -299,15 +299,13 @@ const PROTOCOL_MARKERS = {
 };
 
 // Firmware versions that have been tested, keyed by device type then version string.
-// setCommandLengthPrefix: v66 Skelly sends a 1-byte length before the filename marker in
-// per-file SET commands; v68 Skelly and v24 Lily dropped that byte.
 const KNOWN_FIRMWARE = {
 	[DEVICE_TYPES.SKELLY]: {
-		v66: { setCommandLengthPrefix: true },
-		v68: { setCommandLengthPrefix: false },
+		v66: {},
+		v68: {},
 	},
 	[DEVICE_TYPES.LILY]: {
-		v24: { setCommandLengthPrefix: false },
+		v24: {},
 	},
 };
 
@@ -463,15 +461,23 @@ function getAsciiFromHex(hexString) {
 /**
  * Build filename payload with marker
  * @param {string} name - Filename
+ * @param {Object} [options]
+ * @param {boolean} [options.withLength] - Prepend a 1-byte length
+ *   (marker + name bytes) before the marker. Required by the per-file
+ *   setting commands (AAF2/F3/F4/F6/F9/CA/C9); the transfer commands
+ *   (AAC0/AAC3) take the bare marker instead.
  * @returns {Object} - {fullPayload}
  */
-function buildFilenamePayload(name) {
+function buildFilenamePayload(name, { withLength = false } = {}) {
 	if (!name?.trim()) {
 		return { fullPayload: "00" };
 	}
 
 	const nameHex = utf16leHex(name.trim());
-	const fullPayload = PROTOCOL_MARKERS.FILENAME + nameHex;
+	const marker = PROTOCOL_MARKERS.FILENAME + nameHex;
+	const fullPayload = withLength
+		? intToHex(marker.length / 2, 1) + marker
+		: marker;
 
 	return { fullPayload };
 }
@@ -2542,7 +2548,9 @@ class FileManager {
 			const serial = enabledSerials[i];
 			const file = this.state.getFile(serial);
 			const fileOrder = i + 1; // 1-indexed position
-			const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
+			const { fullPayload: filenamePart } = buildFilenamePayload(file.name, {
+				withLength: true,
+			});
 
 			// AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
 			const payload =
@@ -3736,7 +3744,9 @@ class EditModalManager {
 
 			// Helper to build payload with filename
 			const buildPayload = (dataHex) => {
-				const { fullPayload: filenamePart } = buildFilenamePayload(name);
+				const { fullPayload: filenamePart } = buildFilenamePayload(name, {
+					withLength: true,
+				});
 				return dataHex + clusterHex + filenamePart;
 			};
 
@@ -3767,14 +3777,18 @@ class EditModalManager {
 				this.log(`✓ Set Movement (CA) action=${actionBits}`);
 			}
 
-			// 2. Set Eye (F9)
-			const eyeHex = this.currentFile.eye
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const eyePayload = buildPayload(`${eyeHex}00`);
-			await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
-			this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
+			// 2. Set Eye (F9) - only for devices with an eye image
+			if (DEVICE_PROFILES[this.state.deviceType]?.hasEyeImage) {
+				const eyeHex = this.currentFile.eye
+					.toString(16)
+					.padStart(2, "0")
+					.toUpperCase();
+				const eyePayload = buildPayload(`${eyeHex}00`);
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_EYE, eyePayload, 8),
+				);
+				this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
+			}
 
 			// 3. Set Light 1 Brightness (F3)
 			const light1Brightness = clamp(
@@ -5409,10 +5423,10 @@ class SkellyApp {
 		this.editModal?.initializeMovementControls();
 
 		// Show/hide eye sections
-		const hasEyes = profile.hasEyes;
+		const hasEyeImage = profile.hasEyeImage;
 		for (const id of ["liveEyeSection", "editEyeSection"]) {
 			const el = $(`#${id}`);
-			if (el) el.style.display = hasEyes ? "" : "none";
+			if (el) el.style.display = hasEyeImage ? "" : "none";
 		}
 
 		// Show/hide Light 1 group
@@ -5463,7 +5477,7 @@ class SkellyApp {
 		}
 
 		const filesEyeCol = $("#filesEyeCol");
-		if (filesEyeCol) filesEyeCol.style.display = hasEyes ? "" : "none";
+		if (filesEyeCol) filesEyeCol.style.display = hasEyeImage ? "" : "none";
 
 		const filesLight0Col = $("#filesLight0Col");
 		if (filesLight0Col) filesLight0Col.textContent = light0Label;
@@ -5477,7 +5491,7 @@ class SkellyApp {
 		}
 		const rules = [];
 		if (!hasLight1) rules.push("td.col-light1 { display: none; }");
-		if (!hasEyes) rules.push("td.col-eye { display: none; }");
+		if (!hasEyeImage) rules.push("td.col-eye { display: none; }");
 		dynStyle.textContent = rules.join("\n");
 	}
 

@@ -21,7 +21,7 @@ export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		defaultBleName: "Ultra Skelly v2",
 		uiName: "Ultra Skelly",
-		hasEyes: true,
+		hasEyeImage: true,
 		movements: [
 			{
 				part: "all",
@@ -61,7 +61,7 @@ export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.LILY]: {
 		defaultBleName: "Lethal Lily",
 		uiName: "Lethal Lily",
-		hasEyes: false,
+		hasEyeImage: false,
 		movements: [
 			{
 				part: "all",
@@ -268,14 +268,12 @@ export const PROTOCOL_MARKERS = {
 };
 
 // Firmware versions that have been tested, keyed by device type then version string.
-// setCommandLengthPrefix: v66 Skelly sends a 1-byte length before the filename marker in
-// per-file SET commands; v68 Skelly and v24 Lily dropped that byte.
 export const KNOWN_FIRMWARE = {
 	[DEVICE_TYPES.SKELLY]: {
-		v66: { setCommandLengthPrefix: true },
-		v68: { setCommandLengthPrefix: false },
+		v66: {},
+		v68: {},
 	},
 	[DEVICE_TYPES.LILY]: {
-		v24: { setCommandLengthPrefix: false },
+		v24: {},
 	},
 };

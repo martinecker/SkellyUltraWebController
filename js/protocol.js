@@ -149,15 +149,23 @@ export function getAsciiFromHex(hexString) {
 /**
  * Build filename payload with marker
  * @param {string} name - Filename
+ * @param {Object} [options]
+ * @param {boolean} [options.withLength] - Prepend a 1-byte length
+ *   (marker + name bytes) before the marker. Required by the per-file
+ *   setting commands (AAF2/F3/F4/F6/F9/CA/C9); the transfer commands
+ *   (AAC0/AAC3) take the bare marker instead.
  * @returns {Object} - {fullPayload}
  */
-export function buildFilenamePayload(name) {
+export function buildFilenamePayload(name, { withLength = false } = {}) {
 	if (!name?.trim()) {
 		return { fullPayload: "00" };
 	}
 
 	const nameHex = utf16leHex(name.trim());
-	const fullPayload = PROTOCOL_MARKERS.FILENAME + nameHex;
+	const marker = PROTOCOL_MARKERS.FILENAME + nameHex;
+	const fullPayload = withLength
+		? intToHex(marker.length / 2, 1) + marker
+		: marker;
 
 	return { fullPayload };
 }

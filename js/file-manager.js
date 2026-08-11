@@ -400,7 +400,9 @@ export class FileManager {
 			const serial = enabledSerials[i];
 			const file = this.state.getFile(serial);
 			const fileOrder = i + 1; // 1-indexed position
-			const { fullPayload: filenamePart } = buildFilenamePayload(file.name);
+			const { fullPayload: filenamePart } = buildFilenamePayload(file.name, {
+				withLength: true,
+			});
 
 			// AA C9 <enabled file count> <file order> 00 <file serial> <filename payload>
 			const payload =

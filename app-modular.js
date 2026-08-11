@@ -399,10 +399,10 @@ class SkellyApp {
 		this.editModal?.initializeMovementControls();
 
 		// Show/hide eye sections
-		const hasEyes = profile.hasEyes;
+		const hasEyeImage = profile.hasEyeImage;
 		for (const id of ["liveEyeSection", "editEyeSection"]) {
 			const el = $(`#${id}`);
-			if (el) el.style.display = hasEyes ? "" : "none";
+			if (el) el.style.display = hasEyeImage ? "" : "none";
 		}
 
 		// Show/hide Light 1 group
@@ -453,7 +453,7 @@ class SkellyApp {
 		}
 
 		const filesEyeCol = $("#filesEyeCol");
-		if (filesEyeCol) filesEyeCol.style.display = hasEyes ? "" : "none";
+		if (filesEyeCol) filesEyeCol.style.display = hasEyeImage ? "" : "none";
 
 		const filesLight0Col = $("#filesLight0Col");
 		if (filesLight0Col) filesLight0Col.textContent = light0Label;
@@ -467,7 +467,7 @@ class SkellyApp {
 		}
 		const rules = [];
 		if (!hasLight1) rules.push("td.col-light1 { display: none; }");
-		if (!hasEyes) rules.push("td.col-eye { display: none; }");
+		if (!hasEyeImage) rules.push("td.col-eye { display: none; }");
 		dynStyle.textContent = rules.join("\n");
 	}
 

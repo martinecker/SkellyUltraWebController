@@ -51,7 +51,7 @@ All per-device differences are captured in `DEVICE_PROFILES` in `js/constants.js
 - `movements` — ordered array of `{ part, label, icon, bit }` (bit is the BLE bitfield value; `part='all'` always first with `bit=255`)
 - `lightModes` — array of `{ value, label }` for effect mode selects
 - `lights` — array of `{ id, label, channel }` defining UI light zones (Lily has only `torso`)
-- `hasEyes` — `true` for Skelly, `false` for Lily
+- `hasEyeImage` — `true` for Skelly, `false` for Lily
 
 ### Applying a profile
 
@@ -59,7 +59,7 @@ Call `applyDeviceProfile(deviceType)` in `app-modular.js` whenever the device ty
 1. Rebuilds `#liveMove` and `#edMove` grids dynamically from `profile.movements` (sets `data-part` and `data-bit` on each button)
 2. Re-binds live movement click handlers via `bindMovementGrid('liveMove')`
 3. Calls `editModal.initializeMovementControls()` to re-bind edit modal click handlers
-4. Shows/hides `#liveEyeSection` / `#editEyeSection` based on `profile.hasEyes`
+4. Shows/hides `#liveEyeSection` / `#editEyeSection` based on `profile.hasEyeImage`
 5. Shows/hides `#liveHeadLightGroup` / `#editHeadLightGroup` based on whether profile has a head light zone
 6. Updates torso `<h3>` labels (`#liveTorsoLightLabel`, `#editTorsoLightLabel`) to `profile.lights.find(l=>l.id==='torso')?.label`
 7. Repopulates all 4 effect mode selects from `profile.lightModes`

@@ -3,7 +3,7 @@
  * Handles the per-file edit modal functionality
  */
 
-import { COMMANDS, LOG_CLASSES } from "./constants.js";
+import { COMMANDS, DEVICE_PROFILES, LOG_CLASSES } from "./constants.js";
 import {
 	buildCommand,
 	buildFilenamePayload,
@@ -470,7 +470,9 @@ export class EditModalManager {
 
 			// Helper to build payload with filename
 			const buildPayload = (dataHex) => {
-				const { fullPayload: filenamePart } = buildFilenamePayload(name);
+				const { fullPayload: filenamePart } = buildFilenamePayload(name, {
+					withLength: true,
+				});
 				return dataHex + clusterHex + filenamePart;
 			};
 
@@ -501,14 +503,18 @@ export class EditModalManager {
 				this.log(`✓ Set Movement (CA) action=${actionBits}`);
 			}
 
-			// 2. Set Eye (F9)
-			const eyeHex = this.currentFile.eye
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const eyePayload = buildPayload(`${eyeHex}00`);
-			await this.connection.send(buildCommand(COMMANDS.SET_EYE, eyePayload, 8));
-			this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
+			// 2. Set Eye (F9) - only for devices with an eye image
+			if (DEVICE_PROFILES[this.state.deviceType]?.hasEyeImage) {
+				const eyeHex = this.currentFile.eye
+					.toString(16)
+					.padStart(2, "0")
+					.toUpperCase();
+				const eyePayload = buildPayload(`${eyeHex}00`);
+				await this.connection.send(
+					buildCommand(COMMANDS.SET_EYE, eyePayload, 8),
+				);
+				this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
+			}
 
 			// 3. Set Light 1 Brightness (F3)
 			const light1Brightness = clamp(
