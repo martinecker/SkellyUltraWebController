@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-11T14:17:51.512527
+ * Generated: 2026-08-11T14:24:29.975537
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -170,6 +170,10 @@ const TRANSFER_CONFIG = {
 	CHUNK_DELAY_MS: 50,
 	EDIT_CHUNK_DELAY_MS: 12,
 };
+
+// Delay between per-file setting commands in "Apply All" — AAF4/AACA/etc. are
+// write-without-response with no ACK, so back-to-back writes can be dropped without warning.
+const APPLY_ALL_COMMAND_DELAY_MS = 40;
 
 // Timeout Values (milliseconds)
 const TIMEOUTS = {
@@ -3775,6 +3779,7 @@ class EditModalManager {
 					buildCommand(COMMANDS.SET_MOVEMENT, payload, 8),
 				);
 				this.log(`✓ Set Movement (CA) action=${actionBits}`);
+				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 			}
 
 			// 2. Set Eye (F9) - only for devices with an eye image
@@ -3788,6 +3793,7 @@ class EditModalManager {
 					buildCommand(COMMANDS.SET_EYE, eyePayload, 8),
 				);
 				this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
+				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 			}
 
 			// 3. Set Light 1 Brightness (F3)
@@ -3805,6 +3811,7 @@ class EditModalManager {
 				buildCommand(COMMANDS.SET_BRIGHTNESS, light1BrightnessPayload, 8),
 			);
 			this.log(`✓ Set Light 1 Brightness (F3) brightness=${light1Brightness}`);
+			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			// 4. Set Light 1 Effect Mode (F2)
 			const light1Mode = parseInt($("#edLight1EffectMode")?.value || "1", 10);
@@ -3817,6 +3824,7 @@ class EditModalManager {
 				buildCommand(COMMANDS.SET_MODE, light1ModePayload, 8),
 			);
 			this.log(`✓ Set Light 1 Effect Mode (F2) mode=${light1Mode}`);
+			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			// 5. Set Light 1 Effect Speed (F6) - if not Static mode
 			if (light1Mode !== 1) {
@@ -3833,6 +3841,7 @@ class EditModalManager {
 				this.log(
 					`✓ Set Light 1 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
 				);
+				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 			}
 
 			// 6. Set Light 0 Brightness (F3)
@@ -3850,6 +3859,7 @@ class EditModalManager {
 				buildCommand(COMMANDS.SET_BRIGHTNESS, light0BrightnessPayload, 8),
 			);
 			this.log(`✓ Set Light 0 Brightness (F3) brightness=${light0Brightness}`);
+			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			// 7. Set Light 0 Effect Mode (F2)
 			const light0Mode = parseInt($("#edLight0EffectMode")?.value || "1", 10);
@@ -3862,6 +3872,7 @@ class EditModalManager {
 				buildCommand(COMMANDS.SET_MODE, light0ModePayload, 8),
 			);
 			this.log(`✓ Set Light 0 Effect Mode (F2) mode=${light0Mode}`);
+			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			// 8. Set Light 0 Effect Speed (F6) - if not Static mode
 			if (light0Mode !== 1) {
@@ -3878,6 +3889,7 @@ class EditModalManager {
 				this.log(
 					`✓ Set Light 0 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
 				);
+				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 			}
 
 			// 9. Set Light 1 Color (F4)
@@ -3901,6 +3913,7 @@ class EditModalManager {
 			this.log(
 				`✓ Set Light 1 Color (F4) rgb=${light1R},${light1G},${light1B} cycle=${light1ColorCycle}`,
 			);
+			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			// 10. Set Light 0 Color (F4)
 			const light0R = clamp($("#edLight0R")?.value || 0, 0, 255);
@@ -3923,6 +3936,7 @@ class EditModalManager {
 			this.log(
 				`✓ Set Light 0 Color (F4) rgb=${light0R},${light0G},${light0B} cycle=${light0ColorCycle}`,
 			);
+			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			this.log(
 				`All settings applied successfully for file "${name || "(no name)"}"`,

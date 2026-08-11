@@ -140,6 +140,10 @@ export const TRANSFER_CONFIG = {
 	EDIT_CHUNK_DELAY_MS: 12,
 };
 
+// Delay between per-file setting commands in "Apply All" - AAF4/AACA/etc. are
+// write-without-response with no ACK, so back-to-back writes can be dropped without warning.
+export const APPLY_ALL_COMMAND_DELAY_MS = 40;
+
 // Timeout Values (milliseconds)
 export const TIMEOUTS = {
 	ACK: 5000,
