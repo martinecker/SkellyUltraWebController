@@ -351,7 +351,7 @@ export class FileManager {
 		}
 
 		const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-		await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
+		await this.connection.send(buildCommand(COMMANDS.DELETE, payload, 8));
 		this.log(
 			`Delete request (C7) serial=${serial} cluster=${cluster}`,
 			LOG_CLASSES.WARNING,

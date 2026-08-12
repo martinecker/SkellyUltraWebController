@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-11T14:24:29.975537
+ * Generated: 2026-08-12T08:26:18.153343
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -171,7 +171,7 @@ const TRANSFER_CONFIG = {
 	EDIT_CHUNK_DELAY_MS: 12,
 };
 
-// Delay between per-file setting commands in "Apply All" — AAF4/AACA/etc. are
+// Delay between per-file setting commands in "Apply All" - AAF4/AACA/etc. are
 // write-without-response with no ACK, so back-to-back writes can be dropped without warning.
 const APPLY_ALL_COMMAND_DELAY_MS = 40;
 
@@ -2503,7 +2503,7 @@ class FileManager {
 		}
 
 		const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-		await this.connection.send(buildCommand(COMMANDS.DELETE, payload));
+		await this.connection.send(buildCommand(COMMANDS.DELETE, payload, 8));
 		this.log(
 			`Delete request (C7) serial=${serial} cluster=${cluster}`,
 			LOG_CLASSES.WARNING,
