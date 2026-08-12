@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-12T08:26:18.153343
+ * Generated: 2026-08-12T15:11:14.266926
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -187,7 +187,7 @@ const TIMEOUTS = {
 // Audio Configuration
 const AUDIO_CONFIG = {
 	LONG_TRACK_LIMIT_SECONDS: 30,
-	TARGET_SAMPLE_RATE: 8000,
+	TARGET_SAMPLE_RATE: 32000, // 8000 Hz requires MPEG2.5 which the device doesn't support; 32000 Hz is the lowest MPEG1-compatible rate
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,
@@ -2445,8 +2445,20 @@ class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list
+			// Refresh file list, then initialize all light channels on the new file.
+			// Devices ignore per-channel commands on files whose light data is all-zero
+			// (the factory default after upload). Sending channel=FF first primes all
+			// six channels so subsequent per-channel Apply All edits are accepted.
 			this.startFetchFiles();
+			const newFile = await this.waitForFileByName(fileName);
+			if (newFile) {
+				await this.initializeNewFileLights(newFile.cluster, fileName);
+			} else {
+				this.log(
+					"Uploaded file not found in list after refresh; use Apply All in the Edit view to set lights manually.",
+					LOG_CLASSES.WARNING,
+				);
+			}
 		} catch (error) {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
@@ -2473,6 +2485,99 @@ class FileManager {
 				this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
 			}
 		}
+	}
+
+	/**
+	 * Poll until the named file appears in the file list state, or timeout.
+	 * Used after upload to obtain the device-assigned cluster from BBD0.
+	 * @param {string} fileName
+	 * @param {number} timeoutMs
+	 * @returns {Promise<Object|null>} File object or null on timeout
+	 */
+	async waitForFileByName(fileName, timeoutMs = TIMEOUTS.FILE_LIST) {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			const file = this.state.hasFileName(fileName);
+			if (file) return file;
+			await sleep(100);
+		}
+		return null;
+	}
+
+	/**
+	 * Poll until ALL named files appear in the file list state, or timeout.
+	 * Used after delete to confirm the refreshed list has arrived before
+	 * remapping names to their new (renumbered) serials.
+	 * @param {string[]} names
+	 * @param {number} timeoutMs
+	 * @returns {Promise<boolean>} true if all found before timeout
+	 */
+	async waitForFilesByName(names, timeoutMs = TIMEOUTS.FILE_LIST) {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			if (names.every((name) => this.state.hasFileName(name))) return true;
+			await sleep(100);
+		}
+		return false;
+	}
+
+	/**
+	 * Send all-channel (FF) light init commands after a fresh upload.
+	 * Devices with all-zero light data ignore per-channel commands; sending FF
+	 * first causes the device to accept subsequent per-channel edits.
+	 * @param {number} cluster - Device-assigned cluster for the file
+	 * @param {string} fileName - Filename (for the name payload)
+	 * @returns {Promise<void>}
+	 */
+	async initializeNewFileLights(cluster, fileName) {
+		const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
+		const { fullPayload: filenamePart } = buildFilenamePayload(fileName, {
+			withLength: true,
+		});
+		const buildPayload = (dataHex) => dataHex + clusterHex + filenamePart;
+		const ch = DEFAULTS.TARGET_CHANNEL; // "FF"
+
+		this.log("Initializing light channels for new file...", LOG_CLASSES.INFO);
+
+		await this.connection.send(
+			buildCommand(
+				COMMANDS.SET_BRIGHTNESS,
+				buildPayload(`${ch}${intToHex(DEFAULTS.BRIGHTNESS, 1)}`),
+				8,
+			),
+		);
+		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
+
+		await this.connection.send(
+			buildCommand(
+				COMMANDS.SET_MODE,
+				buildPayload(`${ch}${intToHex(DEFAULTS.LIGHTING_MODE, 1)}`),
+				8,
+			),
+		);
+		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
+
+		await this.connection.send(
+			buildCommand(
+				COMMANDS.SET_RGB,
+				buildPayload(
+					`${ch}${intToHex(DEFAULTS.COLOR_RED, 1)}${intToHex(DEFAULTS.COLOR_GREEN, 1)}${intToHex(DEFAULTS.COLOR_BLUE, 1)}00`,
+				),
+				8,
+			),
+		);
+		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
+
+		await this.connection.send(
+			buildCommand(
+				COMMANDS.SET_SPEED,
+				buildPayload(`${ch}${intToHex(DEFAULTS.SPEED, 1)}`),
+				8,
+			),
+		);
+		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
+
+		this.log("Light channels initialized ✔", LOG_CLASSES.INFO);
 	}
 
 	/**
@@ -3713,19 +3818,45 @@ class EditModalManager {
 					"Delete confirmed, refreshing file list...",
 					LOG_CLASSES.WARNING,
 				);
-				// If the deleted file was in the play order, remove it and resubmit
-				// before refreshing (files are still in local state so names are available)
+
+				// Device renumbers serials after delete (all serials above the deleted
+				// one shift down by 1). Capture ordered names NOW before the refresh
+				// clears local state, then remap to new serials once the updated file
+				// list has arrived.
 				const currentOrder = JSON.parse(this.state.device?.order || "[]");
-				if (currentOrder.includes(serial)) {
-					const newOrder = currentOrder.filter((s) => s !== serial);
-					this.log(
-						`Removing serial ${serial} from play order → ${JSON.stringify(newOrder)}`,
-						LOG_CLASSES.INFO,
-					);
-					await this.fileManager.updateFileOrder(newOrder);
+				const orderedNames = currentOrder
+					.filter((s) => s !== serial)
+					.map((s) => this.state.getFile(s)?.name)
+					.filter(Boolean);
+
+				// Refresh file list (receives new serial assignments from device)
+				this.fileManager.startFetchFiles();
+
+				if (orderedNames.length > 0) {
+					const allFound =
+						await this.fileManager.waitForFilesByName(orderedNames);
+
+					if (!allFound) {
+						this.log(
+							"File list refresh timed out; play order update skipped.",
+							LOG_CLASSES.WARNING,
+						);
+					} else {
+						// Remap names → new serials and push updated order to device
+						const newOrder = orderedNames
+							.map((name) => this.state.hasFileName(name)?.serial)
+							.filter((s) => s != null);
+
+						if (newOrder.length > 0) {
+							this.log(
+								`Updating play order with renumbered serials: ${JSON.stringify(newOrder)}`,
+								LOG_CLASSES.INFO,
+							);
+							await this.fileManager.updateFileOrder(newOrder);
+						}
+					}
 				}
-				// Refresh the file list
-				await this.fileManager.startFetchFiles();
+
 				this.close();
 			} else {
 				this.log("Delete confirmation timeout or failed", LOG_CLASSES.WARNING);

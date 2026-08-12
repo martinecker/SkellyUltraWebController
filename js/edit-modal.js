@@ -441,19 +441,45 @@ export class EditModalManager {
 					"Delete confirmed, refreshing file list...",
 					LOG_CLASSES.WARNING,
 				);
-				// If the deleted file was in the play order, remove it and resubmit
-				// before refreshing (files are still in local state so names are available)
+
+				// Device renumbers serials after delete (all serials above the deleted
+				// one shift down by 1). Capture ordered names NOW before the refresh
+				// clears local state, then remap to new serials once the updated file
+				// list has arrived.
 				const currentOrder = JSON.parse(this.state.device?.order || "[]");
-				if (currentOrder.includes(serial)) {
-					const newOrder = currentOrder.filter((s) => s !== serial);
-					this.log(
-						`Removing serial ${serial} from play order → ${JSON.stringify(newOrder)}`,
-						LOG_CLASSES.INFO,
-					);
-					await this.fileManager.updateFileOrder(newOrder);
+				const orderedNames = currentOrder
+					.filter((s) => s !== serial)
+					.map((s) => this.state.getFile(s)?.name)
+					.filter(Boolean);
+
+				// Refresh file list (receives new serial assignments from device)
+				this.fileManager.startFetchFiles();
+
+				if (orderedNames.length > 0) {
+					const allFound =
+						await this.fileManager.waitForFilesByName(orderedNames);
+
+					if (!allFound) {
+						this.log(
+							"File list refresh timed out; play order update skipped.",
+							LOG_CLASSES.WARNING,
+						);
+					} else {
+						// Remap names to new serials and push updated order to device
+						const newOrder = orderedNames
+							.map((name) => this.state.hasFileName(name)?.serial)
+							.filter((s) => s != null);
+
+						if (newOrder.length > 0) {
+							this.log(
+								`Updating play order with renumbered serials: ${JSON.stringify(newOrder)}`,
+								LOG_CLASSES.INFO,
+							);
+							await this.fileManager.updateFileOrder(newOrder);
+						}
+					}
 				}
-				// Refresh the file list
-				await this.fileManager.startFetchFiles();
+
 				this.close();
 			} else {
 				this.log("Delete confirmation timeout or failed", LOG_CLASSES.WARNING);
