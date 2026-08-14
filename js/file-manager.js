@@ -53,11 +53,22 @@ export class FileManager {
 		// Send query command for files
 		await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
 
-		// Set timeout for no response
+		// Set timeout for no response, or an incomplete list (e.g. device-reported
+		// count doesn't match the entries it actually sends) — either way, stop
+		// waiting so the UI doesn't spin forever.
 		const timer = setTimeout(() => {
-			if (!this.state.files.expected && this.state.files.items.size === 0) {
+			if (this.state.files.activeFetch && !this.state.isFileListComplete()) {
+				const received = this.state.files.items.size;
+				const expected = this.state.files.expected;
 				this.state.updateFilesMetadata({ activeFetch: false });
-				this.log("No file info received (timeout).", LOG_CLASSES.WARNING);
+				if (received > 0) {
+					this.log(
+						`File list incomplete: received ${received} of ${expected} (timeout). Showing partial list.`,
+						LOG_CLASSES.WARNING,
+					);
+				} else {
+					this.log("No file info received (timeout).", LOG_CLASSES.WARNING);
+				}
 			}
 		}, TIMEOUTS.FILE_LIST);
 

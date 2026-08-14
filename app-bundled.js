@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-14T08:03:58.073274
+ * Generated: 2026-08-14T08:14:33.421230
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -2205,11 +2205,22 @@ class FileManager {
 		// Send query command for files
 		await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
 
-		// Set timeout for no response
+		// Set timeout for no response, or an incomplete list (e.g. device-reported
+		// count doesn't match the entries it actually sends) — either way, stop
+		// waiting so the UI doesn't spin forever.
 		const timer = setTimeout(() => {
-			if (!this.state.files.expected && this.state.files.items.size === 0) {
+			if (this.state.files.activeFetch && !this.state.isFileListComplete()) {
+				const received = this.state.files.items.size;
+				const expected = this.state.files.expected;
 				this.state.updateFilesMetadata({ activeFetch: false });
-				this.log("No file info received (timeout).", LOG_CLASSES.WARNING);
+				if (received > 0) {
+					this.log(
+						`File list incomplete: received ${received} of ${expected} (timeout). Showing partial list.`,
+						LOG_CLASSES.WARNING,
+					);
+				} else {
+					this.log("No file info received (timeout).", LOG_CLASSES.WARNING);
+				}
 			}
 		}, TIMEOUTS.FILE_LIST);
 
@@ -2445,7 +2456,7 @@ class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list; the device already sets light defaults on upload.
+			// Refresh file list
 			this.startFetchFiles();
 		} catch (error) {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
