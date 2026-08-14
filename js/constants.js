@@ -138,6 +138,11 @@ export const TRANSFER_CONFIG = {
 	ATT_OVERHEAD: 3, // ATT protocol overhead bytes
 	CHUNK_DELAY_MS: 50,
 	EDIT_CHUNK_DELAY_MS: 12,
+	// Device silently drops the upload (transfer/confirm still ack with
+	// failed=0, but the file never appears in the file list) if the filename
+	// exceeds this — confirmed empirically: 33 chars works, 34 chars fails.
+	// Keep in sync with the #fileName input's maxlength attribute in index.html.
+	MAX_FILENAME_LENGTH: 33,
 };
 
 // Delay between per-file setting commands in "Apply All" - AAF4/AACA/etc. are
@@ -156,7 +161,7 @@ export const TIMEOUTS = {
 // Audio Configuration
 export const AUDIO_CONFIG = {
 	LONG_TRACK_LIMIT_SECONDS: 30,
-	TARGET_SAMPLE_RATE: 32000,
+	TARGET_SAMPLE_RATE: 8000,
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,

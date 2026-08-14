@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-14T08:14:33.421230
+ * Generated: 2026-08-14T08:30:56.316501
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -169,6 +169,11 @@ const TRANSFER_CONFIG = {
 	ATT_OVERHEAD: 3, // ATT protocol overhead bytes
 	CHUNK_DELAY_MS: 50,
 	EDIT_CHUNK_DELAY_MS: 12,
+	// Device silently drops the upload (transfer/confirm still ack with
+	// failed=0, but the file never appears in the file list) if the filename
+	// exceeds this — confirmed empirically: 33 chars works, 34 chars fails.
+	// Keep in sync with the #fileName input's maxlength attribute in index.html.
+	MAX_FILENAME_LENGTH: 33,
 };
 
 // Delay between per-file setting commands in "Apply All" - AAF4/AACA/etc. are
@@ -187,7 +192,7 @@ const TIMEOUTS = {
 // Audio Configuration
 const AUDIO_CONFIG = {
 	LONG_TRACK_LIMIT_SECONDS: 30,
-	TARGET_SAMPLE_RATE: 32000,
+	TARGET_SAMPLE_RATE: 8000,
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,
@@ -4943,6 +4948,17 @@ class TransferModalManager {
 		}
 		if (!finalName) {
 			this.log("Provide a device filename.", LOG_CLASSES.WARNING);
+			return false;
+		}
+
+		// Device silently drops uploads whose filename exceeds the length limit:
+		// transfer/confirm still ack with failed=0, but the file never appears in
+		// the file list afterward. Block here instead of failing silently.
+		if (finalName.length > TRANSFER_CONFIG.MAX_FILENAME_LENGTH) {
+			this.log(
+				`Filename too long: "${finalName}" is ${finalName.length} chars, device limit is ${TRANSFER_CONFIG.MAX_FILENAME_LENGTH}.`,
+				LOG_CLASSES.WARNING,
+			);
 			return false;
 		}
 

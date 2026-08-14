@@ -3,7 +3,7 @@
  * Handles the file transfer modal functionality
  */
 
-import { LOG_CLASSES, STORAGE_KEYS } from "./constants.js";
+import { LOG_CLASSES, STORAGE_KEYS, TRANSFER_CONFIG } from "./constants.js";
 import { ElevenLabsClient } from "./elevenlabs.js";
 
 /**
@@ -732,6 +732,17 @@ export class TransferModalManager {
 		}
 		if (!finalName) {
 			this.log("Provide a device filename.", LOG_CLASSES.WARNING);
+			return false;
+		}
+
+		// Device silently drops uploads whose filename exceeds the length limit:
+		// transfer/confirm still ack with failed=0, but the file never appears in
+		// the file list afterward. Block here instead of failing silently.
+		if (finalName.length > TRANSFER_CONFIG.MAX_FILENAME_LENGTH) {
+			this.log(
+				`Filename too long: "${finalName}" is ${finalName.length} chars, device limit is ${TRANSFER_CONFIG.MAX_FILENAME_LENGTH}.`,
+				LOG_CLASSES.WARNING,
+			);
 			return false;
 		}
 
