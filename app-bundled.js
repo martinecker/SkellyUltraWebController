@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-12T15:11:14.266926
+ * Generated: 2026-08-14T07:55:24.004223
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -187,7 +187,7 @@ const TIMEOUTS = {
 // Audio Configuration
 const AUDIO_CONFIG = {
 	LONG_TRACK_LIMIT_SECONDS: 30,
-	TARGET_SAMPLE_RATE: 32000, // 8000 Hz requires MPEG2.5 which the device doesn't support; 32000 Hz is the lowest MPEG1-compatible rate
+	TARGET_SAMPLE_RATE: 32000,
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,
@@ -2522,9 +2522,7 @@ class FileManager {
 	}
 
 	/**
-	 * Send all-channel (FF) light init commands after a fresh upload.
-	 * Devices with all-zero light data ignore per-channel commands; sending FF
-	 * first causes the device to accept subsequent per-channel edits.
+	 * Send all-channel (FF) light init commands after a fresh upload to set defaults.
 	 * @param {number} cluster - Device-assigned cluster for the file
 	 * @param {string} fileName - Filename (for the name payload)
 	 * @returns {Promise<void>}
@@ -3842,7 +3840,7 @@ class EditModalManager {
 							LOG_CLASSES.WARNING,
 						);
 					} else {
-						// Remap names → new serials and push updated order to device
+						// Remap names to new serials and push updated order to device
 						const newOrder = orderedNames
 							.map((name) => this.state.hasFileName(name)?.serial)
 							.filter((s) => s != null);
