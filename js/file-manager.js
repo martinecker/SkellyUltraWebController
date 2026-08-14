@@ -4,10 +4,8 @@
  */
 
 import {
-	APPLY_ALL_COMMAND_DELAY_MS,
 	AUDIO_CONFIG,
 	COMMANDS,
-	DEFAULTS,
 	LOG_CLASSES,
 	RESPONSES,
 	TIMEOUTS,
@@ -295,20 +293,8 @@ export class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list, then initialize all light channels on the new file.
-			// Devices ignore per-channel commands on files whose light data is all-zero
-			// (the factory default after upload). Sending channel=FF first primes all
-			// six channels so subsequent per-channel Apply All edits are accepted.
+			// Refresh file list
 			this.startFetchFiles();
-			const newFile = await this.waitForFileByName(fileName);
-			if (newFile) {
-				await this.initializeNewFileLights(newFile.cluster, fileName);
-			} else {
-				this.log(
-					"Uploaded file not found in list after refresh; use Apply All in the Edit view to set lights manually.",
-					LOG_CLASSES.WARNING,
-				);
-			}
 		} catch (error) {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
@@ -338,23 +324,6 @@ export class FileManager {
 	}
 
 	/**
-	 * Poll until the named file appears in the file list state, or timeout.
-	 * Used after upload to obtain the device-assigned cluster from BBD0.
-	 * @param {string} fileName
-	 * @param {number} timeoutMs
-	 * @returns {Promise<Object|null>} File object or null on timeout
-	 */
-	async waitForFileByName(fileName, timeoutMs = TIMEOUTS.FILE_LIST) {
-		const deadline = Date.now() + timeoutMs;
-		while (Date.now() < deadline) {
-			const file = this.state.hasFileName(fileName);
-			if (file) return file;
-			await sleep(100);
-		}
-		return null;
-	}
-
-	/**
 	 * Poll until ALL named files appear in the file list state, or timeout.
 	 * Used after delete to confirm the refreshed list has arrived before
 	 * remapping names to their new (renumbered) serials.
@@ -369,63 +338,6 @@ export class FileManager {
 			await sleep(100);
 		}
 		return false;
-	}
-
-	/**
-	 * Send all-channel (FF) light init commands after a fresh upload to set defaults.
-	 * @param {number} cluster - Device-assigned cluster for the file
-	 * @param {string} fileName - Filename (for the name payload)
-	 * @returns {Promise<void>}
-	 */
-	async initializeNewFileLights(cluster, fileName) {
-		const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
-		const { fullPayload: filenamePart } = buildFilenamePayload(fileName, {
-			withLength: true,
-		});
-		const buildPayload = (dataHex) => dataHex + clusterHex + filenamePart;
-		const ch = DEFAULTS.TARGET_CHANNEL; // "FF"
-
-		this.log("Initializing light channels for new file...", LOG_CLASSES.INFO);
-
-		await this.connection.send(
-			buildCommand(
-				COMMANDS.SET_BRIGHTNESS,
-				buildPayload(`${ch}${intToHex(DEFAULTS.BRIGHTNESS, 1)}`),
-				8,
-			),
-		);
-		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-		await this.connection.send(
-			buildCommand(
-				COMMANDS.SET_MODE,
-				buildPayload(`${ch}${intToHex(DEFAULTS.LIGHTING_MODE, 1)}`),
-				8,
-			),
-		);
-		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-		await this.connection.send(
-			buildCommand(
-				COMMANDS.SET_RGB,
-				buildPayload(
-					`${ch}${intToHex(DEFAULTS.COLOR_RED, 1)}${intToHex(DEFAULTS.COLOR_GREEN, 1)}${intToHex(DEFAULTS.COLOR_BLUE, 1)}00`,
-				),
-				8,
-			),
-		);
-		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-		await this.connection.send(
-			buildCommand(
-				COMMANDS.SET_SPEED,
-				buildPayload(`${ch}${intToHex(DEFAULTS.SPEED, 1)}`),
-				8,
-			),
-		);
-		await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-		this.log("Light channels initialized ✔", LOG_CLASSES.INFO);
 	}
 
 	/**
