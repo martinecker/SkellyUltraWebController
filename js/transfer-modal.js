@@ -12,6 +12,20 @@ import { ElevenLabsClient } from "./elevenlabs.js";
 const $ = (selector) => document.querySelector(selector);
 
 /**
+ * Truncate a filename to fit the device's length limit, preserving the
+ * extension where possible.
+ */
+function truncateFilename(name, maxLength) {
+	if (name.length <= maxLength) return name;
+	const dotIndex = name.lastIndexOf(".");
+	const hasExt = dotIndex > 0 && name.length - dotIndex <= 6;
+	if (!hasExt) return name.slice(0, maxLength);
+	const ext = name.slice(dotIndex);
+	const keep = maxLength - ext.length;
+	return keep > 0 ? name.slice(0, keep) + ext : name.slice(0, maxLength);
+}
+
+/**
  * Transfer Modal Manager Class
  */
 export class TransferModalManager {
@@ -595,9 +609,19 @@ export class TransferModalManager {
 
 			this.log(`Picked file: ${file.name} (${originalBytes.length} bytes)`);
 
-			// Pre-fill filename if empty
+			// Pre-fill filename if empty (truncated to fit the device's limit)
 			if (!$("#fileName")?.value) {
-				$("#fileName").value = file.name;
+				const truncated = truncateFilename(
+					file.name,
+					TRANSFER_CONFIG.MAX_FILENAME_LENGTH,
+				);
+				if (truncated !== file.name) {
+					this.log(
+						`Device filename truncated to fit ${TRANSFER_CONFIG.MAX_FILENAME_LENGTH}-char limit: "${truncated}"`,
+						LOG_CLASSES.WARNING,
+					);
+				}
+				$("#fileName").value = truncated;
 			}
 
 			// Check for name conflicts

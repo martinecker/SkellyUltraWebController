@@ -9,12 +9,11 @@ import {
 	DEVICE_PROFILES,
 	LOG_CLASSES,
 } from "./constants.js";
+import { applyFileSettings } from "./device-settings.js";
 import {
 	buildCommand,
-	buildFilenamePayload,
 	clamp,
 	deviceSpeedToUI,
-	sleep,
 	uiSpeedToDevice,
 } from "./protocol.js";
 
@@ -497,200 +496,78 @@ export class EditModalManager {
 			}
 
 			const cluster = Math.max(0, parseInt($("#edCluster")?.value || "0", 10));
-			const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
 			const name = ($("#edName")?.value || "").trim();
-
-			// Helper to build payload with filename
-			const buildPayload = (dataHex) => {
-				const { fullPayload: filenamePart } = buildFilenamePayload(name, {
-					withLength: true,
-				});
-				return dataHex + clusterHex + filenamePart;
-			};
 
 			this.log("Applying all settings to device...", LOG_CLASSES.INFO);
 
-			// 1. Set Animation (CA) - Movement
+			// Movement bitfield from the selected toggle icons
+			let actionBits = 0;
 			const grid = $("#edMove");
 			if (grid) {
-				const toggles = grid.querySelectorAll(".iconToggle.selected");
-
-				let actionBits = 0;
-				toggles.forEach((btn) => {
+				grid.querySelectorAll(".iconToggle.selected").forEach((btn) => {
 					if (btn.getAttribute("data-part") === "all") {
 						actionBits = 255;
 					} else if (actionBits !== 255) {
 						actionBits |= parseInt(btn.dataset.bit || "0", 10);
 					}
 				});
-
-				const actionHex = actionBits
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const payload = buildPayload(`${actionHex}00`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_MOVEMENT, payload, 8),
-				);
-				this.log(`✓ Set Movement (CA) action=${actionBits}`);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 			}
 
-			// 2. Set Eye (F9) - only for devices with an eye image
-			if (DEVICE_PROFILES[this.state.deviceType]?.hasEyeImage) {
-				const eyeHex = this.currentFile.eye
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const eyePayload = buildPayload(`${eyeHex}00`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_EYE, eyePayload, 8),
+			const readLight = (prefix, defaults) => {
+				const effectMode = parseInt(
+					$(`#ed${prefix}EffectMode`)?.value || "1",
+					10,
 				);
-				this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
+				return {
+					brightness: clamp(
+						$(`#ed${prefix}Brightness`)?.value || defaults.brightness,
+						0,
+						255,
+					),
+					effectMode,
+					effectSpeed: uiSpeedToDevice(
+						clamp($(`#ed${prefix}EffectSpeed`)?.value || 0, 0, 254),
+					),
+					r: clamp($(`#ed${prefix}R`)?.value || defaults.r, 0, 255),
+					g: clamp($(`#ed${prefix}G`)?.value || defaults.g, 0, 255),
+					b: clamp($(`#ed${prefix}B`)?.value || defaults.b, 0, 255),
+					colorCycle: $(`#ed${prefix}ColorCycle`)?.classList.contains(
+						"selected",
+					)
+						? 1
+						: 0,
+				};
+			};
+
+			// Only send as many light channels as this device type actually has
+			// (e.g. Lily has 1, Skelly has 2) — the UI only exposes fields for
+			// channels 0 and 1 today, but this stays correct if that grows.
+			const profile = DEVICE_PROFILES[this.state.deviceType];
+			const lightDefaults = [
+				{ brightness: 200, r: 0, g: 0, b: 255 },
+				{ brightness: 200, r: 255, g: 0, b: 0 },
+			];
+			const lightCount = Math.min(profile?.lights?.length || 1, 2);
+			const lights = [];
+			for (let ch = 0; ch < lightCount; ch++) {
+				lights.push(readLight(`Light${ch}`, lightDefaults[ch]));
 			}
 
-			// 3. Set Light 1 Brightness (F3)
-			const light1Brightness = clamp(
-				$("#edLight1Brightness")?.value || 200,
-				0,
-				255,
+			await applyFileSettings(
+				this.connection,
+				cluster,
+				name,
+				{
+					action: actionBits,
+					eye: this.currentFile.eye,
+					lights,
+				},
+				{
+					hasEyeImage: profile?.hasEyeImage,
+					delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+					onStep: (label) => this.log(`✓ ${label}`),
+				},
 			);
-			const light1BrightnessHex = light1Brightness
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light1BrightnessPayload = buildPayload(`01${light1BrightnessHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, light1BrightnessPayload, 8),
-			);
-			this.log(`✓ Set Light 1 Brightness (F3) brightness=${light1Brightness}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 4. Set Light 1 Effect Mode (F2)
-			const light1Mode = parseInt($("#edLight1EffectMode")?.value || "1", 10);
-			const light1ModeHex = light1Mode
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light1ModePayload = buildPayload(`01${light1ModeHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_MODE, light1ModePayload, 8),
-			);
-			this.log(`✓ Set Light 1 Effect Mode (F2) mode=${light1Mode}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 5. Set Light 1 Effect Speed (F6) - if not Static mode
-			if (light1Mode !== 1) {
-				const uiSpeed = clamp($("#edLight1EffectSpeed")?.value || 0, 0, 254);
-				const deviceSpeed = uiSpeedToDevice(uiSpeed);
-				const light1SpeedHex = deviceSpeed
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const light1SpeedPayload = buildPayload(`01${light1SpeedHex}`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_SPEED, light1SpeedPayload, 8),
-				);
-				this.log(
-					`✓ Set Light 1 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
-				);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-			}
-
-			// 6. Set Light 0 Brightness (F3)
-			const light0Brightness = clamp(
-				$("#edLight0Brightness")?.value || 200,
-				0,
-				255,
-			);
-			const light0BrightnessHex = light0Brightness
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light0BrightnessPayload = buildPayload(`00${light0BrightnessHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, light0BrightnessPayload, 8),
-			);
-			this.log(`✓ Set Light 0 Brightness (F3) brightness=${light0Brightness}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 7. Set Light 0 Effect Mode (F2)
-			const light0Mode = parseInt($("#edLight0EffectMode")?.value || "1", 10);
-			const light0ModeHex = light0Mode
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light0ModePayload = buildPayload(`00${light0ModeHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_MODE, light0ModePayload, 8),
-			);
-			this.log(`✓ Set Light 0 Effect Mode (F2) mode=${light0Mode}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 8. Set Light 0 Effect Speed (F6) - if not Static mode
-			if (light0Mode !== 1) {
-				const uiSpeed = clamp($("#edLight0EffectSpeed")?.value || 0, 0, 254);
-				const deviceSpeed = uiSpeedToDevice(uiSpeed);
-				const light0SpeedHex = deviceSpeed
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const light0SpeedPayload = buildPayload(`00${light0SpeedHex}`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_SPEED, light0SpeedPayload, 8),
-				);
-				this.log(
-					`✓ Set Light 0 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
-				);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-			}
-
-			// 9. Set Light 1 Color (F4)
-			const light1R = clamp($("#edLight1R")?.value || 255, 0, 255);
-			const light1G = clamp($("#edLight1G")?.value || 0, 0, 255);
-			const light1B = clamp($("#edLight1B")?.value || 0, 0, 255);
-			const light1ColorCycle = $("#edLight1ColorCycle")?.classList.contains(
-				"selected",
-			)
-				? "01"
-				: "00";
-			const light1RHex = light1R.toString(16).padStart(2, "0").toUpperCase();
-			const light1GHex = light1G.toString(16).padStart(2, "0").toUpperCase();
-			const light1BHex = light1B.toString(16).padStart(2, "0").toUpperCase();
-			const light1Payload = buildPayload(
-				`01${light1RHex}${light1GHex}${light1BHex}${light1ColorCycle}`,
-			);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_RGB, light1Payload, 8),
-			);
-			this.log(
-				`✓ Set Light 1 Color (F4) rgb=${light1R},${light1G},${light1B} cycle=${light1ColorCycle}`,
-			);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 10. Set Light 0 Color (F4)
-			const light0R = clamp($("#edLight0R")?.value || 0, 0, 255);
-			const light0G = clamp($("#edLight0G")?.value || 0, 0, 255);
-			const light0B = clamp($("#edLight0B")?.value || 255, 0, 255);
-			const light0ColorCycle = $("#edLight0ColorCycle")?.classList.contains(
-				"selected",
-			)
-				? "01"
-				: "00";
-			const light0RHex = light0R.toString(16).padStart(2, "0").toUpperCase();
-			const light0GHex = light0G.toString(16).padStart(2, "0").toUpperCase();
-			const light0BHex = light0B.toString(16).padStart(2, "0").toUpperCase();
-			const light0Payload = buildPayload(
-				`00${light0RHex}${light0GHex}${light0BHex}${light0ColorCycle}`,
-			);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_RGB, light0Payload, 8),
-			);
-			this.log(
-				`✓ Set Light 0 Color (F4) rgb=${light0R},${light0G},${light0B} cycle=${light0ColorCycle}`,
-			);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			this.log(
 				`All settings applied successfully for file "${name || "(no name)"}"`,

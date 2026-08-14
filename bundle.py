@@ -47,6 +47,7 @@ def main():
     modules = [
         ('js/constants.js', 'Constants and Configuration'),
         ('js/protocol.js', 'Protocol Utilities'),
+        ('js/device-settings.js', 'Device Settings Commands'),
         ('js/state-manager.js', 'State Manager'),
         ('js/ble-manager.js', 'BLE Manager'),
         ('js/rest-proxy.js', 'REST Proxy Client'),

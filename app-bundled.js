@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-14T08:30:56.316501
+ * Generated: 2026-08-14T09:24:51.553783
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -11,6 +11,7 @@
  * Source modules:
  *   - js/constants.js
  *   - js/protocol.js
+ *   - js/device-settings.js
  *   - js/state-manager.js
  *   - js/ble-manager.js
  *   - js/rest-proxy.js
@@ -270,14 +271,6 @@ const RESPONSES = {
 	FORMAT_ACK: "BBC8", // Format ACK
 
 	KEEPALIVE: "FEDC", // Keepalive packet
-};
-
-// Warning Messages
-const WARNINGS = {
-	LONG_TRACK:
-		"Uploading a track longer than 30 seconds is experimental, please proceed with caution.",
-	SLOW_UPLOAD:
-		"File uploads can take several minutes due to Bluetooth limitations. The device may appear frozen during this time but is still transferring data.",
 };
 
 // Log CSS Classes
@@ -583,6 +576,256 @@ function uiSpeedToDevice(uiSpeed) {
 	// Invert: UI 254 (fast) -> device 0 (fast)
 	//         UI 0 (slow) -> device 254 (slow)
 	return 254 - speed;
+}
+
+  // ============================================================
+  // Device Settings Commands (js/device-settings.js)
+  // ============================================================
+/**
+ * Device Settings Commands
+ * Convenience wrappers for the per-file light/movement/eye setting commands
+ * (AAF2/F3/F4/F6/F9/CA), which all share the same cluster+filename addressing
+ * scheme. Centralizes payload construction so callers (Apply All in the edit
+ * modal, and the post-overwrite settings restore in the file manager) don't
+ * each reimplement it.
+ */
+
+function hex2(n) {
+	return (n || 0).toString(16).padStart(2, "0").toUpperCase();
+}
+
+function targetPayload(cluster, fileName, dataHex) {
+	const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
+	const { fullPayload: filenamePart } = buildFilenamePayload(fileName, {
+		withLength: true,
+	});
+	return dataHex + clusterHex + filenamePart;
+}
+
+/**
+ * Send movement animation (CA).
+ * @param {number} actionBits - Bitfield (0x01 head, 0x02 arm, 0x04 torso, 0xFF all)
+ */
+function sendSetMovement(connection, cluster, fileName, actionBits) {
+	return connection.send(
+		buildCommand(
+			COMMANDS.SET_MOVEMENT,
+			targetPayload(cluster, fileName, `${hex2(actionBits)}00`),
+			8,
+		),
+	);
+}
+
+/**
+ * Send eye icon (F9). Only meaningful on devices with an eye image (e.g.
+ * Skelly, not Lily) — callers should gate on DEVICE_PROFILES[...].hasEyeImage.
+ */
+function sendSetEye(connection, cluster, fileName, eyeIcon) {
+	return connection.send(
+		buildCommand(
+			COMMANDS.SET_EYE,
+			targetPayload(cluster, fileName, `${hex2(eyeIcon)}00`),
+			8,
+		),
+	);
+}
+
+/** Send light brightness (F3) for a channel (0 or 1). */
+function sendSetLightBrightness(
+	connection,
+	cluster,
+	fileName,
+	channel,
+	brightness,
+) {
+	return connection.send(
+		buildCommand(
+			COMMANDS.SET_BRIGHTNESS,
+			targetPayload(
+				cluster,
+				fileName,
+				`${intToHex(channel, 1)}${hex2(brightness)}`,
+			),
+			8,
+		),
+	);
+}
+
+/** Send light effect mode (F2) for a channel (1=static, 2=strobe, 3=pulsing). */
+function sendSetLightMode(
+	connection,
+	cluster,
+	fileName,
+	channel,
+	effectMode,
+) {
+	return connection.send(
+		buildCommand(
+			COMMANDS.SET_MODE,
+			targetPayload(
+				cluster,
+				fileName,
+				`${intToHex(channel, 1)}${hex2(effectMode)}`,
+			),
+			8,
+		),
+	);
+}
+
+/**
+ * Send light effect speed (F6) for a channel. Expects a device-scale value
+ * (use uiSpeedToDevice() first if converting from the UI slider scale).
+ */
+function sendSetLightSpeed(
+	connection,
+	cluster,
+	fileName,
+	channel,
+	effectSpeed,
+) {
+	return connection.send(
+		buildCommand(
+			COMMANDS.SET_SPEED,
+			targetPayload(
+				cluster,
+				fileName,
+				`${intToHex(channel, 1)}${hex2(effectSpeed)}`,
+			),
+			8,
+		),
+	);
+}
+
+/** Send light RGB color + color-cycle flag (F4) for a channel. */
+function sendSetLightRgb(
+	connection,
+	cluster,
+	fileName,
+	channel,
+	r,
+	g,
+	b,
+	colorCycle,
+) {
+	const cycleHex = colorCycle ? "01" : "00";
+	return connection.send(
+		buildCommand(
+			COMMANDS.SET_RGB,
+			targetPayload(
+				cluster,
+				fileName,
+				`${intToHex(channel, 1)}${hex2(r)}${hex2(g)}${hex2(b)}${cycleHex}`,
+			),
+			8,
+		),
+	);
+}
+
+/**
+ * Send the full set of per-file settings (movement, eye, both light
+ * channels) in the order the device expects, pacing writes with `delayMs`
+ * between each (write-without-response commands can be dropped if sent
+ * back-to-back).
+ *
+ * @param {Object} connection - BLE connection manager (has .send)
+ * @param {number} cluster - Device-assigned cluster for the file
+ * @param {string} fileName - Filename to address
+ * @param {Object} settings
+ * @param {number} settings.action - Movement bitfield
+ * @param {number} [settings.eye] - Eye icon (ignored unless hasEyeImage)
+ * @param {Array<Object>} settings.lights - One entry per light channel, index
+ *   = channel number (device supports up to 6, but most device types only
+ *   use 1 or 2). Each entry: {brightness, effectMode, effectSpeed, r, g, b, colorCycle}
+ * @param {Object} [options]
+ * @param {boolean} [options.hasEyeImage] - Whether to send the eye command
+ * @param {number} [options.delayMs] - Delay between commands
+ * @param {(label: string) => void} [options.onStep] - Called after each command sends
+ * @returns {Promise<void>}
+ */
+async function applyFileSettings(
+	connection,
+	cluster,
+	fileName,
+	settings,
+	{ hasEyeImage = false, delayMs = 0, onStep } = {},
+) {
+	const step = async (label, send) => {
+		await send();
+		onStep?.(label);
+		if (delayMs) await sleep(delayMs);
+	};
+
+	await step(`Movement (CA) action=${settings.action}`, () =>
+		sendSetMovement(connection, cluster, fileName, settings.action),
+	);
+
+	if (hasEyeImage) {
+		await step(`Eye (F9) icon=${settings.eye}`, () =>
+			sendSetEye(connection, cluster, fileName, settings.eye),
+		);
+	}
+
+	// Devices can report up to 6 light channels; how many are actually used
+	// depends on the device type (currently 1 for Lily, 2 for Skelly), so
+	// iterate whatever the caller provides rather than assuming a fixed count.
+	const lights = settings.lights || [];
+	for (let channel = 0; channel < lights.length; channel++) {
+		const light = lights[channel];
+		if (!light) continue;
+
+		await step(
+			`Light ${channel} Brightness (F3) brightness=${light.brightness}`,
+			() =>
+				sendSetLightBrightness(
+					connection,
+					cluster,
+					fileName,
+					channel,
+					light.brightness,
+				),
+		);
+
+		await step(
+			`Light ${channel} Effect Mode (F2) mode=${light.effectMode}`,
+			() =>
+				sendSetLightMode(
+					connection,
+					cluster,
+					fileName,
+					channel,
+					light.effectMode,
+				),
+		);
+
+		if ((light.effectMode || 1) !== 1) {
+			await step(
+				`Light ${channel} Effect Speed (F6) speed=${light.effectSpeed}`,
+				() =>
+					sendSetLightSpeed(
+						connection,
+						cluster,
+						fileName,
+						channel,
+						light.effectSpeed,
+					),
+			);
+		}
+
+		await step(
+			`Light ${channel} Color (F4) rgb=${light.r},${light.g},${light.b} cycle=${light.colorCycle}`,
+			() =>
+				sendSetLightRgb(
+					connection,
+					cluster,
+					fileName,
+					channel,
+					light.r,
+					light.g,
+					light.b,
+					light.colorCycle,
+				),
+		);
+	}
 }
 
   // ============================================================
@@ -2325,6 +2568,11 @@ class FileManager {
 			throw new Error("Device not connected");
 		}
 
+		// If this upload overwrites an existing file, the device resets that
+		// file's light/movement/eye settings to default. Capture them now so
+		// they can be restored once the new upload lands.
+		const existingFile = this.state.hasFileName(fileName);
+
 		this.state.startTransfer(fileName);
 
 		try {
@@ -2461,8 +2709,25 @@ class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list
+			// Refresh file list, then restore the previous file's light/movement/eye
+			// settings if this was an overwrite — the device resets them to default
+			// on upload.
 			this.startFetchFiles();
+			if (existingFile) {
+				const updatedFile = await this.waitForFileByName(fileName);
+				if (updatedFile) {
+					await this.restoreFileSettings(
+						updatedFile.cluster,
+						fileName,
+						existingFile,
+					);
+				} else {
+					this.log(
+						"Uploaded file not found in list after refresh; use Apply All in the Edit view to restore settings manually.",
+						LOG_CLASSES.WARNING,
+					);
+				}
+			}
 		} catch (error) {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
@@ -2506,6 +2771,57 @@ class FileManager {
 			await sleep(100);
 		}
 		return false;
+	}
+
+	/**
+	 * Poll until the named file appears in the file list state, or timeout.
+	 * Used after upload to obtain the device-assigned cluster for the file.
+	 * @param {string} fileName
+	 * @param {number} timeoutMs
+	 * @returns {Promise<Object|null>} File object or null on timeout
+	 */
+	async waitForFileByName(fileName, timeoutMs = TIMEOUTS.FILE_LIST) {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			const file = this.state.hasFileName(fileName);
+			if (file) return file;
+			await sleep(100);
+		}
+		return null;
+	}
+
+	/**
+	 * Re-send a file's light/movement/eye settings after an overwrite, since
+	 * the device resets them to default whenever a file is re-uploaded.
+	 * @param {number} cluster - Device-assigned cluster for the file
+	 * @param {string} fileName - Filename (for the name payload)
+	 * @param {Object} savedFile - Previously captured file record (lights/action/eye)
+	 * @returns {Promise<void>}
+	 */
+	async restoreFileSettings(cluster, fileName, savedFile) {
+		this.log("Restoring saved settings after overwrite...", LOG_CLASSES.INFO);
+
+		// The raw file record can carry up to 6 light channel slots regardless
+		// of device type; only restore as many as this device actually has.
+		const profile = DEVICE_PROFILES[this.state.deviceType];
+		const lightCount = profile?.lights?.length || 1;
+
+		await applyFileSettings(
+			this.connection,
+			cluster,
+			fileName,
+			{
+				action: savedFile.action,
+				eye: savedFile.eye ?? 1,
+				lights: (savedFile.lights || []).slice(0, lightCount),
+			},
+			{
+				hasEyeImage: profile?.hasEyeImage,
+				delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+			},
+		);
+
+		this.log("Settings restored ✔", LOG_CLASSES.INFO);
 	}
 
 	/**
@@ -3802,200 +4118,78 @@ class EditModalManager {
 			}
 
 			const cluster = Math.max(0, parseInt($("#edCluster")?.value || "0", 10));
-			const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
 			const name = ($("#edName")?.value || "").trim();
-
-			// Helper to build payload with filename
-			const buildPayload = (dataHex) => {
-				const { fullPayload: filenamePart } = buildFilenamePayload(name, {
-					withLength: true,
-				});
-				return dataHex + clusterHex + filenamePart;
-			};
 
 			this.log("Applying all settings to device...", LOG_CLASSES.INFO);
 
-			// 1. Set Animation (CA) - Movement
+			// Movement bitfield from the selected toggle icons
+			let actionBits = 0;
 			const grid = $("#edMove");
 			if (grid) {
-				const toggles = grid.querySelectorAll(".iconToggle.selected");
-
-				let actionBits = 0;
-				toggles.forEach((btn) => {
+				grid.querySelectorAll(".iconToggle.selected").forEach((btn) => {
 					if (btn.getAttribute("data-part") === "all") {
 						actionBits = 255;
 					} else if (actionBits !== 255) {
 						actionBits |= parseInt(btn.dataset.bit || "0", 10);
 					}
 				});
-
-				const actionHex = actionBits
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const payload = buildPayload(`${actionHex}00`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_MOVEMENT, payload, 8),
-				);
-				this.log(`✓ Set Movement (CA) action=${actionBits}`);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 			}
 
-			// 2. Set Eye (F9) - only for devices with an eye image
-			if (DEVICE_PROFILES[this.state.deviceType]?.hasEyeImage) {
-				const eyeHex = this.currentFile.eye
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const eyePayload = buildPayload(`${eyeHex}00`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_EYE, eyePayload, 8),
+			const readLight = (prefix, defaults) => {
+				const effectMode = parseInt(
+					$(`#ed${prefix}EffectMode`)?.value || "1",
+					10,
 				);
-				this.log(`✓ Set Eye (F9) icon=${this.currentFile.eye}`);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
+				return {
+					brightness: clamp(
+						$(`#ed${prefix}Brightness`)?.value || defaults.brightness,
+						0,
+						255,
+					),
+					effectMode,
+					effectSpeed: uiSpeedToDevice(
+						clamp($(`#ed${prefix}EffectSpeed`)?.value || 0, 0, 254),
+					),
+					r: clamp($(`#ed${prefix}R`)?.value || defaults.r, 0, 255),
+					g: clamp($(`#ed${prefix}G`)?.value || defaults.g, 0, 255),
+					b: clamp($(`#ed${prefix}B`)?.value || defaults.b, 0, 255),
+					colorCycle: $(`#ed${prefix}ColorCycle`)?.classList.contains(
+						"selected",
+					)
+						? 1
+						: 0,
+				};
+			};
+
+			// Only send as many light channels as this device type actually has
+			// (e.g. Lily has 1, Skelly has 2) — the UI only exposes fields for
+			// channels 0 and 1 today, but this stays correct if that grows.
+			const profile = DEVICE_PROFILES[this.state.deviceType];
+			const lightDefaults = [
+				{ brightness: 200, r: 0, g: 0, b: 255 },
+				{ brightness: 200, r: 255, g: 0, b: 0 },
+			];
+			const lightCount = Math.min(profile?.lights?.length || 1, 2);
+			const lights = [];
+			for (let ch = 0; ch < lightCount; ch++) {
+				lights.push(readLight(`Light${ch}`, lightDefaults[ch]));
 			}
 
-			// 3. Set Light 1 Brightness (F3)
-			const light1Brightness = clamp(
-				$("#edLight1Brightness")?.value || 200,
-				0,
-				255,
+			await applyFileSettings(
+				this.connection,
+				cluster,
+				name,
+				{
+					action: actionBits,
+					eye: this.currentFile.eye,
+					lights,
+				},
+				{
+					hasEyeImage: profile?.hasEyeImage,
+					delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+					onStep: (label) => this.log(`✓ ${label}`),
+				},
 			);
-			const light1BrightnessHex = light1Brightness
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light1BrightnessPayload = buildPayload(`01${light1BrightnessHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, light1BrightnessPayload, 8),
-			);
-			this.log(`✓ Set Light 1 Brightness (F3) brightness=${light1Brightness}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 4. Set Light 1 Effect Mode (F2)
-			const light1Mode = parseInt($("#edLight1EffectMode")?.value || "1", 10);
-			const light1ModeHex = light1Mode
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light1ModePayload = buildPayload(`01${light1ModeHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_MODE, light1ModePayload, 8),
-			);
-			this.log(`✓ Set Light 1 Effect Mode (F2) mode=${light1Mode}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 5. Set Light 1 Effect Speed (F6) - if not Static mode
-			if (light1Mode !== 1) {
-				const uiSpeed = clamp($("#edLight1EffectSpeed")?.value || 0, 0, 254);
-				const deviceSpeed = uiSpeedToDevice(uiSpeed);
-				const light1SpeedHex = deviceSpeed
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const light1SpeedPayload = buildPayload(`01${light1SpeedHex}`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_SPEED, light1SpeedPayload, 8),
-				);
-				this.log(
-					`✓ Set Light 1 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
-				);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-			}
-
-			// 6. Set Light 0 Brightness (F3)
-			const light0Brightness = clamp(
-				$("#edLight0Brightness")?.value || 200,
-				0,
-				255,
-			);
-			const light0BrightnessHex = light0Brightness
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light0BrightnessPayload = buildPayload(`00${light0BrightnessHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, light0BrightnessPayload, 8),
-			);
-			this.log(`✓ Set Light 0 Brightness (F3) brightness=${light0Brightness}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 7. Set Light 0 Effect Mode (F2)
-			const light0Mode = parseInt($("#edLight0EffectMode")?.value || "1", 10);
-			const light0ModeHex = light0Mode
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const light0ModePayload = buildPayload(`00${light0ModeHex}`);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_MODE, light0ModePayload, 8),
-			);
-			this.log(`✓ Set Light 0 Effect Mode (F2) mode=${light0Mode}`);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 8. Set Light 0 Effect Speed (F6) - if not Static mode
-			if (light0Mode !== 1) {
-				const uiSpeed = clamp($("#edLight0EffectSpeed")?.value || 0, 0, 254);
-				const deviceSpeed = uiSpeedToDevice(uiSpeed);
-				const light0SpeedHex = deviceSpeed
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const light0SpeedPayload = buildPayload(`00${light0SpeedHex}`);
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_SPEED, light0SpeedPayload, 8),
-				);
-				this.log(
-					`✓ Set Light 0 Effect Speed (F6) speed=${uiSpeed} (device: ${deviceSpeed})`,
-				);
-				await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-			}
-
-			// 9. Set Light 1 Color (F4)
-			const light1R = clamp($("#edLight1R")?.value || 255, 0, 255);
-			const light1G = clamp($("#edLight1G")?.value || 0, 0, 255);
-			const light1B = clamp($("#edLight1B")?.value || 0, 0, 255);
-			const light1ColorCycle = $("#edLight1ColorCycle")?.classList.contains(
-				"selected",
-			)
-				? "01"
-				: "00";
-			const light1RHex = light1R.toString(16).padStart(2, "0").toUpperCase();
-			const light1GHex = light1G.toString(16).padStart(2, "0").toUpperCase();
-			const light1BHex = light1B.toString(16).padStart(2, "0").toUpperCase();
-			const light1Payload = buildPayload(
-				`01${light1RHex}${light1GHex}${light1BHex}${light1ColorCycle}`,
-			);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_RGB, light1Payload, 8),
-			);
-			this.log(
-				`✓ Set Light 1 Color (F4) rgb=${light1R},${light1G},${light1B} cycle=${light1ColorCycle}`,
-			);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
-
-			// 10. Set Light 0 Color (F4)
-			const light0R = clamp($("#edLight0R")?.value || 0, 0, 255);
-			const light0G = clamp($("#edLight0G")?.value || 0, 0, 255);
-			const light0B = clamp($("#edLight0B")?.value || 255, 0, 255);
-			const light0ColorCycle = $("#edLight0ColorCycle")?.classList.contains(
-				"selected",
-			)
-				? "01"
-				: "00";
-			const light0RHex = light0R.toString(16).padStart(2, "0").toUpperCase();
-			const light0GHex = light0G.toString(16).padStart(2, "0").toUpperCase();
-			const light0BHex = light0B.toString(16).padStart(2, "0").toUpperCase();
-			const light0Payload = buildPayload(
-				`00${light0RHex}${light0GHex}${light0BHex}${light0ColorCycle}`,
-			);
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_RGB, light0Payload, 8),
-			);
-			this.log(
-				`✓ Set Light 0 Color (F4) rgb=${light0R},${light0G},${light0B} cycle=${light0ColorCycle}`,
-			);
-			await sleep(APPLY_ALL_COMMAND_DELAY_MS);
 
 			this.log(
 				`All settings applied successfully for file "${name || "(no name)"}"`,
@@ -4226,6 +4420,20 @@ class EditModalManager {
  */
 
 // $ helper already defined above
+
+/**
+ * Truncate a filename to fit the device's length limit, preserving the
+ * extension where possible.
+ */
+function truncateFilename(name, maxLength) {
+	if (name.length <= maxLength) return name;
+	const dotIndex = name.lastIndexOf(".");
+	const hasExt = dotIndex > 0 && name.length - dotIndex <= 6;
+	if (!hasExt) return name.slice(0, maxLength);
+	const ext = name.slice(dotIndex);
+	const keep = maxLength - ext.length;
+	return keep > 0 ? name.slice(0, keep) + ext : name.slice(0, maxLength);
+}
 
 /**
  * Transfer Modal Manager Class
@@ -4811,9 +5019,19 @@ class TransferModalManager {
 
 			this.log(`Picked file: ${file.name} (${originalBytes.length} bytes)`);
 
-			// Pre-fill filename if empty
+			// Pre-fill filename if empty (truncated to fit the device's limit)
 			if (!$("#fileName")?.value) {
-				$("#fileName").value = file.name;
+				const truncated = truncateFilename(
+					file.name,
+					TRANSFER_CONFIG.MAX_FILENAME_LENGTH,
+				);
+				if (truncated !== file.name) {
+					this.log(
+						`Device filename truncated to fit ${TRANSFER_CONFIG.MAX_FILENAME_LENGTH}-char limit: "${truncated}"`,
+						LOG_CLASSES.WARNING,
+					);
+				}
+				$("#fileName").value = truncated;
 			}
 
 			// Check for name conflicts

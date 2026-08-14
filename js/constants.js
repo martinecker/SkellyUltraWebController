@@ -241,14 +241,6 @@ export const RESPONSES = {
 	KEEPALIVE: "FEDC", // Keepalive packet
 };
 
-// Warning Messages
-export const WARNINGS = {
-	LONG_TRACK:
-		"Uploading a track longer than 30 seconds is experimental, please proceed with caution.",
-	SLOW_UPLOAD:
-		"File uploads can take several minutes due to Bluetooth limitations. The device may appear frozen during this time but is still transferring data.",
-};
-
 // Log CSS Classes
 export const LOG_CLASSES = {
 	NORMAL: "",

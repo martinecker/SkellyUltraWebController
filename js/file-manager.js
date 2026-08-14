@@ -4,13 +4,16 @@
  */
 
 import {
+	APPLY_ALL_COMMAND_DELAY_MS,
 	AUDIO_CONFIG,
 	COMMANDS,
+	DEVICE_PROFILES,
 	LOG_CLASSES,
 	RESPONSES,
 	TIMEOUTS,
 	TRANSFER_CONFIG,
 } from "./constants.js";
+import { applyFileSettings } from "./device-settings.js";
 import {
 	buildCommand,
 	buildFilenamePayload,
@@ -168,6 +171,11 @@ export class FileManager {
 			throw new Error("Device not connected");
 		}
 
+		// If this upload overwrites an existing file, the device resets that
+		// file's light/movement/eye settings to default. Capture them now so
+		// they can be restored once the new upload lands.
+		const existingFile = this.state.hasFileName(fileName);
+
 		this.state.startTransfer(fileName);
 
 		try {
@@ -304,8 +312,25 @@ export class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list
+			// Refresh file list, then restore the previous file's light/movement/eye
+			// settings if this was an overwrite — the device resets them to default
+			// on upload.
 			this.startFetchFiles();
+			if (existingFile) {
+				const updatedFile = await this.waitForFileByName(fileName);
+				if (updatedFile) {
+					await this.restoreFileSettings(
+						updatedFile.cluster,
+						fileName,
+						existingFile,
+					);
+				} else {
+					this.log(
+						"Uploaded file not found in list after refresh; use Apply All in the Edit view to restore settings manually.",
+						LOG_CLASSES.WARNING,
+					);
+				}
+			}
 		} catch (error) {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
@@ -349,6 +374,57 @@ export class FileManager {
 			await sleep(100);
 		}
 		return false;
+	}
+
+	/**
+	 * Poll until the named file appears in the file list state, or timeout.
+	 * Used after upload to obtain the device-assigned cluster for the file.
+	 * @param {string} fileName
+	 * @param {number} timeoutMs
+	 * @returns {Promise<Object|null>} File object or null on timeout
+	 */
+	async waitForFileByName(fileName, timeoutMs = TIMEOUTS.FILE_LIST) {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			const file = this.state.hasFileName(fileName);
+			if (file) return file;
+			await sleep(100);
+		}
+		return null;
+	}
+
+	/**
+	 * Re-send a file's light/movement/eye settings after an overwrite, since
+	 * the device resets them to default whenever a file is re-uploaded.
+	 * @param {number} cluster - Device-assigned cluster for the file
+	 * @param {string} fileName - Filename (for the name payload)
+	 * @param {Object} savedFile - Previously captured file record (lights/action/eye)
+	 * @returns {Promise<void>}
+	 */
+	async restoreFileSettings(cluster, fileName, savedFile) {
+		this.log("Restoring saved settings after overwrite...", LOG_CLASSES.INFO);
+
+		// The raw file record can carry up to 6 light channel slots regardless
+		// of device type; only restore as many as this device actually has.
+		const profile = DEVICE_PROFILES[this.state.deviceType];
+		const lightCount = profile?.lights?.length || 1;
+
+		await applyFileSettings(
+			this.connection,
+			cluster,
+			fileName,
+			{
+				action: savedFile.action,
+				eye: savedFile.eye ?? 1,
+				lights: (savedFile.lights || []).slice(0, lightCount),
+			},
+			{
+				hasEyeImage: profile?.hasEyeImage,
+				delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+			},
+		);
+
+		this.log("Settings restored ✔", LOG_CLASSES.INFO);
 	}
 
 	/**
