@@ -312,21 +312,28 @@ export class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list, then restore the previous file's light/movement/eye
-			// settings if this was an overwrite — the device resets them to default
-			// on upload.
+			// If this was an overwrite, restore the previous light/movement/eye
+			// settings right away — the device resets them to default on upload.
+			if (existingFile) {
+				await this.restoreFileSettings(
+					existingFile.cluster,
+					fileName,
+					existingFile,
+				);
+			}
+
+			// Refresh file list
 			this.startFetchFiles();
+
+			// Verify the restored settings actually stuck, since these are
+			// unacknowledged writes the device can silently drop.
 			if (existingFile) {
 				const updatedFile = await this.waitForFileByName(fileName);
 				if (updatedFile) {
-					await this.restoreFileSettings(
-						updatedFile.cluster,
-						fileName,
-						existingFile,
-					);
+					this.verifyRestoredSettings(existingFile, updatedFile);
 				} else {
 					this.log(
-						"Uploaded file not found in list after refresh; use Apply All in the Edit view to restore settings manually.",
+						"Could not verify restored settings — file not found after refresh.",
 						LOG_CLASSES.WARNING,
 					);
 				}
@@ -425,6 +432,63 @@ export class FileManager {
 		);
 
 		this.log("Settings restored ✔", LOG_CLASSES.INFO);
+	}
+
+	/**
+	 * Compare a refreshed file record against the settings that were saved
+	 * before an overwrite and warn if any didn't stick — restoreFileSettings
+	 * uses unacknowledged writes the device can silently drop.
+	 * @param {Object} expected - Previously captured file record
+	 * @param {Object} actual - Freshly refreshed file record
+	 */
+	verifyRestoredSettings(expected, actual) {
+		const profile = DEVICE_PROFILES[this.state.deviceType];
+		const lightCount = profile?.lights?.length || 1;
+		const mismatches = [];
+
+		const expectedAction = expected.action || 0;
+		const actualAction = actual.action || 0;
+		if (expectedAction !== actualAction) {
+			mismatches.push(
+				`movement (expected ${expectedAction}, got ${actualAction})`,
+			);
+		}
+
+		if (profile?.hasEyeImage) {
+			const expectedEye = expected.eye ?? 1;
+			const actualEye = actual.eye ?? 1;
+			if (expectedEye !== actualEye) {
+				mismatches.push(`eye icon (expected ${expectedEye}, got ${actualEye})`);
+			}
+		}
+
+		for (let ch = 0; ch < lightCount; ch++) {
+			const exp = expected.lights?.[ch];
+			const act = actual.lights?.[ch];
+			if (!exp) continue;
+			if (!act) {
+				mismatches.push(`light ${ch} (missing after refresh)`);
+				continue;
+			}
+			const fields = ["brightness", "effectMode", "r", "g", "b", "colorCycle"];
+			if ((exp.effectMode || 1) !== 1) fields.push("effectSpeed");
+			for (const field of fields) {
+				if ((exp[field] || 0) !== (act[field] || 0)) {
+					mismatches.push(
+						`light ${ch} ${field} (expected ${exp[field]}, got ${act[field]})`,
+					);
+				}
+			}
+		}
+
+		if (mismatches.length > 0) {
+			this.log(
+				`Settings did not fully stick after overwrite: ${mismatches.join("; ")}. Use Apply All in the Edit view to retry.`,
+				LOG_CLASSES.WARNING,
+			);
+		} else {
+			this.log("Restored settings verified ✔", LOG_CLASSES.INFO);
+		}
 	}
 
 	/**

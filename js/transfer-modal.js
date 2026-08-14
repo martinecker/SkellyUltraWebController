@@ -42,6 +42,9 @@ export class TransferModalManager {
 		this._mode = null;
 		this._lockedFilename = "";
 		this._onReplaceSuccess = null;
+		// Tracks whether the user has manually typed into the filename field,
+		// so picking a new file only auto-fills it when they haven't.
+		this._fileNameUserEdited = false;
 
 		this.initializeModal();
 	}
@@ -92,6 +95,8 @@ export class TransferModalManager {
 		if ($("#progText")) $("#progText").textContent = "0 / 0";
 		if ($("#progPct")) $("#progPct").textContent = "0%";
 		if ($("#progBar")) $("#progBar").style.width = "0%";
+
+		this._fileNameUserEdited = false;
 
 		const fileNameEl = $("#fileName");
 		const lockNotice = $("#transferModalLockNotice");
@@ -586,6 +591,13 @@ export class TransferModalManager {
 		$("#fileInput")?.addEventListener("change", async (e) => {
 			await this.handleFileSelection(e.target.files?.[0]);
 		});
+
+		// Only fires on genuine user input, not our own programmatic auto-fills
+		// (setting .value directly doesn't dispatch "input"), so this reliably
+		// tracks whether the user has taken over the filename field.
+		$("#fileName")?.addEventListener("input", () => {
+			this._fileNameUserEdited = true;
+		});
 	}
 
 	/**
@@ -609,8 +621,10 @@ export class TransferModalManager {
 
 			this.log(`Picked file: ${file.name} (${originalBytes.length} bytes)`);
 
-			// Pre-fill filename if empty (truncated to fit the device's limit)
-			if (!$("#fileName")?.value) {
+			// Fill in the filename from the picked file (truncated to fit the
+			// device's limit), unless the user has manually edited it — picking a
+			// different file should still update an untouched/auto-filled name.
+			if (!this._fileNameUserEdited || !$("#fileName")?.value) {
 				const truncated = truncateFilename(
 					file.name,
 					TRANSFER_CONFIG.MAX_FILENAME_LENGTH,

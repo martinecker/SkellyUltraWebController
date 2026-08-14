@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-14T09:24:51.553783
+ * Generated: 2026-08-14T09:39:21.055568
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -2709,21 +2709,28 @@ class FileManager {
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
-			// Refresh file list, then restore the previous file's light/movement/eye
-			// settings if this was an overwrite — the device resets them to default
-			// on upload.
+			// If this was an overwrite, restore the previous light/movement/eye
+			// settings right away — the device resets them to default on upload.
+			if (existingFile) {
+				await this.restoreFileSettings(
+					existingFile.cluster,
+					fileName,
+					existingFile,
+				);
+			}
+
+			// Refresh file list
 			this.startFetchFiles();
+
+			// Verify the restored settings actually stuck, since these are
+			// unacknowledged writes the device can silently drop.
 			if (existingFile) {
 				const updatedFile = await this.waitForFileByName(fileName);
 				if (updatedFile) {
-					await this.restoreFileSettings(
-						updatedFile.cluster,
-						fileName,
-						existingFile,
-					);
+					this.verifyRestoredSettings(existingFile, updatedFile);
 				} else {
 					this.log(
-						"Uploaded file not found in list after refresh; use Apply All in the Edit view to restore settings manually.",
+						"Could not verify restored settings — file not found after refresh.",
 						LOG_CLASSES.WARNING,
 					);
 				}
@@ -2822,6 +2829,63 @@ class FileManager {
 		);
 
 		this.log("Settings restored ✔", LOG_CLASSES.INFO);
+	}
+
+	/**
+	 * Compare a refreshed file record against the settings that were saved
+	 * before an overwrite and warn if any didn't stick — restoreFileSettings
+	 * uses unacknowledged writes the device can silently drop.
+	 * @param {Object} expected - Previously captured file record
+	 * @param {Object} actual - Freshly refreshed file record
+	 */
+	verifyRestoredSettings(expected, actual) {
+		const profile = DEVICE_PROFILES[this.state.deviceType];
+		const lightCount = profile?.lights?.length || 1;
+		const mismatches = [];
+
+		const expectedAction = expected.action || 0;
+		const actualAction = actual.action || 0;
+		if (expectedAction !== actualAction) {
+			mismatches.push(
+				`movement (expected ${expectedAction}, got ${actualAction})`,
+			);
+		}
+
+		if (profile?.hasEyeImage) {
+			const expectedEye = expected.eye ?? 1;
+			const actualEye = actual.eye ?? 1;
+			if (expectedEye !== actualEye) {
+				mismatches.push(`eye icon (expected ${expectedEye}, got ${actualEye})`);
+			}
+		}
+
+		for (let ch = 0; ch < lightCount; ch++) {
+			const exp = expected.lights?.[ch];
+			const act = actual.lights?.[ch];
+			if (!exp) continue;
+			if (!act) {
+				mismatches.push(`light ${ch} (missing after refresh)`);
+				continue;
+			}
+			const fields = ["brightness", "effectMode", "r", "g", "b", "colorCycle"];
+			if ((exp.effectMode || 1) !== 1) fields.push("effectSpeed");
+			for (const field of fields) {
+				if ((exp[field] || 0) !== (act[field] || 0)) {
+					mismatches.push(
+						`light ${ch} ${field} (expected ${exp[field]}, got ${act[field]})`,
+					);
+				}
+			}
+		}
+
+		if (mismatches.length > 0) {
+			this.log(
+				`Settings did not fully stick after overwrite: ${mismatches.join("; ")}. Use Apply All in the Edit view to retry.`,
+				LOG_CLASSES.WARNING,
+			);
+		} else {
+			this.log("Restored settings verified ✔", LOG_CLASSES.INFO);
+		}
 	}
 
 	/**
@@ -4452,6 +4516,9 @@ class TransferModalManager {
 		this._mode = null;
 		this._lockedFilename = "";
 		this._onReplaceSuccess = null;
+		// Tracks whether the user has manually typed into the filename field,
+		// so picking a new file only auto-fills it when they haven't.
+		this._fileNameUserEdited = false;
 
 		this.initializeModal();
 	}
@@ -4502,6 +4569,8 @@ class TransferModalManager {
 		if ($("#progText")) $("#progText").textContent = "0 / 0";
 		if ($("#progPct")) $("#progPct").textContent = "0%";
 		if ($("#progBar")) $("#progBar").style.width = "0%";
+
+		this._fileNameUserEdited = false;
 
 		const fileNameEl = $("#fileName");
 		const lockNotice = $("#transferModalLockNotice");
@@ -4996,6 +5065,13 @@ class TransferModalManager {
 		$("#fileInput")?.addEventListener("change", async (e) => {
 			await this.handleFileSelection(e.target.files?.[0]);
 		});
+
+		// Only fires on genuine user input, not our own programmatic auto-fills
+		// (setting .value directly doesn't dispatch "input"), so this reliably
+		// tracks whether the user has taken over the filename field.
+		$("#fileName")?.addEventListener("input", () => {
+			this._fileNameUserEdited = true;
+		});
 	}
 
 	/**
@@ -5019,8 +5095,10 @@ class TransferModalManager {
 
 			this.log(`Picked file: ${file.name} (${originalBytes.length} bytes)`);
 
-			// Pre-fill filename if empty (truncated to fit the device's limit)
-			if (!$("#fileName")?.value) {
+			// Fill in the filename from the picked file (truncated to fit the
+			// device's limit), unless the user has manually edited it — picking a
+			// different file should still update an untouched/auto-filled name.
+			if (!this._fileNameUserEdited || !$("#fileName")?.value) {
 				const truncated = truncateFilename(
 					file.name,
 					TRANSFER_CONFIG.MAX_FILENAME_LENGTH,
