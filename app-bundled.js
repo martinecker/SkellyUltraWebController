@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-08-14T09:39:21.055568
+ * Generated: 2026-09-21T07:41:59.475924
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3529,7 +3529,7 @@ class ProtocolParser {
 		const serial = parseInt(hex.slice(4, 8), 16);
 		const cluster = parseInt(hex.slice(8, 16), 16);
 		const total = parseInt(hex.slice(16, 20), 16);
-		const length = parseInt(hex.slice(20, 24), 16);
+		// hex.slice(20, 24) is skipped: observed as always 0 on real devices.
 		const action = parseInt(hex.slice(24, 26), 16);
 
 		// Parse light data (6 channels, 7 bytes each = 84 hex chars)
@@ -3576,7 +3576,6 @@ class ProtocolParser {
 			serial,
 			cluster,
 			total,
-			length,
 			action,
 			lights,
 			eye: eyeIcon,
