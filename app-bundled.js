@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-10-21T16:17:28.213165
+ * Generated: 2026-10-21T16:21:43.861743
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -62,25 +62,25 @@ const DEVICE_PROFILES = {
 			{
 				part: "all",
 				label: "All",
-				icon: "images/skelly/icon_action1.png",
+				icon: "images/skelly/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/skelly/icon_action2.png",
+				icon: "images/skelly/movement_head.png",
 				bit: 0x01,
 			},
 			{
 				part: "arm",
 				label: "Arm",
-				icon: "images/skelly/icon_action3.png",
+				icon: "images/skelly/movement_arm.png",
 				bit: 0x02,
 			},
 			{
 				part: "torso",
 				label: "Torso",
-				icon: "images/skelly/icon_action4.png",
+				icon: "images/skelly/movement_torso.png",
 				bit: 0x04,
 			},
 		],
@@ -104,7 +104,7 @@ const DEVICE_PROFILES = {
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/skelly12ft/icon_action2.png",
+				icon: "images/skelly12ft/movement_head.png",
 				bit: 0x02,
 			},
 		],
@@ -123,31 +123,31 @@ const DEVICE_PROFILES = {
 			{
 				part: "all",
 				label: "All",
-				icon: "images/lily/icon_action1.png",
+				icon: "images/lily/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "wrist",
 				label: "Wrist",
-				icon: "images/lily/icon_action2.png",
+				icon: "images/lily/movement_wrist.png",
 				bit: 0x01,
 			},
 			{
 				part: "elbow",
 				label: "Elbow",
-				icon: "images/lily/icon_action3.png",
+				icon: "images/lily/movement_elbow.png",
 				bit: 0x02,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/lily/icon_action4.png",
+				icon: "images/lily/movement_head.png",
 				bit: 0x10,
 			},
 			{
 				part: "eyes",
 				label: "Eyes",
-				icon: "images/lily/icon_action5.png",
+				icon: "images/lily/movement_eyes.png",
 				bit: 0x20,
 			},
 		],

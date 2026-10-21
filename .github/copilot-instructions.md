@@ -87,5 +87,5 @@ A `const $ = selector => document.querySelector(selector)` helper is defined onc
 
 ### Image Assets
 
-- `images/lily/` — action icons for the Lily character (`icon_action1.png` … `icon_action5.png`)
-- `images/skelly/` — action icons, eye icons, and other Skelly-specific images (`icon_action1.png` … `icon_action4.png`, `eye_icon_1.png` … `eye_icon_18.png`)
+- `images/lily/` — movement icons for the Lily character (`movement_<part>.png`: all, wrist, elbow, head, eyes)
+- `images/skelly/` — movement icons, eye icons, and other Skelly-specific images (`movement_<part>.png`: all, head, arm, torso; `eye_icon_1.png` … `eye_icon_18.png`)
