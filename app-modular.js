@@ -11,6 +11,7 @@ import {
 	COMMANDS,
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
+	getEyeIconPath,
 	KNOWN_FIRMWARE,
 	LOG_CLASSES,
 	STORAGE_KEYS,
@@ -397,6 +398,10 @@ class SkellyApp {
 		this.bindMovementGrid("liveMove");
 		// Re-bind edit modal movement handlers
 		this.editModal?.initializeMovementControls();
+
+		// Rebuild eye grids (icon count and images vary per profile)
+		this.buildLiveEyeGrid();
+		this.editModal?.buildEyeGrid();
 
 		// Show/hide eye sections
 		const hasEyeImage = profile.hasEyeImage;
@@ -2200,8 +2205,9 @@ class SkellyApp {
 
 		grid.innerHTML = "";
 
-		// Create eye options for images 1-18
-		for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
+		// Create eye options for images 1..eyeIconCount of the active profile
+		const eyeCount = DEVICE_PROFILES[this.state.deviceType]?.eyeIconCount || 0;
+		for (let imgIdx = 1; imgIdx <= eyeCount; imgIdx++) {
 			const eyeNum = imgIdx;
 			const div = document.createElement("div");
 			div.className = `eye-opt${eyeNum === this.selectedEye ? " selected" : ""}`;
@@ -2211,7 +2217,7 @@ class SkellyApp {
 			// Create image element
 			const img = document.createElement("img");
 			img.className = "eye-thumb";
-			img.src = `images/skelly/eye_icon_${imgIdx}.png`;
+			img.src = getEyeIconPath(this.state.deviceType, imgIdx);
 			img.alt = `eye ${eyeNum}`;
 
 			div.appendChild(img);
@@ -2559,6 +2565,7 @@ class SkellyApp {
 		for (const file of files) {
 			const tr = document.createElement("tr");
 			const eyeImgIdx = file.eye || 0;
+			const eyeImgPath = getEyeIconPath(this.state.deviceType, eyeImgIdx);
 
 			// Generate Light 1 color indicator (lights[1])
 			let light1ColorHtml = "";
@@ -2636,7 +2643,7 @@ class SkellyApp {
         <td class="col-light1">${light1ColorHtml}</td>
         <td>${light0ColorHtml}</td>
         <td>${movementIcons}</td>
-        <td class="col-eye">${eyeImgIdx ? `<img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${eyeImgIdx}" />${eyeImgIdx}` : "—"}</td>
+        <td class="col-eye">${eyeImgIdx ? `${eyeImgPath ? `<img class="eye-thumb" src="${eyeImgPath}" alt="eye ${eyeImgIdx}" />` : ""}${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-09-21T07:41:59.475924
+ * Generated: 2026-10-21T16:17:28.213165
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -45,15 +45,19 @@ const BLE_CONFIG = {
 // Device Types
 const DEVICE_TYPES = {
 	SKELLY: "skelly",
+	SKELLY_12FT: "skelly12ft",
 	LILY: "lily",
 };
 
 // Device Profiles — per-device UI configuration
+// Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
 const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		defaultBleName: "Ultra Skelly v2",
 		uiName: "Ultra Skelly",
 		hasEyeImage: true,
+		eyeIconCount: 18,
+		eyeIconFolder: "images/skelly",
 		movements: [
 			{
 				part: "all",
@@ -84,6 +88,27 @@ const DEVICE_PROFILES = {
 			{ label: "Torso Light", channel: "00" },
 			{ label: "Head Light", channel: "01" },
 		],
+		lightModes: [
+			{ value: 1, label: "Static" },
+			{ value: 2, label: "Strobe" },
+			{ value: 3, label: "Pulsing" },
+		],
+	},
+	[DEVICE_TYPES.SKELLY_12FT]: {
+		defaultBleName: "12ft Skelly",
+		uiName: "12ft Skelly",
+		hasEyeImage: true,
+		eyeIconCount: 20,
+		eyeIconFolder: "images/skelly12ft",
+		movements: [
+			{
+				part: "head",
+				label: "Head",
+				icon: "images/skelly12ft/icon_action2.png",
+				bit: 0x02,
+			},
+		],
+		lights: [{ label: "Torso Light", channel: "00" }],
 		lightModes: [
 			{ value: 1, label: "Static" },
 			{ value: 2, label: "Strobe" },
@@ -134,6 +159,15 @@ const DEVICE_PROFILES = {
 		],
 	},
 };
+
+// Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
+function getEyeIconPath(deviceType, eyeIdx) {
+	const profile = DEVICE_PROFILES[deviceType];
+	if (!profile?.eyeIconFolder || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
+		return null;
+	}
+	return `${profile.eyeIconFolder}/eye_icon_${eyeIdx}.png`;
+}
 
 // LocalStorage Keys
 const STORAGE_KEYS = {
@@ -305,6 +339,9 @@ const KNOWN_FIRMWARE = {
 	[DEVICE_TYPES.SKELLY]: {
 		v66: {},
 		v68: {},
+	},
+	[DEVICE_TYPES.SKELLY_12FT]: {
+		v14: {},
 	},
 	[DEVICE_TYPES.LILY]: {
 		v24: {},
@@ -4000,8 +4037,9 @@ class EditModalManager {
 
 		this.eyeGrid.innerHTML = "";
 
-		// Create eye options for images 1-18
-		for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
+		// Create eye options for images 1..eyeIconCount of the active profile
+		const eyeCount = DEVICE_PROFILES[this.state.deviceType]?.eyeIconCount || 0;
+		for (let imgIdx = 1; imgIdx <= eyeCount; imgIdx++) {
 			const eyeNum = imgIdx;
 			const div = document.createElement("div");
 			div.className = "eye-opt";
@@ -4011,7 +4049,7 @@ class EditModalManager {
 			// Create image element
 			const img = document.createElement("img");
 			img.className = "eye-thumb";
-			img.src = `images/skelly/eye_icon_${imgIdx}.png`;
+			img.src = getEyeIconPath(this.state.deviceType, imgIdx);
 			img.alt = `eye ${eyeNum}`;
 
 			div.appendChild(img);
@@ -5802,6 +5840,10 @@ class SkellyApp {
 		this.bindMovementGrid("liveMove");
 		// Re-bind edit modal movement handlers
 		this.editModal?.initializeMovementControls();
+
+		// Rebuild eye grids (icon count and images vary per profile)
+		this.buildLiveEyeGrid();
+		this.editModal?.buildEyeGrid();
 
 		// Show/hide eye sections
 		const hasEyeImage = profile.hasEyeImage;
@@ -7605,8 +7647,9 @@ class SkellyApp {
 
 		grid.innerHTML = "";
 
-		// Create eye options for images 1-18
-		for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
+		// Create eye options for images 1..eyeIconCount of the active profile
+		const eyeCount = DEVICE_PROFILES[this.state.deviceType]?.eyeIconCount || 0;
+		for (let imgIdx = 1; imgIdx <= eyeCount; imgIdx++) {
 			const eyeNum = imgIdx;
 			const div = document.createElement("div");
 			div.className = `eye-opt${eyeNum === this.selectedEye ? " selected" : ""}`;
@@ -7616,7 +7659,7 @@ class SkellyApp {
 			// Create image element
 			const img = document.createElement("img");
 			img.className = "eye-thumb";
-			img.src = `images/skelly/eye_icon_${imgIdx}.png`;
+			img.src = getEyeIconPath(this.state.deviceType, imgIdx);
 			img.alt = `eye ${eyeNum}`;
 
 			div.appendChild(img);
@@ -7964,6 +8007,7 @@ class SkellyApp {
 		for (const file of files) {
 			const tr = document.createElement("tr");
 			const eyeImgIdx = file.eye || 0;
+			const eyeImgPath = getEyeIconPath(this.state.deviceType, eyeImgIdx);
 
 			// Generate Light 1 color indicator (lights[1])
 			let light1ColorHtml = "";
@@ -8041,7 +8085,7 @@ class SkellyApp {
         <td class="col-light1">${light1ColorHtml}</td>
         <td>${light0ColorHtml}</td>
         <td>${movementIcons}</td>
-        <td class="col-eye">${eyeImgIdx ? `<img class="eye-thumb" src="images/skelly/eye_icon_${eyeImgIdx}.png" alt="eye ${eyeImgIdx}" />${eyeImgIdx}` : "—"}</td>
+        <td class="col-eye">${eyeImgIdx ? `${eyeImgPath ? `<img class="eye-thumb" src="${eyeImgPath}" alt="eye ${eyeImgIdx}" />` : ""}${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.db}</td>
         <td class="detail-column">${file.cluster}</td>

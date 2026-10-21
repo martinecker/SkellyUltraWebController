@@ -7,6 +7,7 @@ import {
 	APPLY_ALL_COMMAND_DELAY_MS,
 	COMMANDS,
 	DEVICE_PROFILES,
+	getEyeIconPath,
 	LOG_CLASSES,
 } from "./constants.js";
 import { applyFileSettings } from "./device-settings.js";
@@ -315,8 +316,9 @@ export class EditModalManager {
 
 		this.eyeGrid.innerHTML = "";
 
-		// Create eye options for images 1-18
-		for (let imgIdx = 1; imgIdx <= 18; imgIdx++) {
+		// Create eye options for images 1..eyeIconCount of the active profile
+		const eyeCount = DEVICE_PROFILES[this.state.deviceType]?.eyeIconCount || 0;
+		for (let imgIdx = 1; imgIdx <= eyeCount; imgIdx++) {
 			const eyeNum = imgIdx;
 			const div = document.createElement("div");
 			div.className = "eye-opt";
@@ -326,7 +328,7 @@ export class EditModalManager {
 			// Create image element
 			const img = document.createElement("img");
 			img.className = "eye-thumb";
-			img.src = `images/skelly/eye_icon_${imgIdx}.png`;
+			img.src = getEyeIconPath(this.state.deviceType, imgIdx);
 			img.alt = `eye ${eyeNum}`;
 
 			div.appendChild(img);

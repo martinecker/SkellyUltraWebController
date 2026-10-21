@@ -445,6 +445,7 @@
         <select id="connectDefaultDevice" style="width: 100%;">
           <option value="skelly">Ultra Skelly v2 (new firmware)</option>
           <option value="skelly_old">Animated Skelly (older firmware)</option>
+          <option value="skelly12ft">12ft Skelly</option>
           <option value="lily">Lethal Lily</option>
         </select>
       </div>
@@ -524,7 +525,7 @@
   <div class="modal-panel" style="background:#101318;border-color:#92400e;color:#fde68a;max-width:520px;">
     <h3 id="fwWarningTitle">⚠️ Untested firmware version</h3>
     <p>Connected firmware version <strong id="fwWarningVersion"></strong> has not been tested with this app.</p>
-    <p>Tested versions: <strong>Ultra Skelly v66, v68</strong> · <strong>Lethal Lily v24</strong>.</p>
+    <p>Tested versions: <strong>Ultra Skelly v66, v68</strong> · <strong>12ft Skelly v14</strong> · <strong>Lethal Lily v24</strong>.</p>
     <p>Per-file settings (lights, eye, movement) may not save correctly. Proceed with caution.</p>
     <div class="modal-actions">
       <button type="button" id="fwWarningOk" class="btn primary">OK, I understand</button>
@@ -810,6 +811,7 @@
           <label>Device Type</label>
           <select id="deviceTypeSelect" style="flex:1">
             <option value="skelly">Ultra Skelly</option>
+            <option value="skelly12ft">12ft Skelly</option>
             <option value="lily">Lethal Lily</option>
           </select>
         </div>

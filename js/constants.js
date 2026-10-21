@@ -13,15 +13,19 @@ export const BLE_CONFIG = {
 // Device Types
 export const DEVICE_TYPES = {
 	SKELLY: "skelly",
+	SKELLY_12FT: "skelly12ft",
 	LILY: "lily",
 };
 
 // Device Profiles — per-device UI configuration
+// Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
 export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		defaultBleName: "Ultra Skelly v2",
 		uiName: "Ultra Skelly",
 		hasEyeImage: true,
+		eyeIconCount: 18,
+		eyeIconFolder: "images/skelly",
 		movements: [
 			{
 				part: "all",
@@ -52,6 +56,27 @@ export const DEVICE_PROFILES = {
 			{ label: "Torso Light", channel: "00" },
 			{ label: "Head Light", channel: "01" },
 		],
+		lightModes: [
+			{ value: 1, label: "Static" },
+			{ value: 2, label: "Strobe" },
+			{ value: 3, label: "Pulsing" },
+		],
+	},
+	[DEVICE_TYPES.SKELLY_12FT]: {
+		defaultBleName: "12ft Skelly",
+		uiName: "12ft Skelly",
+		hasEyeImage: true,
+		eyeIconCount: 20,
+		eyeIconFolder: "images/skelly12ft",
+		movements: [
+			{
+				part: "head",
+				label: "Head",
+				icon: "images/skelly12ft/icon_action2.png",
+				bit: 0x02,
+			},
+		],
+		lights: [{ label: "Torso Light", channel: "00" }],
 		lightModes: [
 			{ value: 1, label: "Static" },
 			{ value: 2, label: "Strobe" },
@@ -102,6 +127,15 @@ export const DEVICE_PROFILES = {
 		],
 	},
 };
+
+// Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
+export function getEyeIconPath(deviceType, eyeIdx) {
+	const profile = DEVICE_PROFILES[deviceType];
+	if (!profile?.eyeIconFolder || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
+		return null;
+	}
+	return `${profile.eyeIconFolder}/eye_icon_${eyeIdx}.png`;
+}
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {
@@ -273,6 +307,9 @@ export const KNOWN_FIRMWARE = {
 	[DEVICE_TYPES.SKELLY]: {
 		v66: {},
 		v68: {},
+	},
+	[DEVICE_TYPES.SKELLY_12FT]: {
+		v14: {},
 	},
 	[DEVICE_TYPES.LILY]: {
 		v24: {},
