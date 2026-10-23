@@ -26,6 +26,9 @@ export class RestProxy {
 		this.notificationHandlers = [];
 		this.pollingActive = false;
 		this.nextSequence = 0;
+		// Sequence numbers already handled this session. Older REST proxy servers can send
+		// a buffered notification more than once.
+		this.seenSequences = new Set();
 		this.pollingAbortController = null;
 		this.pollingErrorCount = 0;
 		this.maxPollingErrors = 3; // Give up after 3 consecutive errors
@@ -192,6 +195,7 @@ export class RestProxy {
 			this.mtuSize = data.mtu || null;
 			this.connected = true;
 			this.nextSequence = 0;
+			this.seenSequences.clear();
 
 			// Update state
 			this.state.updateDevice({
@@ -396,6 +400,21 @@ export class RestProxy {
 						`REST proxy: Processing ${data.notifications.length} notification(s)`,
 					);
 					for (const notification of data.notifications) {
+						const seq = notification.sequence;
+						if (Number.isInteger(seq)) {
+							if (this.seenSequences.has(seq)) {
+								continue;
+							}
+							this.seenSequences.add(seq);
+							// Keep the set small; repeats are always recent
+							if (this.seenSequences.size > 500) {
+								for (const old of this.seenSequences) {
+									if (old < seq - 250) {
+										this.seenSequences.delete(old);
+									}
+								}
+							}
+						}
 						this.handleNotification(notification);
 					}
 				}
@@ -574,6 +593,7 @@ export class RestProxy {
 		this.deviceName = null;
 		this.mtuSize = null;
 		this.nextSequence = 0;
+		this.seenSequences.clear();
 
 		// Update state
 		this.state.setConnected(false);

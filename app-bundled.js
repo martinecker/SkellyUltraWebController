@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-10-21T16:21:43.861743
+ * Generated: 2026-10-23T15:38:01.013651
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1664,6 +1664,9 @@ class RestProxy {
 		this.notificationHandlers = [];
 		this.pollingActive = false;
 		this.nextSequence = 0;
+		// Sequence numbers already handled this session. Older servers can send
+		// a buffered notification more than once.
+		this.seenSequences = new Set();
 		this.pollingAbortController = null;
 		this.pollingErrorCount = 0;
 		this.maxPollingErrors = 3; // Give up after 3 consecutive errors
@@ -1830,6 +1833,7 @@ class RestProxy {
 			this.mtuSize = data.mtu || null;
 			this.connected = true;
 			this.nextSequence = 0;
+			this.seenSequences.clear();
 
 			// Update state
 			this.state.updateDevice({
@@ -2034,6 +2038,21 @@ class RestProxy {
 						`REST proxy: Processing ${data.notifications.length} notification(s)`,
 					);
 					for (const notification of data.notifications) {
+						const seq = notification.sequence;
+						if (Number.isInteger(seq)) {
+							if (this.seenSequences.has(seq)) {
+								continue;
+							}
+							this.seenSequences.add(seq);
+							// Keep the set small; repeats are always recent
+							if (this.seenSequences.size > 500) {
+								for (const old of this.seenSequences) {
+									if (old < seq - 250) {
+										this.seenSequences.delete(old);
+									}
+								}
+							}
+						}
 						this.handleNotification(notification);
 					}
 				}
@@ -2212,6 +2231,7 @@ class RestProxy {
 		this.deviceName = null;
 		this.mtuSize = null;
 		this.nextSequence = 0;
+		this.seenSequences.clear();
 
 		// Update state
 		this.state.setConnected(false);
