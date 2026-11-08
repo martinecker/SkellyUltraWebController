@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-10-23T15:38:01.013651
+ * Generated: 2026-11-07T17:16:18.735001
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1664,7 +1664,7 @@ class RestProxy {
 		this.notificationHandlers = [];
 		this.pollingActive = false;
 		this.nextSequence = 0;
-		// Sequence numbers already handled this session. Older servers can send
+		// Sequence numbers already handled this session. Older REST proxy servers can send
 		// a buffered notification more than once.
 		this.seenSequences = new Set();
 		this.pollingAbortController = null;
@@ -3621,6 +3621,25 @@ class ProtocolParser {
 			} catch (_error) {
 				// Ignore decode errors
 			}
+		}
+
+		// A different total than the one this refresh started with is a late
+		// reply to an earlier refresh, or the files changed meanwhile: count
+		// again from this report on, so a stale entry can't stay in the list
+		// or end the refresh early.
+		const expected = this.state.files.expected;
+		if (
+			this.state.files.activeFetch &&
+			total &&
+			expected &&
+			total !== expected
+		) {
+			this.log(
+				`File list total changed from ${expected} to ${total}, starting over.`,
+				LOG_CLASSES.WARNING,
+			);
+			this.state.files.items.clear();
+			this.state.updateFilesMetadata({ expected: total });
 		}
 
 		// Update expected count

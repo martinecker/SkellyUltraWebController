@@ -322,6 +322,25 @@ export class ProtocolParser {
 			}
 		}
 
+		// A different total than the one this refresh started with is a late
+		// reply to an earlier refresh, or the files changed meanwhile: count
+		// again from this report on, so a stale entry can't stay in the list
+		// or end the refresh early.
+		const expected = this.state.files.expected;
+		if (
+			this.state.files.activeFetch &&
+			total &&
+			expected &&
+			total !== expected
+		) {
+			this.log(
+				`File list total changed from ${expected} to ${total}, starting over.`,
+				LOG_CLASSES.WARNING,
+			);
+			this.state.files.items.clear();
+			this.state.updateFilesMetadata({ expected: total });
+		}
+
 		// Update expected count
 		if (total && !this.state.files.expected) {
 			this.state.updateFilesMetadata({ expected: total });
