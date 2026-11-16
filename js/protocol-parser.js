@@ -191,15 +191,18 @@ export class ProtocolParser {
 		}
 
 		const eyeIcon = parseInt(hex.slice(90, 92), 16);
+		// Scene firmware adds the live LIGHT_SCENES value after the eye icon; null: no scenes.
+		const scene = hex.length > 94 ? parseInt(hex.slice(92, 94), 16) : null;
 
 		this.state.updateLive({
 			action,
 			eye: eyeIcon,
 			lights,
+			scene,
 		});
 
 		this.log(
-			`Parsed Live: action=${action} eyeIcon=${eyeIcon} lights=${JSON.stringify(lights)}`,
+			`Parsed Live: action=${action} eyeIcon=${eyeIcon} scene=${scene} lights=${JSON.stringify(lights)}`,
 		);
 	}
 
@@ -308,11 +311,28 @@ export class ProtocolParser {
 		}
 
 		const eyeIcon = parseInt(hex.slice(110, 112), 16);
-		const dbPos = parseInt(hex.slice(112, 114), 16);
+
+		// The tail layout depends on the firmware; tell it apart by where the name
+		// marker sits (byte offsets, hex offsets are twice that):
+		// - scene firmware (12ft Skelly, Lethal Lily, Ultra Skelly v68): byte 56 light
+		//   scene (LIGHT_SCENES), byte 57 position, marker at 58
+		// - older firmware (Ultra Skelly v66): byte 56 position, marker at 57
+		const markerAt = (byte) =>
+			hex.slice(byte * 2, byte * 2 + 4) === PROTOCOL_MARKERS.FILENAME;
+		let markerPos = -1;
+		let scene = null;
+		let dbPos = 0;
+		if (markerAt(58)) {
+			markerPos = 58 * 2;
+			scene = parseInt(hex.slice(112, 114), 16);
+			dbPos = parseInt(hex.slice(114, 116), 16);
+		} else if (markerAt(57)) {
+			markerPos = 57 * 2;
+			dbPos = parseInt(hex.slice(112, 114), 16);
+		}
 
 		// Extract filename after marker
 		let name = "";
-		const markerPos = hex.indexOf(PROTOCOL_MARKERS.FILENAME, 114);
 		if (markerPos >= 0) {
 			const nameHex = hex.slice(markerPos + 4, hex.length - 2);
 			try {
@@ -355,6 +375,7 @@ export class ProtocolParser {
 			lights,
 			eye: eyeIcon,
 			db: dbPos,
+			scene,
 			name,
 		});
 

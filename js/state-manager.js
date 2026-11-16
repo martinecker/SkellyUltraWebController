@@ -30,11 +30,12 @@ export class StateManager {
 		// Active device type (drives UI profile)
 		this.deviceType = DEVICE_TYPES.SKELLY;
 
-		// Live status (action, eye icon, lights)
+		// Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes)
 		this.live = {
 			action: null,
 			eye: null,
 			lights: [],
+			scene: null,
 		};
 
 		// File list state
@@ -353,6 +354,7 @@ export class StateManager {
 			action: null,
 			eye: null,
 			lights: [],
+			scene: null,
 		};
 		this.resetFiles();
 		this.endTransfer();

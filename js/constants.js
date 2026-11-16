@@ -340,6 +340,13 @@ export const DEFAULTS = {
 	SPEED: 0,
 };
 
+// Light scene presets, in file info (BBD0), live status (BBE1) and F1
+export const LIGHT_SCENES = Object.freeze({
+	CUSTOM: 0, // each light channel's own settings
+	HALLOWEEN: 1,
+	CHRISTMAS: 2,
+});
+
 // File name marker in protocol
 export const PROTOCOL_MARKERS = {
 	FILENAME: "5C55", // UTF16LE filename marker

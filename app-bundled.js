@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-16T19:24:27.875726
+ * Generated: 2026-11-16T12:50:46.474331
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -50,7 +50,6 @@ const DEVICE_TYPES = {
 };
 
 // Capabilities that depend on the firmware, keys of a profile's `capabilities`.
-// Gated on the firmware version, never on the BLE name (users can rename).
 const CAPABILITIES = {
 	// Halloween and Christmas light scene presets (F1 scene byte, BBD0/BBE1 scene byte)
 	LIGHT_SCENES: "lightScenes",
@@ -105,7 +104,7 @@ const DEVICE_PROFILES = {
 			{ value: 3, label: "Pulsing" },
 		],
 		// Capability -> lowest firmware version that has it (0: any version).
-		// v66 (advertises "Animated Skelly") has none, v68 ("Ultra Skelly v2") has the scenes.
+		// v66 (advertises "Animated Skelly") has none, v68 ("Ultra Skelly v2") has them.
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 68,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 68,
@@ -132,7 +131,6 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Strobe" },
 			{ value: 3, label: "Pulsing" },
 		],
-		// Scenes tested on v14, the only firmware seen so far
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 14,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 14,
@@ -181,7 +179,6 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Pulsing" },
 			{ value: 3, label: "Chasing" },
 		],
-		// Scenes tested on v24, the only firmware seen so far
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 24,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 24,
@@ -374,6 +371,13 @@ const DEFAULTS = {
 	LIGHTING_MODE: 1,
 	SPEED: 0,
 };
+
+// Light scene presets, in file info (BBD0), live status (BBE1) and F1
+const LIGHT_SCENES = Object.freeze({
+	CUSTOM: 0, // each light channel's own settings
+	HALLOWEEN: 1,
+	CHRISTMAS: 2,
+});
 
 // File name marker in protocol
 const PROTOCOL_MARKERS = {
@@ -944,11 +948,12 @@ class StateManager {
 		// Active device type (drives UI profile)
 		this.deviceType = DEVICE_TYPES.SKELLY;
 
-		// Live status (action, eye icon, lights)
+		// Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes)
 		this.live = {
 			action: null,
 			eye: null,
 			lights: [],
+			scene: null,
 		};
 
 		// File list state
@@ -1267,6 +1272,7 @@ class StateManager {
 			action: null,
 			eye: null,
 			lights: [],
+			scene: null,
 		};
 		this.resetFiles();
 		this.endTransfer();
@@ -3708,15 +3714,18 @@ class ProtocolParser {
 		}
 
 		const eyeIcon = parseInt(hex.slice(90, 92), 16);
+		// Scene firmware adds the live LIGHT_SCENES value after the eye icon; null: no scenes.
+		const scene = hex.length > 94 ? parseInt(hex.slice(92, 94), 16) : null;
 
 		this.state.updateLive({
 			action,
 			eye: eyeIcon,
 			lights,
+			scene,
 		});
 
 		this.log(
-			`Parsed Live: action=${action} eyeIcon=${eyeIcon} lights=${JSON.stringify(lights)}`,
+			`Parsed Live: action=${action} eyeIcon=${eyeIcon} scene=${scene} lights=${JSON.stringify(lights)}`,
 		);
 	}
 
@@ -3825,11 +3834,28 @@ class ProtocolParser {
 		}
 
 		const eyeIcon = parseInt(hex.slice(110, 112), 16);
-		const dbPos = parseInt(hex.slice(112, 114), 16);
+
+		// The tail layout depends on the firmware; tell it apart by where the name
+		// marker sits (byte offsets, hex offsets are twice that):
+		// - scene firmware (12ft Skelly, Lethal Lily, Ultra Skelly v68): byte 56 light
+		//   scene (LIGHT_SCENES), byte 57 position, marker at 58
+		// - older firmware (Ultra Skelly v66): byte 56 position, marker at 57
+		const markerAt = (byte) =>
+			hex.slice(byte * 2, byte * 2 + 4) === PROTOCOL_MARKERS.FILENAME;
+		let markerPos = -1;
+		let scene = null;
+		let dbPos = 0;
+		if (markerAt(58)) {
+			markerPos = 58 * 2;
+			scene = parseInt(hex.slice(112, 114), 16);
+			dbPos = parseInt(hex.slice(114, 116), 16);
+		} else if (markerAt(57)) {
+			markerPos = 57 * 2;
+			dbPos = parseInt(hex.slice(112, 114), 16);
+		}
 
 		// Extract filename after marker
 		let name = "";
-		const markerPos = hex.indexOf(PROTOCOL_MARKERS.FILENAME, 114);
 		if (markerPos >= 0) {
 			const nameHex = hex.slice(markerPos + 4, hex.length - 2);
 			try {
@@ -3872,6 +3898,7 @@ class ProtocolParser {
 			lights,
 			eye: eyeIcon,
 			db: dbPos,
+			scene,
 			name,
 		});
 
