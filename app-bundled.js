@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-15T20:45:09.701007
+ * Generated: 2026-11-16T19:24:27.875726
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -49,6 +49,17 @@ const DEVICE_TYPES = {
 	LILY: "lily",
 };
 
+// Capabilities that depend on the firmware, keys of a profile's `capabilities`.
+// Gated on the firmware version, never on the BLE name (users can rename).
+const CAPABILITIES = {
+	// Halloween and Christmas light scene presets (F1 scene byte, BBD0/BBE1 scene byte)
+	LIGHT_SCENES: "lightScenes",
+	// F1: set all light channels (and the scene) with one command
+	SET_ALL_LIGHTS: "setAllLights",
+	// CD: per-file jaw movement data, sent after an upload
+	JAW_DATA: "jawData",
+};
+
 // Device Profiles — per-device UI configuration
 // Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
 const DEVICE_PROFILES = {
@@ -93,6 +104,13 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Strobe" },
 			{ value: 3, label: "Pulsing" },
 		],
+		// Capability -> lowest firmware version that has it (0: any version).
+		// v66 (advertises "Animated Skelly") has none, v68 ("Ultra Skelly v2") has the scenes.
+		capabilities: {
+			[CAPABILITIES.LIGHT_SCENES]: 68,
+			[CAPABILITIES.SET_ALL_LIGHTS]: 68,
+			[CAPABILITIES.JAW_DATA]: 68,
+		},
 	},
 	[DEVICE_TYPES.SKELLY_12FT]: {
 		defaultBleName: "12ft Skelly",
@@ -114,6 +132,12 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Strobe" },
 			{ value: 3, label: "Pulsing" },
 		],
+		// Scenes tested on v14, the only firmware seen so far
+		capabilities: {
+			[CAPABILITIES.LIGHT_SCENES]: 14,
+			[CAPABILITIES.SET_ALL_LIGHTS]: 14,
+			[CAPABILITIES.JAW_DATA]: 14,
+		},
 	},
 	[DEVICE_TYPES.LILY]: {
 		defaultBleName: "Lethal Lily",
@@ -157,8 +181,30 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Pulsing" },
 			{ value: 3, label: "Chasing" },
 		],
+		// Scenes tested on v24, the only firmware seen so far
+		capabilities: {
+			[CAPABILITIES.LIGHT_SCENES]: 24,
+			[CAPABILITIES.SET_ALL_LIGHTS]: 24,
+			[CAPABILITIES.JAW_DATA]: 24,
+		},
 	},
 };
+
+/**
+ * Whether a device of this type with this firmware has a capability (one of CAPABILITIES).
+ * version is the firmware as the device state holds it ("v68") or a number. Firmware below
+ * the lowest tested version has none; newer, untested firmware keeps what the tested one had.
+ * An unknown version (not read yet) has none.
+ */
+function hasCapability(deviceType, version, capability) {
+	const minVersion = DEVICE_PROFILES[deviceType]?.capabilities?.[capability];
+	if (minVersion == null || version == null) return false;
+	const number =
+		typeof version === "number"
+			? version
+			: Number.parseInt(String(version).replace(/^v/i, ""), 10);
+	return Number.isFinite(number) && number >= minVersion;
+}
 
 // Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
 function getEyeIconPath(deviceType, eyeIdx) {
