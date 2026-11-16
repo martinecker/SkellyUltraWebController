@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-07T17:16:18.735001
+ * Generated: 2026-11-15T19:14:19.065032
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1497,8 +1497,8 @@ class BLEManager {
 		this.writeCharacteristic = null;
 		this.notifyCharacteristic = null;
 
-		// Clear waiters
-		this.waiters.splice(0);
+		// Fail pending waiters now rather than at their timeout
+		this.clearWaiters();
 
 		// Update state
 		this.state.setConnected(false);
@@ -1557,12 +1557,18 @@ class BLEManager {
 		this.notificationHandlers.push(handler);
 
 		// Return unsubscribe function
-		return () => {
-			const index = this.notificationHandlers.indexOf(handler);
-			if (index >= 0) {
-				this.notificationHandlers.splice(index, 1);
-			}
-		};
+		return () => this.offNotification(handler);
+	}
+
+	/**
+	 * Unregister a notification handler
+	 * @param {Function} handler - Handler passed to onNotification
+	 */
+	offNotification(handler) {
+		const index = this.notificationHandlers.indexOf(handler);
+		if (index >= 0) {
+			this.notificationHandlers.splice(index, 1);
+		}
 	}
 
 	/**
@@ -1581,6 +1587,11 @@ class BLEManager {
 	waitForResponse(prefix, timeoutMs = TIMEOUTS.ACK) {
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
+				// Remove waiter from list
+				const index = this.waiters.indexOf(waiter);
+				if (index >= 0) {
+					this.waiters.splice(index, 1);
+				}
 				reject(new Error(`Timeout waiting for ${prefix}`));
 			}, timeoutMs);
 
@@ -1616,7 +1627,7 @@ class BLEManager {
 	clearWaiters() {
 		for (const waiter of this.waiters) {
 			clearTimeout(waiter.timer);
-			waiter.reject(new Error("Cleared"));
+			waiter.reject(new Error("Disconnected"));
 		}
 		this.waiters.splice(0);
 	}
@@ -1949,12 +1960,18 @@ class RestProxy {
 		this.notificationHandlers.push(handler);
 
 		// Return unsubscribe function
-		return () => {
-			const index = this.notificationHandlers.indexOf(handler);
-			if (index >= 0) {
-				this.notificationHandlers.splice(index, 1);
-			}
-		};
+		return () => this.offNotification(handler);
+	}
+
+	/**
+	 * Unregister a notification handler
+	 * @param {Function} handler - Handler passed to onNotification
+	 */
+	offNotification(handler) {
+		const index = this.notificationHandlers.indexOf(handler);
+		if (index >= 0) {
+			this.notificationHandlers.splice(index, 1);
+		}
 	}
 
 	/**
@@ -2167,6 +2184,17 @@ class RestProxy {
 	}
 
 	/**
+	 * Clear all pending waiters (useful on disconnect)
+	 */
+	clearWaiters() {
+		for (const waiter of this.waiters) {
+			clearTimeout(waiter.timer);
+			waiter.reject(new Error("Disconnected"));
+		}
+		this.waiters.splice(0);
+	}
+
+	/**
 	 * Start keepalive pings
 	 */
 	startKeepalive() {
@@ -2232,6 +2260,9 @@ class RestProxy {
 		this.mtuSize = null;
 		this.nextSequence = 0;
 		this.seenSequences.clear();
+
+		// Fail pending waiters now rather than at their timeout
+		this.clearWaiters();
 
 		// Update state
 		this.state.setConnected(false);
@@ -2411,6 +2442,8 @@ class ConnectionManager {
 			if (index >= 0) {
 				this.notificationHandlers.splice(index, 1);
 			}
+			// The active connection holds its own copy of the handler
+			this.activeConnection?.offNotification?.(handler);
 		};
 	}
 
@@ -2613,6 +2646,26 @@ class FileManager {
 	}
 
 	/**
+	 * Send a command and wait for its reply
+	 * The wait starts before the send, since the reply can arrive before
+	 * send() returns (the REST proxy polls for it separately).
+	 * @param {Uint8Array} commandBytes - Command to send
+	 * @param {string} prefix - Reply prefix to wait for
+	 * @param {number} timeoutMs - Timeout in milliseconds
+	 * @returns {Promise<string>} - Reply hex string
+	 */
+	async sendAndWait(commandBytes, prefix, timeoutMs) {
+		const reply = this.connection.waitForResponse(prefix, timeoutMs);
+		try {
+			await this.connection.send(commandBytes);
+		} catch (error) {
+			reply.catch(() => {}); // It times out unanswered
+			throw error;
+		}
+		return reply;
+	}
+
+	/**
 	 * Upload file to device
 	 * @param {Uint8Array} fileBytes - File data
 	 * @param {string} fileName - Target filename
@@ -2632,6 +2685,20 @@ class FileManager {
 
 		this.state.startTransfer(fileName);
 
+		// The device can end the transfer as failed (BBC2) while chunks are
+		// still being sent. Watch for it from the first chunk on, so the
+		// upload stops at once instead of waiting for a BBC2 that won't come.
+		let earlyC2Response = null;
+		const stopWatchingC2 = this.connection.onNotification((hex) => {
+			if (
+				earlyC2Response === null &&
+				this.state.transfer.inProgress &&
+				hex.startsWith(RESPONSES.TRANSFER_END)
+			) {
+				earlyC2Response = hex;
+			}
+		});
+
 		try {
 			// === Phase 1: Start Transfer (C0) ===
 			const size = fileBytes.length;
@@ -2641,12 +2708,8 @@ class FileManager {
 
 			const c0Payload =
 				intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-			await this.connection.send(
+			const c0Response = await this.sendAndWait(
 				buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
-			);
-
-			// Wait for start acknowledgment
-			const c0Response = await this.connection.waitForResponse(
 				RESPONSES.TRANSFER_START,
 				TIMEOUTS.ACK_LONG,
 			);
@@ -2660,6 +2723,9 @@ class FileManager {
 			if (c0Failed !== 0) {
 				throw new Error("Device rejected transfer start");
 			}
+
+			// Only a BBC2 from this transfer counts
+			earlyC2Response = null;
 
 			// Resume from last written position if applicable
 			const startIndex = Math.floor(c0Written / chunkSize);
@@ -2678,6 +2744,17 @@ class FileManager {
 
 				if (this.state.transfer.cancel) {
 					throw new Error("Transfer cancelled");
+				}
+
+				if (
+					earlyC2Response !== null &&
+					parseInt(earlyC2Response.slice(4, 6), 16) !== 0
+				) {
+					this.log(
+						`Device ended the transfer at chunk ${index} of ${maxPackets}`,
+						LOG_CLASSES.WARNING,
+					);
+					break;
 				}
 
 				// Handle resume request from device
@@ -2706,12 +2783,14 @@ class FileManager {
 			}
 
 			// === Phase 3: End Transfer (C2) ===
-			await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, "", 8));
-
-			const c2Response = await this.connection.waitForResponse(
-				RESPONSES.TRANSFER_END,
-				TIMEOUTS.FILE_TRANSFER,
-			);
+			// Unless the device already ended it while chunks were being sent
+			const c2Response =
+				earlyC2Response ??
+				(await this.sendAndWait(
+					buildCommand(COMMANDS.END_TRANSFER, "", 8),
+					RESPONSES.TRANSFER_END,
+					TIMEOUTS.FILE_TRANSFER,
+				));
 
 			if (!c2Response) {
 				throw new Error("Timeout waiting for transfer end acknowledgment");
@@ -2734,8 +2813,11 @@ class FileManager {
 						throw new Error("Transfer cancelled");
 					}
 
-					const payload = this.state.getChunk(tailIndex);
-					if (!payload) break;
+					// Chunks after an early end were never sent, so build them
+					const payload =
+						this.state.getChunk(tailIndex) ??
+						intToHex(tailIndex, 2) +
+							chunkToHex(fileBytes, tailIndex * chunkSize, chunkSize);
 
 					await this.connection.send(
 						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
@@ -2747,11 +2829,8 @@ class FileManager {
 
 			// === Phase 4: Confirm Transfer (C3) ===
 			const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
-			await this.connection.send(
+			const c3Response = await this.sendAndWait(
 				buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8),
-			);
-
-			const c3Response = await this.connection.waitForResponse(
 				RESPONSES.CONFIRM_TRANSFER_ACK,
 				TIMEOUTS.ACK,
 			);
@@ -2796,6 +2875,7 @@ class FileManager {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
 		} finally {
+			stopWatchingC2();
 			this.state.endTransfer();
 		}
 	}

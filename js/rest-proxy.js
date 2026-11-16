@@ -311,12 +311,18 @@ export class RestProxy {
 		this.notificationHandlers.push(handler);
 
 		// Return unsubscribe function
-		return () => {
-			const index = this.notificationHandlers.indexOf(handler);
-			if (index >= 0) {
-				this.notificationHandlers.splice(index, 1);
-			}
-		};
+		return () => this.offNotification(handler);
+	}
+
+	/**
+	 * Unregister a notification handler
+	 * @param {Function} handler - Handler passed to onNotification
+	 */
+	offNotification(handler) {
+		const index = this.notificationHandlers.indexOf(handler);
+		if (index >= 0) {
+			this.notificationHandlers.splice(index, 1);
+		}
 	}
 
 	/**
@@ -529,6 +535,17 @@ export class RestProxy {
 	}
 
 	/**
+	 * Clear all pending waiters (useful on disconnect)
+	 */
+	clearWaiters() {
+		for (const waiter of this.waiters) {
+			clearTimeout(waiter.timer);
+			waiter.reject(new Error("Disconnected"));
+		}
+		this.waiters.splice(0);
+	}
+
+	/**
 	 * Start keepalive pings
 	 */
 	startKeepalive() {
@@ -594,6 +611,9 @@ export class RestProxy {
 		this.mtuSize = null;
 		this.nextSequence = 0;
 		this.seenSequences.clear();
+
+		// Fail pending waiters now rather than at their timeout
+		this.clearWaiters();
 
 		// Update state
 		this.state.setConnected(false);

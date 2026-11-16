@@ -159,6 +159,26 @@ export class FileManager {
 	}
 
 	/**
+	 * Send a command and wait for its reply
+	 * The wait starts before the send, since the reply can arrive before
+	 * send() returns (the REST proxy polls for it separately).
+	 * @param {Uint8Array} commandBytes - Command to send
+	 * @param {string} prefix - Reply prefix to wait for
+	 * @param {number} timeoutMs - Timeout in milliseconds
+	 * @returns {Promise<string>} - Reply hex string
+	 */
+	async sendAndWait(commandBytes, prefix, timeoutMs) {
+		const reply = this.connection.waitForResponse(prefix, timeoutMs);
+		try {
+			await this.connection.send(commandBytes);
+		} catch (error) {
+			reply.catch(() => {}); // It times out unanswered
+			throw error;
+		}
+		return reply;
+	}
+
+	/**
 	 * Upload file to device
 	 * @param {Uint8Array} fileBytes - File data
 	 * @param {string} fileName - Target filename
@@ -178,6 +198,20 @@ export class FileManager {
 
 		this.state.startTransfer(fileName);
 
+		// The device can end the transfer as failed (BBC2) while chunks are
+		// still being sent. Watch for it from the first chunk on, so the
+		// upload stops at once instead of waiting for a BBC2 that won't come.
+		let earlyC2Response = null;
+		const stopWatchingC2 = this.connection.onNotification((hex) => {
+			if (
+				earlyC2Response === null &&
+				this.state.transfer.inProgress &&
+				hex.startsWith(RESPONSES.TRANSFER_END)
+			) {
+				earlyC2Response = hex;
+			}
+		});
+
 		try {
 			// === Phase 1: Start Transfer (C0) ===
 			const size = fileBytes.length;
@@ -187,12 +221,8 @@ export class FileManager {
 
 			const c0Payload =
 				intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-			await this.connection.send(
+			const c0Response = await this.sendAndWait(
 				buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
-			);
-
-			// Wait for start acknowledgment
-			const c0Response = await this.connection.waitForResponse(
 				RESPONSES.TRANSFER_START,
 				TIMEOUTS.ACK_LONG,
 			);
@@ -206,6 +236,9 @@ export class FileManager {
 			if (c0Failed !== 0) {
 				throw new Error("Device rejected transfer start");
 			}
+
+			// Only a BBC2 from this transfer counts
+			earlyC2Response = null;
 
 			// Resume from last written position if applicable
 			const startIndex = Math.floor(c0Written / chunkSize);
@@ -224,6 +257,17 @@ export class FileManager {
 
 				if (this.state.transfer.cancel) {
 					throw new Error("Transfer cancelled");
+				}
+
+				if (
+					earlyC2Response !== null &&
+					parseInt(earlyC2Response.slice(4, 6), 16) !== 0
+				) {
+					this.log(
+						`Device ended the transfer at chunk ${index} of ${maxPackets}`,
+						LOG_CLASSES.WARNING,
+					);
+					break;
 				}
 
 				// Handle resume request from device
@@ -252,12 +296,14 @@ export class FileManager {
 			}
 
 			// === Phase 3: End Transfer (C2) ===
-			await this.connection.send(buildCommand(COMMANDS.END_TRANSFER, "", 8));
-
-			const c2Response = await this.connection.waitForResponse(
-				RESPONSES.TRANSFER_END,
-				TIMEOUTS.FILE_TRANSFER,
-			);
+			// Unless the device already ended it while chunks were being sent
+			const c2Response =
+				earlyC2Response ??
+				(await this.sendAndWait(
+					buildCommand(COMMANDS.END_TRANSFER, "", 8),
+					RESPONSES.TRANSFER_END,
+					TIMEOUTS.FILE_TRANSFER,
+				));
 
 			if (!c2Response) {
 				throw new Error("Timeout waiting for transfer end acknowledgment");
@@ -280,8 +326,11 @@ export class FileManager {
 						throw new Error("Transfer cancelled");
 					}
 
-					const payload = this.state.getChunk(tailIndex);
-					if (!payload) break;
+					// Chunks after an early end were never sent, so build them
+					const payload =
+						this.state.getChunk(tailIndex) ??
+						intToHex(tailIndex, 2) +
+							chunkToHex(fileBytes, tailIndex * chunkSize, chunkSize);
 
 					await this.connection.send(
 						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
@@ -293,11 +342,8 @@ export class FileManager {
 
 			// === Phase 4: Confirm Transfer (C3) ===
 			const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
-			await this.connection.send(
+			const c3Response = await this.sendAndWait(
 				buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8),
-			);
-
-			const c3Response = await this.connection.waitForResponse(
 				RESPONSES.CONFIRM_TRANSFER_ACK,
 				TIMEOUTS.ACK,
 			);
@@ -342,6 +388,7 @@ export class FileManager {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
 		} finally {
+			stopWatchingC2();
 			this.state.endTransfer();
 		}
 	}

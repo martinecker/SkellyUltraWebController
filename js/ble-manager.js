@@ -254,8 +254,8 @@ export class BLEManager {
 		this.writeCharacteristic = null;
 		this.notifyCharacteristic = null;
 
-		// Clear waiters
-		this.waiters.splice(0);
+		// Fail pending waiters now rather than at their timeout
+		this.clearWaiters();
 
 		// Update state
 		this.state.setConnected(false);
@@ -314,12 +314,18 @@ export class BLEManager {
 		this.notificationHandlers.push(handler);
 
 		// Return unsubscribe function
-		return () => {
-			const index = this.notificationHandlers.indexOf(handler);
-			if (index >= 0) {
-				this.notificationHandlers.splice(index, 1);
-			}
-		};
+		return () => this.offNotification(handler);
+	}
+
+	/**
+	 * Unregister a notification handler
+	 * @param {Function} handler - Handler passed to onNotification
+	 */
+	offNotification(handler) {
+		const index = this.notificationHandlers.indexOf(handler);
+		if (index >= 0) {
+			this.notificationHandlers.splice(index, 1);
+		}
 	}
 
 	/**
@@ -338,6 +344,11 @@ export class BLEManager {
 	waitForResponse(prefix, timeoutMs = TIMEOUTS.ACK) {
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
+				// Remove waiter from list
+				const index = this.waiters.indexOf(waiter);
+				if (index >= 0) {
+					this.waiters.splice(index, 1);
+				}
 				reject(new Error(`Timeout waiting for ${prefix}`));
 			}, timeoutMs);
 
@@ -373,7 +384,7 @@ export class BLEManager {
 	clearWaiters() {
 		for (const waiter of this.waiters) {
 			clearTimeout(waiter.timer);
-			waiter.reject(new Error("Cleared"));
+			waiter.reject(new Error("Disconnected"));
 		}
 		this.waiters.splice(0);
 	}

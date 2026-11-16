@@ -152,6 +152,8 @@ export class ConnectionManager {
 			if (index >= 0) {
 				this.notificationHandlers.splice(index, 1);
 			}
+			// The active connection holds its own copy of the handler
+			this.activeConnection?.offNotification?.(handler);
 		};
 	}
 
