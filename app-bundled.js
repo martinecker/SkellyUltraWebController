@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-15T19:14:19.065032
+ * Generated: 2026-11-15T20:45:09.701007
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -2683,6 +2683,11 @@ class FileManager {
 		// they can be restored once the new upload lands.
 		const existingFile = this.state.hasFileName(fileName);
 
+		// A new file makes the device rewrite the play order, and it gets that
+		// wrong (it drops the first entry and lists the last one twice).
+		// Remember the order by name, so it can be put right afterwards.
+		const previousOrderNames = existingFile ? null : this.orderedFileNames();
+
 		this.state.startTransfer(fileName);
 
 		// The device can end the transfer as failed (BBC2) while chunks are
@@ -2858,6 +2863,10 @@ class FileManager {
 			// Refresh file list
 			this.startFetchFiles();
 
+			if (previousOrderNames) {
+				await this.putNewFileFirst(fileName, previousOrderNames);
+			}
+
 			// Verify the restored settings actually stuck, since these are
 			// unacknowledged writes the device can silently drop.
 			if (existingFile) {
@@ -2915,6 +2924,87 @@ class FileManager {
 			await sleep(100);
 		}
 		return false;
+	}
+
+	/**
+	 * Return the names of the enabled files, in play order
+	 * @returns {string[]|null} null if the play order hasn't been read yet
+	 */
+	orderedFileNames() {
+		const order = this.state.device?.order;
+		if (!order) return null;
+		return JSON.parse(order)
+			.map((serial) => this.state.getFile(serial)?.name)
+			.filter(Boolean);
+	}
+
+	/**
+	 * Poll until a file list refresh has finished, including the play order
+	 * that follows the list. Call right after startFetchFiles().
+	 * @param {number} timeoutMs
+	 * @returns {Promise<boolean>} true if the full list and order arrived
+	 */
+	async waitForFileListRefresh(timeoutMs = TIMEOUTS.FILE_LIST + 2000) {
+		const deadline = Date.now() + timeoutMs;
+		// startFetchFiles() sets activeFetch before its first await, so a false
+		// here means it never started (not connected)
+		while (this.state.files.activeFetch && Date.now() < deadline) {
+			await sleep(100);
+		}
+		return !this.state.files.activeFetch && this.state.isFileListComplete();
+	}
+
+	/**
+	 * After a new upload, make the new file first in the play order and keep
+	 * the other files in the order and enabled state they had before.
+	 * Problems are logged, not thrown, since the upload itself succeeded.
+	 * @param {string} fileName - The uploaded file
+	 * @param {string[]} previousOrderNames - Enabled file names before the upload
+	 * @returns {Promise<void>}
+	 */
+	async putNewFileFirst(fileName, previousOrderNames) {
+		if (!(await this.waitForFileListRefresh())) {
+			this.log(
+				"File list refresh didn't finish; play order left as the device set it.",
+				LOG_CLASSES.WARNING,
+			);
+			return;
+		}
+
+		const newFile = this.state.hasFileName(fileName);
+		if (!newFile) {
+			this.log(
+				`${fileName} isn't in the file list; play order left as the device set it.`,
+				LOG_CLASSES.WARNING,
+			);
+			return;
+		}
+
+		// Map the names to the serials the device uses now
+		const previous = previousOrderNames
+			.map((name) => this.state.hasFileName(name)?.serial)
+			.filter((serial) => serial != null);
+		const wanted = [...new Set([newFile.serial, ...previous])];
+		const current = JSON.parse(this.state.device?.order || "[]");
+		const same = (a, b) =>
+			a.length === b.length && a.every((value, i) => value === b[i]);
+
+		// Nothing to do if the order is right, or if the device didn't touch it
+		// (the file was there already, under a name the list didn't show)
+		if (same(current, wanted) || same(current, previous)) return;
+
+		this.log(
+			`Device changed the play order from ${JSON.stringify(previous)} to ${JSON.stringify(current)} on upload; setting ${JSON.stringify(wanted)}`,
+			LOG_CLASSES.INFO,
+		);
+		try {
+			await this.updateFileOrder(wanted);
+		} catch (error) {
+			this.log(
+				`Failed to put the play order right: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+		}
 	}
 
 	/**
