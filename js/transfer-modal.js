@@ -694,7 +694,7 @@ export class TransferModalManager {
 				const kbps = $("#chkBitrateOverride")?.checked
 					? parseInt($("#mp3Kbps")?.value || "32", 10)
 					: 32;
-				this.log(`Converting ElevenLabs audio to 8 kHz mono (${kbps} kbps)…`);
+				this.log(`Converting ElevenLabs audio to MP3 mono (${kbps} kbps)…`);
 				const file = new File([rawMp3], rawName, { type: "audio/mpeg" });
 				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
 				fileBytes = result.u8;
@@ -730,7 +730,7 @@ export class TransferModalManager {
 					const kbps = $("#chkBitrateOverride")?.checked
 						? parseInt($("#mp3Kbps")?.value || "32", 10)
 						: 32;
-					this.log(`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`);
+					this.log(`Converting to MP3 mono (${kbps} kbps) before send…`);
 					const result = await this.audioConverter.convertToDeviceMp3(
 						pickerData.file,
 						kbps,

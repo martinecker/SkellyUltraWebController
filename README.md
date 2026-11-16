@@ -15,7 +15,7 @@ This project also has a [REST Server](https://github.com/martinecker/SkellyUltra
 ### 🎵 Audio File Management
 
 - **Upload Audio Files**: Send MP3 and other audio files directly to your animatronic via Bluetooth
-- **Automatic Conversion**: Built-in audio conversion to optimize files for the device (8kHz, mono, 32kbps MP3)
+- **Automatic Conversion**: Built-in audio conversion to optimize files for the device (mono MP3 at 32 kbps, like the phone app's uploads)
 - **File List Management**: View, play, pause, and delete files stored on the device
 - **Storage Monitoring**: Check available storage capacity in real-time
 - **Edit File Metadata**: Modify file properties including lights, animations, and eye icons

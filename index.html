@@ -587,17 +587,16 @@
       <!-- Shared: convert + bitrate -->
       <div style="display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap">
         <label class="small checkline" style="margin:0">
-          <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3, 8 kHz mono)
+          <input id="chkConvert" type="checkbox" checked> Convert to device format (MP3 mono)
         </label>
         <label class="small checkline" style="margin:0">
           <input id="chkBitrateOverride" type="checkbox"> Override bitrate
         </label>
         <div id="convertOpts" class="hidden" style="display:flex; align-items:center; gap:8px">
           <select id="mp3Kbps" aria-label="MP3 bitrate">
-            <option value="16">16 kbps</option>
-            <option value="24">24 kbps</option>
             <option value="32" selected>32 kbps</option>
             <option value="64">64 kbps</option>
+            <option value="128">128 kbps</option>
           </select>
         </div>
       </div>

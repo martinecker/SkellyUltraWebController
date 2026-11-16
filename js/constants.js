@@ -238,7 +238,11 @@ export const TIMEOUTS = {
 // Audio Configuration
 export const AUDIO_CONFIG = {
 	LONG_TRACK_LIMIT_SECONDS: 30,
-	TARGET_SAMPLE_RATE: 8000,
+	// Uploads are mono CBR MP3 at 32 kbps, like the phone app's. Audio is resampled
+	// to 44.1 kHz, the app's rate, for the encoder; lamejs can't be told the output
+	// rate and encodes 32 kbps at 22.05 kHz (MPEG-2), like the app's cloud voices,
+	// and 64 kbps and up at 44.1 kHz.
+	TARGET_SAMPLE_RATE: 44100,
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,

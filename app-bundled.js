@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-16T12:50:46.474331
+ * Generated: 2026-11-16T20:54:50.380808
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -270,7 +270,11 @@ const TIMEOUTS = {
 // Audio Configuration
 const AUDIO_CONFIG = {
 	LONG_TRACK_LIMIT_SECONDS: 30,
-	TARGET_SAMPLE_RATE: 8000,
+	// Uploads are mono CBR MP3 at 32 kbps, like the phone app's. Audio is resampled
+	// to 44.1 kHz, the app's rate, for the encoder; lamejs can't be told the output
+	// rate and encodes 32 kbps at 22.05 kHz (MPEG-2), like the app's cloud voices,
+	// and 64 kbps and up at 44.1 kHz.
+	TARGET_SAMPLE_RATE: 44100,
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,
@@ -5487,7 +5491,7 @@ class TransferModalManager {
 				const kbps = $("#chkBitrateOverride")?.checked
 					? parseInt($("#mp3Kbps")?.value || "32", 10)
 					: 32;
-				this.log(`Converting ElevenLabs audio to 8 kHz mono (${kbps} kbps)…`);
+				this.log(`Converting ElevenLabs audio to MP3 mono (${kbps} kbps)…`);
 				const file = new File([rawMp3], rawName, { type: "audio/mpeg" });
 				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
 				fileBytes = result.u8;
@@ -5523,7 +5527,7 @@ class TransferModalManager {
 					const kbps = $("#chkBitrateOverride")?.checked
 						? parseInt($("#mp3Kbps")?.value || "32", 10)
 						: 32;
-					this.log(`Converting to MP3 8 kHz mono (${kbps} kbps) before send…`);
+					this.log(`Converting to MP3 mono (${kbps} kbps) before send…`);
 					const result = await this.audioConverter.convertToDeviceMp3(
 						pickerData.file,
 						kbps,
