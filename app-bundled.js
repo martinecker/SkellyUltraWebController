@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-17T01:46:52.995896
+ * Generated: 2026-11-17T02:18:42.162493
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -219,6 +219,8 @@ const STORAGE_KEYS = {
 	ADV_FEDC: "skelly_adv_fedc",
 	CHUNK_OVERRIDE: "skelly_chunk_override",
 	CHUNK_SIZE: "skelly_chunk_size",
+	CHUNK_DELAY_OVERRIDE: "skelly_chunk_delay_override",
+	CHUNK_DELAY: "skelly_chunk_delay",
 	BITRATE_OVERRIDE: "skelly_bitrate_override",
 	BITRATE: "skelly_bitrate",
 	SHOW_FILE_DETAILS: "skelly_show_file_details",
@@ -247,8 +249,11 @@ const TRANSFER_CONFIG = {
 	// MTU bytes a chunk can't use: the ATT write header (3) and the C1 frame
 	// around the data (AA C1, index u16, CRC: 5). Same as the phone app.
 	CHUNK_OVERHEAD: 8,
-	CHUNK_DELAY_MS: 50,
-	EDIT_CHUNK_DELAY_MS: 12,
+	// Pause between chunks, including resent ones, like the phone app's
+	// 100 ms; can be overridden (MIN-MAX) in the transfer dialog
+	CHUNK_DELAY_MS: 100,
+	MIN_CHUNK_DELAY_MS: 10,
+	MAX_CHUNK_DELAY_MS: 1000,
 	// Device silently drops the upload (transfer/confirm still ack with
 	// failed=0, but the file never appears in the file list) if the filename
 	// exceeds this — confirmed empirically: 33 chars works, 34 chars fails.
@@ -2739,13 +2744,36 @@ class FileManager {
 	}
 
 	/**
+	 * Pause between chunks: the override if it's in range, else 100 ms
+	 * @param {number|null} override - Optional override from the user (ms)
+	 * @returns {number} Pause in ms
+	 */
+	getChunkDelay(override = null) {
+		if (
+			typeof override === "number" &&
+			override >= TRANSFER_CONFIG.MIN_CHUNK_DELAY_MS &&
+			override <= TRANSFER_CONFIG.MAX_CHUNK_DELAY_MS
+		) {
+			this.log(`Using override chunk delay: ${override} ms`, LOG_CLASSES.INFO);
+			return override;
+		}
+		return TRANSFER_CONFIG.CHUNK_DELAY_MS;
+	}
+
+	/**
 	 * Upload file to device
 	 * @param {Uint8Array} fileBytes - File data
 	 * @param {string} fileName - Target filename
 	 * @param {number|null} chunkSizeOverride - Optional chunk size override
+	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
 	 * @returns {Promise<void>}
 	 */
-	async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
+	async uploadFile(
+		fileBytes,
+		fileName,
+		chunkSizeOverride = null,
+		chunkDelayOverride = null,
+	) {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected — cannot send file.", LOG_CLASSES.WARNING);
 			throw new Error("Device not connected");
@@ -2781,6 +2809,7 @@ class FileManager {
 			// === Phase 1: Start Transfer (C0) ===
 			const size = fileBytes.length;
 			const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
+			const chunkDelay = this.getChunkDelay(chunkDelayOverride);
 			const maxPackets = Math.ceil(size / chunkSize);
 			const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
@@ -2857,7 +2886,7 @@ class FileManager {
 					this.onProgress(index + 1, maxPackets);
 				}
 
-				await sleep(TRANSFER_CONFIG.CHUNK_DELAY_MS);
+				await sleep(chunkDelay);
 			}
 
 			// === Phase 3: End Transfer (C2) ===
@@ -2901,7 +2930,7 @@ class FileManager {
 						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
 					);
 					tailIndex += 1;
-					await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
+					await sleep(chunkDelay);
 				}
 			}
 
@@ -4878,6 +4907,7 @@ class TransferModalManager {
 		this.initializeElevenLabsControls();
 		this.initializeBitrateControls();
 		this.initializeChunkSizeControls();
+		this.initializeChunkDelayControls();
 		this.initializeButtons();
 		this.initializeFileInputHandler();
 
@@ -5362,6 +5392,54 @@ class TransferModalManager {
 	}
 
 	/**
+	 * Initialize chunk delay override controls
+	 */
+	initializeChunkDelayControls() {
+		const chkDelayOverride = $("#chkChunkDelayOverride");
+		const delayOverrideOpts = $("#chunkDelayOverrideOpts");
+		const chunkDelaySlider = $("#chunkDelaySlider");
+		const chunkDelayValue = $("#chunkDelayValue");
+
+		// Load saved preferences from localStorage
+		const savedOverride =
+			localStorage.getItem(STORAGE_KEYS.CHUNK_DELAY_OVERRIDE) === "true";
+		const savedDelay = parseInt(
+			localStorage.getItem(STORAGE_KEYS.CHUNK_DELAY),
+			10,
+		);
+
+		if (chunkDelaySlider && chunkDelayValue) {
+			const initialDelay =
+				savedDelay >= TRANSFER_CONFIG.MIN_CHUNK_DELAY_MS &&
+				savedDelay <= TRANSFER_CONFIG.MAX_CHUNK_DELAY_MS
+					? savedDelay
+					: TRANSFER_CONFIG.CHUNK_DELAY_MS;
+			chunkDelaySlider.value = initialDelay;
+			chunkDelayValue.textContent = initialDelay;
+		}
+
+		if (chkDelayOverride) {
+			chkDelayOverride.checked = savedOverride;
+			delayOverrideOpts?.classList.toggle("hidden", !savedOverride);
+		}
+
+		chkDelayOverride?.addEventListener("change", (e) => {
+			delayOverrideOpts?.classList.toggle("hidden", !e.target.checked);
+			localStorage.setItem(
+				STORAGE_KEYS.CHUNK_DELAY_OVERRIDE,
+				e.target.checked.toString(),
+			);
+		});
+
+		chunkDelaySlider?.addEventListener("input", (e) => {
+			if (chunkDelayValue) {
+				chunkDelayValue.textContent = e.target.value;
+			}
+			localStorage.setItem(STORAGE_KEYS.CHUNK_DELAY, e.target.value);
+		});
+	}
+
+	/**
 	 * Initialize file transfer buttons (send/cancel) and modal close handlers
 	 */
 	initializeButtons() {
@@ -5618,11 +5696,19 @@ class TransferModalManager {
 			chunkSizeOverride = parseInt(chunkSizeSlider.value, 10);
 		}
 
+		// And the chunk delay override
+		let chunkDelayOverride = null;
+		const chunkDelaySlider = $("#chunkDelaySlider");
+		if ($("#chkChunkDelayOverride")?.checked && chunkDelaySlider) {
+			chunkDelayOverride = parseInt(chunkDelaySlider.value, 10);
+		}
+
 		try {
 			await this.fileManager.uploadFile(
 				fileBytes,
 				finalName,
 				chunkSizeOverride,
+				chunkDelayOverride,
 			);
 			return true;
 		} catch (error) {

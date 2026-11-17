@@ -180,13 +180,36 @@ export class FileManager {
 	}
 
 	/**
+	 * Pause between chunks: the override if it's in range, else 100 ms
+	 * @param {number|null} override - Optional override from the user (ms)
+	 * @returns {number} Pause in ms
+	 */
+	getChunkDelay(override = null) {
+		if (
+			typeof override === "number" &&
+			override >= TRANSFER_CONFIG.MIN_CHUNK_DELAY_MS &&
+			override <= TRANSFER_CONFIG.MAX_CHUNK_DELAY_MS
+		) {
+			this.log(`Using override chunk delay: ${override} ms`, LOG_CLASSES.INFO);
+			return override;
+		}
+		return TRANSFER_CONFIG.CHUNK_DELAY_MS;
+	}
+
+	/**
 	 * Upload file to device
 	 * @param {Uint8Array} fileBytes - File data
 	 * @param {string} fileName - Target filename
 	 * @param {number|null} chunkSizeOverride - Optional chunk size override
+	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
 	 * @returns {Promise<void>}
 	 */
-	async uploadFile(fileBytes, fileName, chunkSizeOverride = null) {
+	async uploadFile(
+		fileBytes,
+		fileName,
+		chunkSizeOverride = null,
+		chunkDelayOverride = null,
+	) {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected — cannot send file.", LOG_CLASSES.WARNING);
 			throw new Error("Device not connected");
@@ -222,6 +245,7 @@ export class FileManager {
 			// === Phase 1: Start Transfer (C0) ===
 			const size = fileBytes.length;
 			const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
+			const chunkDelay = this.getChunkDelay(chunkDelayOverride);
 			const maxPackets = Math.ceil(size / chunkSize);
 			const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
@@ -298,7 +322,7 @@ export class FileManager {
 					this.onProgress(index + 1, maxPackets);
 				}
 
-				await sleep(TRANSFER_CONFIG.CHUNK_DELAY_MS);
+				await sleep(chunkDelay);
 			}
 
 			// === Phase 3: End Transfer (C2) ===
@@ -342,7 +366,7 @@ export class FileManager {
 						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
 					);
 					tailIndex += 1;
-					await sleep(TRANSFER_CONFIG.EDIT_CHUNK_DELAY_MS);
+					await sleep(chunkDelay);
 				}
 			}
 

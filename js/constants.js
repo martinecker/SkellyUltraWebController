@@ -187,6 +187,8 @@ export const STORAGE_KEYS = {
 	ADV_FEDC: "skelly_adv_fedc",
 	CHUNK_OVERRIDE: "skelly_chunk_override",
 	CHUNK_SIZE: "skelly_chunk_size",
+	CHUNK_DELAY_OVERRIDE: "skelly_chunk_delay_override",
+	CHUNK_DELAY: "skelly_chunk_delay",
 	BITRATE_OVERRIDE: "skelly_bitrate_override",
 	BITRATE: "skelly_bitrate",
 	SHOW_FILE_DETAILS: "skelly_show_file_details",
@@ -215,8 +217,11 @@ export const TRANSFER_CONFIG = {
 	// MTU bytes a chunk can't use: the ATT write header (3) and the C1 frame
 	// around the data (AA C1, index u16, CRC: 5). Same as the phone app.
 	CHUNK_OVERHEAD: 8,
-	CHUNK_DELAY_MS: 50,
-	EDIT_CHUNK_DELAY_MS: 12,
+	// Pause between chunks, including resent ones, like the phone app's
+	// 100 ms; can be overridden (MIN-MAX) in the transfer dialog
+	CHUNK_DELAY_MS: 100,
+	MIN_CHUNK_DELAY_MS: 10,
+	MAX_CHUNK_DELAY_MS: 1000,
 	// Device silently drops the upload (transfer/confirm still ack with
 	// failed=0, but the file never appears in the file list) if the filename
 	// exceeds this — confirmed empirically: 33 chars works, 34 chars fails.

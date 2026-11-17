@@ -615,8 +615,17 @@
           <span class="small" style="white-space:nowrap"><span id="chunkSizeValue">250</span> bytes</span>
         </div>
       </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px">
+        <label class="small checkline" style="margin:0">
+          <input id="chkChunkDelayOverride" type="checkbox"> Override chunk delay
+        </label>
+        <div id="chunkDelayOverrideOpts" class="hidden" style="display:flex; align-items:center; gap:10px; flex:1; min-width:300px">
+          <input id="chunkDelaySlider" type="range" min="10" max="1000" value="100" step="10" style="flex:1; min-width:150px" />
+          <span class="small" style="white-space:nowrap"><span id="chunkDelayValue">100</span> ms</span>
+        </div>
+      </div>
       <div class="small muted" style="margin-top:6px">
-        ⚠️ If transfers fail frequently, try reducing the chunk size. Larger values may be faster but less reliable.
+        ⚠️ If transfers fail frequently, try reducing the chunk size or increasing the chunk delay (100 ms by default, like the phone app). Larger chunks and shorter delays may be faster but less reliable.
       </div>
 
       <div class="spacer"></div>

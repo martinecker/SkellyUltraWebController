@@ -64,6 +64,7 @@ export class TransferModalManager {
 		this.initializeElevenLabsControls();
 		this.initializeBitrateControls();
 		this.initializeChunkSizeControls();
+		this.initializeChunkDelayControls();
 		this.initializeButtons();
 		this.initializeFileInputHandler();
 
@@ -548,6 +549,54 @@ export class TransferModalManager {
 	}
 
 	/**
+	 * Initialize chunk delay override controls
+	 */
+	initializeChunkDelayControls() {
+		const chkDelayOverride = $("#chkChunkDelayOverride");
+		const delayOverrideOpts = $("#chunkDelayOverrideOpts");
+		const chunkDelaySlider = $("#chunkDelaySlider");
+		const chunkDelayValue = $("#chunkDelayValue");
+
+		// Load saved preferences from localStorage
+		const savedOverride =
+			localStorage.getItem(STORAGE_KEYS.CHUNK_DELAY_OVERRIDE) === "true";
+		const savedDelay = parseInt(
+			localStorage.getItem(STORAGE_KEYS.CHUNK_DELAY),
+			10,
+		);
+
+		if (chunkDelaySlider && chunkDelayValue) {
+			const initialDelay =
+				savedDelay >= TRANSFER_CONFIG.MIN_CHUNK_DELAY_MS &&
+				savedDelay <= TRANSFER_CONFIG.MAX_CHUNK_DELAY_MS
+					? savedDelay
+					: TRANSFER_CONFIG.CHUNK_DELAY_MS;
+			chunkDelaySlider.value = initialDelay;
+			chunkDelayValue.textContent = initialDelay;
+		}
+
+		if (chkDelayOverride) {
+			chkDelayOverride.checked = savedOverride;
+			delayOverrideOpts?.classList.toggle("hidden", !savedOverride);
+		}
+
+		chkDelayOverride?.addEventListener("change", (e) => {
+			delayOverrideOpts?.classList.toggle("hidden", !e.target.checked);
+			localStorage.setItem(
+				STORAGE_KEYS.CHUNK_DELAY_OVERRIDE,
+				e.target.checked.toString(),
+			);
+		});
+
+		chunkDelaySlider?.addEventListener("input", (e) => {
+			if (chunkDelayValue) {
+				chunkDelayValue.textContent = e.target.value;
+			}
+			localStorage.setItem(STORAGE_KEYS.CHUNK_DELAY, e.target.value);
+		});
+	}
+
+	/**
 	 * Initialize file transfer buttons (send/cancel) and modal close handlers
 	 */
 	initializeButtons() {
@@ -804,11 +853,19 @@ export class TransferModalManager {
 			chunkSizeOverride = parseInt(chunkSizeSlider.value, 10);
 		}
 
+		// And the chunk delay override
+		let chunkDelayOverride = null;
+		const chunkDelaySlider = $("#chunkDelaySlider");
+		if ($("#chkChunkDelayOverride")?.checked && chunkDelaySlider) {
+			chunkDelayOverride = parseInt(chunkDelaySlider.value, 10);
+		}
+
 		try {
 			await this.fileManager.uploadFile(
 				fileBytes,
 				finalName,
 				chunkSizeOverride,
+				chunkDelayOverride,
 			);
 			return true;
 		} catch (error) {
