@@ -139,8 +139,9 @@ export class FileManager {
 		const mtu = this.connection.getMtuSize();
 
 		if (mtu !== null && typeof mtu === "number" && mtu > 0) {
-			// Calculate safe chunk size (MTU minus ATT overhead)
-			const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
+			// A whole C1 frame fills one write (MTU - 3 bytes), like the app's.
+			// A bigger frame doesn't fit and gets lost.
+			const safeSize = mtu - TRANSFER_CONFIG.CHUNK_OVERHEAD;
 			// Cap at tested maximum
 			const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
 			this.log(

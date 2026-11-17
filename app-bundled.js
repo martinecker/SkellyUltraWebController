@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-16T21:40:32.311841
+ * Generated: 2026-11-17T01:46:52.995896
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -244,7 +244,9 @@ const PADDING = {
 const TRANSFER_CONFIG = {
 	MAX_CHUNK_SIZE: 500, // Maximum bytes per chunk (tested maximum)
 	DEFAULT_CHUNK_SIZE: 250, // Conservative default for unknown MTU
-	ATT_OVERHEAD: 3, // ATT protocol overhead bytes
+	// MTU bytes a chunk can't use: the ATT write header (3) and the C1 frame
+	// around the data (AA C1, index u16, CRC: 5). Same as the phone app.
+	CHUNK_OVERHEAD: 8,
 	CHUNK_DELAY_MS: 50,
 	EDIT_CHUNK_DELAY_MS: 12,
 	// Device silently drops the upload (transfer/confirm still ack with
@@ -2696,8 +2698,9 @@ class FileManager {
 		const mtu = this.connection.getMtuSize();
 
 		if (mtu !== null && typeof mtu === "number" && mtu > 0) {
-			// Calculate safe chunk size (MTU minus ATT overhead)
-			const safeSize = mtu - TRANSFER_CONFIG.ATT_OVERHEAD;
+			// A whole C1 frame fills one write (MTU - 3 bytes), like the app's.
+			// A bigger frame doesn't fit and gets lost.
+			const safeSize = mtu - TRANSFER_CONFIG.CHUNK_OVERHEAD;
 			// Cap at tested maximum
 			const chunkSize = Math.min(safeSize, TRANSFER_CONFIG.MAX_CHUNK_SIZE);
 			this.log(

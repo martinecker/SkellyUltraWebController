@@ -212,7 +212,9 @@ export const PADDING = {
 export const TRANSFER_CONFIG = {
 	MAX_CHUNK_SIZE: 500, // Maximum bytes per chunk (tested maximum)
 	DEFAULT_CHUNK_SIZE: 250, // Conservative default for unknown MTU
-	ATT_OVERHEAD: 3, // ATT protocol overhead bytes
+	// MTU bytes a chunk can't use: the ATT write header (3) and the C1 frame
+	// around the data (AA C1, index u16, CRC: 5). Same as the phone app.
+	CHUNK_OVERHEAD: 8,
 	CHUNK_DELAY_MS: 50,
 	EDIT_CHUNK_DELAY_MS: 12,
 	// Device silently drops the upload (transfer/confirm still ack with
