@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-17T15:22:54.869700
+ * Generated: 2026-11-17T16:00:43.500405
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -47,6 +47,7 @@ const DEVICE_TYPES = {
 	SKELLY: "skelly",
 	SKELLY_12FT: "skelly12ft",
 	LILY: "lily",
+	SANTA: "santa",
 };
 
 // Capabilities that depend on the firmware, keys of a profile's `capabilities`.
@@ -183,6 +184,59 @@ const DEVICE_PROFILES = {
 			[CAPABILITIES.LIGHT_SCENES]: 24,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 24,
 			[CAPABILITIES.JAW_DATA]: 24,
+		},
+	},
+	// From the phone app only, not tested on a device: its Santa movements
+	// (ActionUtil.SantaClausAction), light modes and single all-channels light
+	// (like Lily's), no eye icons. Also advertises as "Santa Claus".
+	[DEVICE_TYPES.SANTA]: {
+		defaultBleName: "Ultra Santa",
+		uiName: "Ultra Santa",
+		hasEyeImage: false,
+		movements: [
+			{
+				part: "all",
+				label: "All",
+				icon: "images/santa/movement_all.png",
+				bit: 255,
+			},
+			{
+				part: "eyes",
+				label: "Eyes",
+				icon: "images/santa/movement_eyes.png",
+				bit: 0x01,
+			},
+			{
+				part: "head",
+				label: "Head",
+				icon: "images/santa/movement_head.png",
+				bit: 0x02,
+			},
+			{
+				part: "torso",
+				label: "Torso",
+				icon: "images/santa/movement_torso.png",
+				bit: 0x04,
+			},
+			{
+				part: "arm",
+				label: "Arm",
+				icon: "images/santa/movement_arm.png",
+				bit: 0x08,
+			},
+		],
+		lights: [{ label: "Lantern", channel: "00" }],
+		lightModes: [
+			{ value: 1, label: "Static" },
+			{ value: 2, label: "Sparkle" },
+			{ value: 3, label: "Pulsing" },
+		],
+		// The app treats Santa as a scene model; no firmware version is known
+		// yet, so any version counts as capable
+		capabilities: {
+			[CAPABILITIES.LIGHT_SCENES]: 0,
+			[CAPABILITIES.SET_ALL_LIGHTS]: 0,
+			[CAPABILITIES.JAW_DATA]: 0,
 		},
 	},
 };
@@ -6557,6 +6611,9 @@ class SkellyApp {
 				if (selectedOption === "skelly_old") {
 					deviceType = DEVICE_TYPES.SKELLY;
 					nameFilter = "Animated Skelly";
+				} else if (selectedOption === "santa_claus") {
+					deviceType = DEVICE_TYPES.SANTA;
+					nameFilter = "Santa Claus";
 				} else {
 					deviceType = selectedOption;
 					nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
@@ -8052,6 +8109,10 @@ class SkellyApp {
 		// Legacy "Animated Skelly" firmware maps to Skelly
 		if (lower.includes("animated skelly")) {
 			return DEVICE_TYPES.SKELLY;
+		}
+		// The Ultra Santa's other name in the phone app
+		if (lower.includes("santa claus")) {
+			return DEVICE_TYPES.SANTA;
 		}
 		return null;
 	}

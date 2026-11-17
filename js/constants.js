@@ -15,6 +15,7 @@ export const DEVICE_TYPES = {
 	SKELLY: "skelly",
 	SKELLY_12FT: "skelly12ft",
 	LILY: "lily",
+	SANTA: "santa",
 };
 
 // Capabilities that depend on the firmware, keys of a profile's `capabilities`.
@@ -151,6 +152,56 @@ export const DEVICE_PROFILES = {
 			[CAPABILITIES.LIGHT_SCENES]: 24,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 24,
 			[CAPABILITIES.JAW_DATA]: 24,
+		},
+	},
+	[DEVICE_TYPES.SANTA]: {
+		defaultBleName: "Ultra Santa",
+		uiName: "Ultra Santa",
+		hasEyeImage: false,
+		movements: [
+			{
+				part: "all",
+				label: "All",
+				icon: "images/santa/movement_all.png",
+				bit: 255,
+			},
+			{
+				part: "eyes",
+				label: "Eyes",
+				icon: "images/santa/movement_eyes.png",
+				bit: 0x01,
+			},
+			{
+				part: "head",
+				label: "Head",
+				icon: "images/santa/movement_head.png",
+				bit: 0x02,
+			},
+			{
+				part: "torso",
+				label: "Torso",
+				icon: "images/santa/movement_torso.png",
+				bit: 0x04,
+			},
+			{
+				part: "arm",
+				label: "Arm",
+				icon: "images/santa/movement_arm.png",
+				bit: 0x08,
+			},
+		],
+		lights: [{ label: "Lantern", channel: "00" }],
+		lightModes: [
+			{ value: 1, label: "Static" },
+			{ value: 2, label: "Sparkle" },
+			{ value: 3, label: "Pulsing" },
+		],
+		// The app treats Santa as a scene model; no firmware version is known
+		// yet, so any version counts as capable
+		capabilities: {
+			[CAPABILITIES.LIGHT_SCENES]: 0,
+			[CAPABILITIES.SET_ALL_LIGHTS]: 0,
+			[CAPABILITIES.JAW_DATA]: 0,
 		},
 	},
 };

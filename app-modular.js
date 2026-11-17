@@ -690,6 +690,9 @@ class SkellyApp {
 				if (selectedOption === "skelly_old") {
 					deviceType = DEVICE_TYPES.SKELLY;
 					nameFilter = "Animated Skelly";
+				} else if (selectedOption === "santa_claus") {
+					deviceType = DEVICE_TYPES.SANTA;
+					nameFilter = "Santa Claus";
 				} else {
 					deviceType = selectedOption;
 					nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
@@ -2185,6 +2188,10 @@ class SkellyApp {
 		// Legacy "Animated Skelly" firmware maps to Skelly
 		if (lower.includes("animated skelly")) {
 			return DEVICE_TYPES.SKELLY;
+		}
+		// The Ultra Santa's other name in the phone app
+		if (lower.includes("santa claus")) {
+			return DEVICE_TYPES.SANTA;
 		}
 		return null;
 	}
