@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-17T17:06:57.267860
+ * Generated: 2026-11-17T20:08:47.143134
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -898,6 +898,74 @@ function sendSetLightRgb(
 			),
 			8,
 		),
+	);
+}
+
+// F1 always carries this many light channels
+const ALL_LIGHT_CHANNELS = 6;
+
+function byteHex(value, what) {
+	if (!Number.isInteger(value) || value < 0 || value > 255) {
+		throw new RangeError(`${what} must be 0-255, got ${value}`);
+	}
+	return value.toString(16).padStart(2, "0").toUpperCase();
+}
+
+/**
+ * Build F1: every light channel and the light scene in one command.
+ *
+ * Not sent anywhere yet. Only for firmware with the setAllLights
+ * capability (see hasCapability): older firmware (the v66 Ultra) doesn't
+ * know F1.
+ *
+ * @param {Array<Object>} lights - Channels from 0 on (1-6), each
+ *   {effectMode, brightness, r, g, b, colorCycle, effectSpeed} in device
+ *   units. F1 always carries 6; the missing ones repeat the given channels
+ *   in turn, as the phone app fills them.
+ * @param {number} [cluster] - 0 for the live lights, else that file's.
+ *   Unlike F2-F6 there is no file name; the app sends audio mode 0 with
+ *   cluster 0 and 1 with a file's cluster, and so does this.
+ * @param {number} [scene] - LIGHT_SCENES value
+ * @returns {Uint8Array} The command frame
+ */
+function buildSetAllLightsCommand(
+	lights,
+	cluster = 0,
+	scene = LIGHT_SCENES.CUSTOM,
+) {
+	if (!Array.isArray(lights) || lights.length < 1) {
+		throw new RangeError("F1 needs at least one light channel");
+	}
+	if (lights.length > ALL_LIGHT_CHANNELS) {
+		throw new RangeError(
+			`F1 takes at most ${ALL_LIGHT_CHANNELS} light channels, got ${lights.length}`,
+		);
+	}
+	if (!Number.isInteger(cluster) || cluster < 0 || cluster > 0xffffffff) {
+		throw new RangeError(`Cluster must be 0-${0xffffffff}, got ${cluster}`);
+	}
+	let channelsHex = "";
+	for (let channel = 0; channel < ALL_LIGHT_CHANNELS; channel++) {
+		const light = lights[channel % lights.length];
+		if (![1, 2, 3].includes(light.effectMode)) {
+			throw new RangeError(`Light mode must be 1-3, got ${light.effectMode}`);
+		}
+		channelsHex +=
+			byteHex(light.effectMode, "Light mode") +
+			byteHex(light.brightness, "Brightness") +
+			byteHex(light.r, "Red") +
+			byteHex(light.g, "Green") +
+			byteHex(light.b, "Blue") +
+			byteHex(light.colorCycle ? 1 : 0, "Color cycle") +
+			byteHex(light.effectSpeed, "Speed");
+	}
+	return buildCommand(
+		COMMANDS.SET_ALL_LIGHTS,
+		intToHex(cluster, 4) +
+			(cluster === 0 ? "00" : "01") + // audio mode: live / file
+			byteHex(scene, "Scene") +
+			channelsHex,
+		8,
 	);
 }
 
