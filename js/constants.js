@@ -267,6 +267,7 @@ export const PADDING = {
 
 // File Transfer Configuration
 export const TRANSFER_CONFIG = {
+	MIN_CHUNK_SIZE: 15, // What fits the smallest BLE MTU (23 - CHUNK_OVERHEAD)
 	MAX_CHUNK_SIZE: 500, // Maximum bytes per chunk (tested maximum)
 	DEFAULT_CHUNK_SIZE: 250, // Conservative default for unknown MTU
 	// MTU bytes a chunk can't use: the ATT write header (3) and the C1 frame
@@ -277,6 +278,18 @@ export const TRANSFER_CONFIG = {
 	CHUNK_DELAY_MS: 100,
 	MIN_CHUNK_DELAY_MS: 10,
 	MAX_CHUNK_DELAY_MS: 1000,
+	// Lost chunks, handled like the phone app: after a loss report (BBC1
+	// lost = 1) stop, wait LOSS_WAIT_MS then RESUME_WAIT_MS (a new report
+	// starts the wait over), and resend from the reported chunk. A failed
+	// BBC2 is handled the same way, followed by C2 again. Too many of either:
+	// the attempt fails and the upload starts over with half-size chunks, up
+	// to MAX_ATTEMPTS attempts in all.
+	LOSS_WAIT_MS: 1000,
+	RESUME_WAIT_MS: 2000,
+	REPEAT_WINDOW_MS: 1000, // repeats of a report within this count once
+	MAX_LOSSES: 10, // the app gives up after 10 loss reports
+	MAX_FAILED_ENDS: 3, // failed BBC2s before the attempt counts as failed
+	MAX_ATTEMPTS: 3,
 	// Device silently drops the upload (transfer/confirm still ack with
 	// failed=0, but the file never appears in the file list) if the filename
 	// exceeds this — confirmed empirically: 33 chars works, 34 chars fails.

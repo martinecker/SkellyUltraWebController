@@ -406,17 +406,13 @@ export class ProtocolParser {
 	parseChunkDropped(hex) {
 		const dropped = parseInt(hex.slice(4, 6), 16);
 		const index = parseInt(hex.slice(6, 10), 16);
-		this.log(`Chunk Dropped: ${dropped} @${index}`);
-
-		// Resend chunk if we have it stored
-		if (this.state.transfer.inProgress) {
-			const payload = this.state.getChunk(index);
-			if (payload) {
-				this.log(`Resending chunk ${index}`, LOG_CLASSES.WARNING);
-				// The BLE manager will handle the resend via the stored chunk
-				this.state.setResumePoint(index);
-			}
-		}
+		// lost = 0 is a status without a loss; the upload (FileManager)
+		// handles lost = 1
+		this.log(
+			dropped === 0
+				? `Chunk status: no loss (@${index})`
+				: `Chunk lost: device wants chunks from ${index} again`,
+		);
 	}
 
 	/**

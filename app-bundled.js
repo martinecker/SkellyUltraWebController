@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-17T16:18:13.993867
+ * Generated: 2026-11-17T17:06:57.267860
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -191,7 +191,6 @@ const DEVICE_PROFILES = {
 		},
 	},
 	[DEVICE_TYPES.SANTA]: {
-		// The phone app knows both names for the same product
 		bleNames: ["Ultra Santa", "Santa Claus"],
 		uiName: "Ultra Santa",
 		hasEyeImage: false,
@@ -300,6 +299,7 @@ const PADDING = {
 
 // File Transfer Configuration
 const TRANSFER_CONFIG = {
+	MIN_CHUNK_SIZE: 15, // What fits the smallest BLE MTU (23 - CHUNK_OVERHEAD)
 	MAX_CHUNK_SIZE: 500, // Maximum bytes per chunk (tested maximum)
 	DEFAULT_CHUNK_SIZE: 250, // Conservative default for unknown MTU
 	// MTU bytes a chunk can't use: the ATT write header (3) and the C1 frame
@@ -310,6 +310,18 @@ const TRANSFER_CONFIG = {
 	CHUNK_DELAY_MS: 100,
 	MIN_CHUNK_DELAY_MS: 10,
 	MAX_CHUNK_DELAY_MS: 1000,
+	// Lost chunks, handled like the phone app: after a loss report (BBC1
+	// lost = 1) stop, wait LOSS_WAIT_MS then RESUME_WAIT_MS (a new report
+	// starts the wait over), and resend from the reported chunk. A failed
+	// BBC2 is handled the same way, followed by C2 again. Too many of either:
+	// the attempt fails and the upload starts over with half-size chunks, up
+	// to MAX_ATTEMPTS attempts in all.
+	LOSS_WAIT_MS: 1000,
+	RESUME_WAIT_MS: 2000,
+	REPEAT_WINDOW_MS: 1000, // repeats of a report within this count once
+	MAX_LOSSES: 10, // the app gives up after 10 loss reports
+	MAX_FAILED_ENDS: 3, // failed BBC2s before the attempt counts as failed
+	MAX_ATTEMPTS: 3,
 	// Device silently drops the upload (transfer/confirm still ack with
 	// failed=0, but the file never appears in the file list) if the filename
 	// exceeds this — confirmed empirically: 33 chars works, 34 chars fails.
@@ -1050,8 +1062,6 @@ class StateManager {
 		this.transfer = {
 			inProgress: false,
 			cancel: false,
-			resumeFrom: null,
-			chunks: new Map(), // index -> payload hex
 			currentFile: null,
 		};
 
@@ -1229,8 +1239,6 @@ class StateManager {
 	startTransfer(fileName) {
 		this.transfer.inProgress = true;
 		this.transfer.cancel = false;
-		this.transfer.resumeFrom = null;
-		this.transfer.chunks.clear();
 		this.transfer.currentFile = fileName;
 		this.notify("transfer");
 	}
@@ -1250,35 +1258,7 @@ class StateManager {
 		this.transfer.inProgress = false;
 		this.transfer.cancel = false;
 		this.transfer.currentFile = null;
-		this.transfer.chunks.clear();
 		this.notify("transfer");
-	}
-
-	/**
-	 * Set resume point for transfer
-	 * @param {number} index - Chunk index to resume from
-	 */
-	setResumePoint(index) {
-		this.transfer.resumeFrom = index;
-		this.notify("transfer");
-	}
-
-	/**
-	 * Store a chunk for potential resend
-	 * @param {number} index - Chunk index
-	 * @param {string} payload - Chunk payload hex
-	 */
-	storeChunk(index, payload) {
-		this.transfer.chunks.set(index, payload);
-	}
-
-	/**
-	 * Get stored chunk
-	 * @param {number} index - Chunk index
-	 * @returns {string|undefined} - Chunk payload hex or undefined
-	 */
-	getChunk(index) {
-		return this.transfer.chunks.get(index);
 	}
 
 	// === Edit Modal State Methods ===
@@ -1326,10 +1306,7 @@ class StateManager {
 				...this.files,
 				items: new Map(this.files.items),
 			},
-			transfer: {
-				...this.transfer,
-				chunks: new Map(this.transfer.chunks),
-			},
+			transfer: { ...this.transfer },
 			editModal: { ...this.editModal },
 		};
 	}
@@ -2643,6 +2620,79 @@ class ConnectionManager {
  */
 
 /**
+ * The device's replies to chunks (BBC1) and to C2 (BBC2) during one upload
+ * attempt, in arrival order
+ */
+class TransferReports {
+	constructor(connection) {
+		this.chunkReports = []; // { lost, index }
+		this.ends = []; // failed byte of each BBC2
+		this.stop = connection.onNotification((hex) => {
+			if (hex.startsWith(RESPONSES.CHUNK_DROPPED)) {
+				this.chunkReports.push({
+					lost: parseInt(hex.slice(4, 6), 16),
+					index: parseInt(hex.slice(6, 10), 16),
+				});
+			} else if (hex.startsWith(RESPONSES.TRANSFER_END)) {
+				this.ends.push(parseInt(hex.slice(4, 6), 16));
+			}
+		});
+	}
+
+	takeChunkReports() {
+		return this.chunkReports.splice(0);
+	}
+
+	hasFailedEnd() {
+		return this.ends.some((failed) => failed !== 0);
+	}
+
+	/** The first failed BBC2, removed; null if there is none */
+	takeFailedEnd() {
+		const at = this.ends.findIndex((failed) => failed !== 0);
+		return at < 0 ? null : this.ends.splice(at, 1)[0];
+	}
+
+	/** The first BBC2, removed; null if there is none */
+	takeEnd() {
+		return this.ends.length > 0 ? this.ends.shift() : null;
+	}
+}
+
+/** The device's loss reports (BBC1 lost = 1) during one upload attempt */
+class LossTracker {
+	constructor() {
+		this.count = 0; // loss reports, repeats not counted
+		this.pending = null; // resend from here, not yet done
+		this.lastIndex = null; // index of the latest report
+		this.lastTime = 0;
+	}
+
+	/**
+	 * Take one BBC1. lost = 0 means no loss (the app ignores it too). A
+	 * repeat of the latest report within REPEAT_WINDOW_MS counts once, like
+	 * in the app.
+	 * @returns {boolean} whether it is a new loss report
+	 */
+	note(lost, index, now) {
+		if (lost === 0) {
+			return false;
+		}
+		if (
+			index === this.lastIndex &&
+			now - this.lastTime < TRANSFER_CONFIG.REPEAT_WINDOW_MS
+		) {
+			return false;
+		}
+		this.count += 1;
+		this.pending = index;
+		this.lastIndex = index;
+		this.lastTime = now;
+		return true;
+	}
+}
+
+/**
  * File Transfer and Management
  */
 class FileManager {
@@ -2879,151 +2929,39 @@ class FileManager {
 
 		this.state.startTransfer(fileName);
 
-		// The device can end the transfer as failed (BBC2) while chunks are
-		// still being sent. Watch for it from the first chunk on, so the
-		// upload stops at once instead of waiting for a BBC2 that won't come.
-		let earlyC2Response = null;
-		const stopWatchingC2 = this.connection.onNotification((hex) => {
-			if (
-				earlyC2Response === null &&
-				this.state.transfer.inProgress &&
-				hex.startsWith(RESPONSES.TRANSFER_END)
-			) {
-				earlyC2Response = hex;
-			}
-		});
-
 		try {
-			// === Phase 1: Start Transfer (C0) ===
 			const size = fileBytes.length;
-			const chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
+			let chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
 			const chunkDelay = this.getChunkDelay(chunkDelayOverride);
-			const maxPackets = Math.ceil(size / chunkSize);
-			const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
 
 			// Like the phone app: refuse a file the device has no room for.
 			// Overwrites are checked too.
 			await this.checkFreeSpace(size);
 
-			const c0Payload =
-				intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
-			const c0Response = await this.sendAndWait(
-				buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
-				RESPONSES.TRANSFER_START,
-				TIMEOUTS.ACK_LONG,
-			);
-			if (!c0Response) {
-				throw new Error("Timeout waiting for transfer start acknowledgment");
-			}
-
-			const c0Failed = parseInt(c0Response.slice(4, 6), 16);
-			const c0Written = parseInt(c0Response.slice(6, 14), 16) || 0;
-
-			if (c0Failed !== 0) {
-				throw new Error("Device rejected transfer start");
-			}
-
-			// Only a BBC2 from this transfer counts
-			earlyC2Response = null;
-
-			// Resume from last written position if applicable
-			const startIndex = Math.floor(c0Written / chunkSize);
-			if (startIndex > 0) {
-				this.log(
-					`Resuming at chunk ${startIndex} (written=${c0Written})`,
-					LOG_CLASSES.WARNING,
-				);
-			}
-
-			// === Phase 2: Send Data Chunks (C1) ===
-			for (let index = startIndex; index < maxPackets; index++) {
-				if (!this.connection.isConnected()) {
-					throw new Error("Disconnected during transfer");
-				}
-
-				if (this.state.transfer.cancel) {
-					throw new Error("Transfer cancelled");
-				}
-
-				if (
-					earlyC2Response !== null &&
-					parseInt(earlyC2Response.slice(4, 6), 16) !== 0
-				) {
-					this.log(
-						`Device ended the transfer at chunk ${index} of ${maxPackets}`,
-						LOG_CLASSES.WARNING,
-					);
+			// === Phases 1-3: Start (C0), Data Chunks (C1), End (C2) ===
+			// If the device keeps losing chunks, start over with smaller ones
+			for (let attempt = 1; ; attempt++) {
+				if (await this.sendOnce(fileBytes, fileName, chunkSize, chunkDelay)) {
 					break;
 				}
-
-				// Handle resume request from device
-				if (this.state.transfer.resumeFrom !== null) {
-					index = this.state.transfer.resumeFrom;
-					this.state.setResumePoint(null);
-				}
-
-				const offset = index * chunkSize;
-				const dataHex = chunkToHex(fileBytes, offset, chunkSize);
-				const payload = intToHex(index, 2) + dataHex;
-
-				// Store chunk for potential resend
-				this.state.storeChunk(index, payload);
-
-				await this.connection.send(
-					buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
-				);
-
-				// Update progress
-				if (this.onProgress) {
-					this.onProgress(index + 1, maxPackets);
-				}
-
-				await sleep(chunkDelay);
-			}
-
-			// === Phase 3: End Transfer (C2) ===
-			// Unless the device already ended it while chunks were being sent
-			const c2Response =
-				earlyC2Response ??
-				(await this.sendAndWait(
-					buildCommand(COMMANDS.END_TRANSFER, "", 8),
-					RESPONSES.TRANSFER_END,
-					TIMEOUTS.FILE_TRANSFER,
-				));
-
-			if (!c2Response) {
-				throw new Error("Timeout waiting for transfer end acknowledgment");
-			}
-
-			const c2Failed = parseInt(c2Response.slice(4, 6), 16);
-			if (c2Failed !== 0) {
-				// Device may request resume
-				const lastIndex =
-					c2Response.length >= 10 ? parseInt(c2Response.slice(6, 10), 16) : 0;
-				this.state.setResumePoint(lastIndex);
-
-				// Resend tail chunks
-				let tailIndex = Math.min(
-					maxPackets,
-					Math.max(0, this.state.transfer.resumeFrom),
-				);
-				while (tailIndex < maxPackets) {
-					if (this.state.transfer.cancel) {
-						throw new Error("Transfer cancelled");
-					}
-
-					// Chunks after an early end were never sent, so build them
-					const payload =
-						this.state.getChunk(tailIndex) ??
-						intToHex(tailIndex, 2) +
-							chunkToHex(fileBytes, tailIndex * chunkSize, chunkSize);
-
-					await this.connection.send(
-						buildCommand(COMMANDS.CHUNK_DATA, payload, 0),
+				if (attempt >= TRANSFER_CONFIG.MAX_ATTEMPTS) {
+					// Leave nothing open on the device
+					await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+					throw new Error(
+						`Transfer failed after ${attempt} attempts with smaller chunks`,
 					);
-					tailIndex += 1;
-					await sleep(chunkDelay);
 				}
+				chunkSize = Math.max(
+					TRANSFER_CONFIG.MIN_CHUNK_SIZE,
+					Math.floor(chunkSize / 2),
+				);
+				this.log(
+					`Transfer failed, starting over with ${chunkSize}-byte chunks (retry ${attempt}/${TRANSFER_CONFIG.MAX_ATTEMPTS - 1})`,
+					LOG_CLASSES.WARNING,
+				);
+				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+				await sleep(1000); // Give the device time to reset
+				this.checkTransferGoing();
 			}
 
 			// === Phase 4: Confirm Transfer (C3) ===
@@ -3078,8 +3016,223 @@ class FileManager {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
 			throw error;
 		} finally {
-			stopWatchingC2();
 			this.state.endTransfer();
+		}
+	}
+
+	/**
+	 * One upload attempt: C0, the chunks (C1) and C2, resending lost chunks
+	 * like the phone app (see TRANSFER_CONFIG.LOSS_WAIT_MS).
+	 * @returns {Promise<boolean>} true once BBC2 says ok; false if the device
+	 *   kept losing chunks, so the caller starts over with smaller ones
+	 */
+	async sendOnce(fileBytes, fileName, chunkSize, chunkDelay) {
+		const size = fileBytes.length;
+		const maxPackets = Math.ceil(size / chunkSize);
+		const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
+		const c0Payload =
+			intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
+		const c0Response = await this.sendAndWait(
+			buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
+			RESPONSES.TRANSFER_START,
+			TIMEOUTS.ACK_LONG,
+		);
+		if (!c0Response) {
+			throw new Error("Timeout waiting for transfer start acknowledgment");
+		}
+		if (parseInt(c0Response.slice(4, 6), 16) !== 0) {
+			throw new Error("Device rejected transfer start");
+		}
+
+		// Only replies from this attempt count
+		const reports = new TransferReports(this.connection);
+		try {
+			// Resume from last written position if applicable
+			const c0Written = parseInt(c0Response.slice(6, 14), 16) || 0;
+			let index = Math.floor(c0Written / chunkSize);
+			if (index > 0) {
+				this.log(
+					`Resuming at chunk ${index} (written=${c0Written})`,
+					LOG_CLASSES.WARNING,
+				);
+			}
+
+			const losses = new LossTracker();
+			let failedEnds = 0;
+			for (;;) {
+				const sent = await this.sendChunks(
+					reports,
+					losses,
+					fileBytes,
+					index,
+					chunkSize,
+					chunkDelay,
+				);
+				if (!sent) {
+					return false;
+				}
+
+				// Unless the device already ended it while chunks were being sent
+				let failed = reports.takeFailedEnd();
+				if (failed === null) {
+					await this.connection.send(
+						buildCommand(COMMANDS.END_TRANSFER, "", 8),
+					);
+					failed = await this.waitForEnd(reports);
+				}
+				if (failed === 0) {
+					return true;
+				}
+
+				// Like the app: resend from the last lost chunk. Without a loss
+				// report nobody knows what is missing, so all of it.
+				failedEnds += 1;
+				this.noteChunkReports(reports, losses);
+				index = losses.lastIndex ?? 0;
+				this.log(
+					`Device reported the transfer failed (${failedEnds}/${TRANSFER_CONFIG.MAX_FAILED_ENDS}); resending from chunk ${index}`,
+					LOG_CLASSES.WARNING,
+				);
+				if (failedEnds >= TRANSFER_CONFIG.MAX_FAILED_ENDS) {
+					return false;
+				}
+				losses.pending = index;
+				index = await this.waitOutLosses(reports, losses);
+				if (index === null) {
+					return false;
+				}
+				// A BBC2 still buffered now answers an earlier C2 (e.g. one that
+				// crossed an early failed BBC2); don't take it for this round's
+				reports.ends.length = 0;
+			}
+		} finally {
+			reports.stop();
+		}
+	}
+
+	/**
+	 * Send chunks from index on, going back after a loss report. Stops early
+	 * when the device ends the transfer as failed (left for the caller).
+	 * @returns {Promise<boolean>} false after more than MAX_LOSSES losses
+	 */
+	async sendChunks(reports, losses, fileBytes, index, chunkSize, chunkDelay) {
+		const maxPackets = Math.ceil(fileBytes.length / chunkSize);
+		for (;;) {
+			this.checkTransferGoing();
+
+			if (reports.hasFailedEnd()) {
+				this.log(
+					`Device ended the transfer at chunk ${index} of ${maxPackets}`,
+					LOG_CLASSES.WARNING,
+				);
+				return true;
+			}
+
+			this.noteChunkReports(reports, losses);
+			if (losses.pending !== null) {
+				const resume = await this.waitOutLosses(reports, losses);
+				if (resume === null) {
+					return false;
+				}
+				index = resume;
+				continue;
+			}
+
+			if (index >= maxPackets) {
+				return true;
+			}
+
+			const dataHex = chunkToHex(fileBytes, index * chunkSize, chunkSize);
+			await this.connection.send(
+				buildCommand(COMMANDS.CHUNK_DATA, intToHex(index, 2) + dataHex, 0),
+			);
+			index += 1;
+
+			if (this.onProgress) {
+				this.onProgress(index, maxPackets);
+			}
+
+			await sleep(chunkDelay);
+		}
+	}
+
+	/**
+	 * Note the BBC1s received so far
+	 * @returns {boolean} whether one was a new loss report
+	 */
+	noteChunkReports(reports, losses) {
+		let found = false;
+		for (const { lost, index } of reports.takeChunkReports()) {
+			if (losses.note(lost, index, Date.now())) {
+				found = true;
+				this.log(
+					`Device lost chunk ${index} (loss ${losses.count}/${TRANSFER_CONFIG.MAX_LOSSES})`,
+					LOG_CLASSES.WARNING,
+				);
+			}
+		}
+		return found;
+	}
+
+	/**
+	 * Pause after a loss like the app: LOSS_WAIT_MS + RESUME_WAIT_MS after
+	 * the latest new loss report
+	 * @returns {Promise<number|null>} the chunk to resend from; null after
+	 *   more than MAX_LOSSES loss reports
+	 */
+	async waitOutLosses(reports, losses) {
+		const pause = TRANSFER_CONFIG.LOSS_WAIT_MS + TRANSFER_CONFIG.RESUME_WAIT_MS;
+		let resumeAt = Date.now() + pause;
+		for (;;) {
+			if (losses.count > TRANSFER_CONFIG.MAX_LOSSES) {
+				this.log(
+					`Device lost ${losses.count} chunks; giving up`,
+					LOG_CLASSES.WARNING,
+				);
+				return null;
+			}
+			this.checkTransferGoing();
+			const remaining = resumeAt - Date.now();
+			if (remaining <= 0) {
+				break;
+			}
+			await sleep(Math.min(100, remaining));
+			if (this.noteChunkReports(reports, losses)) {
+				resumeAt = Date.now() + pause;
+			}
+		}
+		const index = losses.pending ?? 0;
+		losses.pending = null;
+		this.log(`Resending from chunk ${index}`, LOG_CLASSES.WARNING);
+		return index;
+	}
+
+	/**
+	 * Wait for the BBC2 that answers C2
+	 * @returns {Promise<number>} its failed byte
+	 */
+	async waitForEnd(reports) {
+		const deadline = Date.now() + TIMEOUTS.FILE_TRANSFER;
+		for (;;) {
+			const failed = reports.takeEnd();
+			if (failed !== null) {
+				return failed;
+			}
+			this.checkTransferGoing();
+			if (Date.now() >= deadline) {
+				throw new Error("Timeout waiting for transfer end acknowledgment");
+			}
+			await sleep(50);
+		}
+	}
+
+	/** Throw if the upload was cancelled or the connection is gone */
+	checkTransferGoing() {
+		if (!this.connection.isConnected()) {
+			throw new Error("Disconnected during transfer");
+		}
+		if (this.state.transfer.cancel) {
+			throw new Error("Transfer cancelled");
 		}
 	}
 
@@ -4071,17 +4224,13 @@ class ProtocolParser {
 	parseChunkDropped(hex) {
 		const dropped = parseInt(hex.slice(4, 6), 16);
 		const index = parseInt(hex.slice(6, 10), 16);
-		this.log(`Chunk Dropped: ${dropped} @${index}`);
-
-		// Resend chunk if we have it stored
-		if (this.state.transfer.inProgress) {
-			const payload = this.state.getChunk(index);
-			if (payload) {
-				this.log(`Resending chunk ${index}`, LOG_CLASSES.WARNING);
-				// The BLE manager will handle the resend via the stored chunk
-				this.state.setResumePoint(index);
-			}
-		}
+		// lost = 0 is a status without a loss; the upload (FileManager)
+		// handles lost = 1
+		this.log(
+			dropped === 0
+				? `Chunk status: no loss (@${index})`
+				: `Chunk lost: device wants chunks from ${index} again`,
+		);
 	}
 
 	/**

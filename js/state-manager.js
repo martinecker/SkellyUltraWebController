@@ -51,8 +51,6 @@ export class StateManager {
 		this.transfer = {
 			inProgress: false,
 			cancel: false,
-			resumeFrom: null,
-			chunks: new Map(), // index -> payload hex
 			currentFile: null,
 		};
 
@@ -230,8 +228,6 @@ export class StateManager {
 	startTransfer(fileName) {
 		this.transfer.inProgress = true;
 		this.transfer.cancel = false;
-		this.transfer.resumeFrom = null;
-		this.transfer.chunks.clear();
 		this.transfer.currentFile = fileName;
 		this.notify("transfer");
 	}
@@ -251,35 +247,7 @@ export class StateManager {
 		this.transfer.inProgress = false;
 		this.transfer.cancel = false;
 		this.transfer.currentFile = null;
-		this.transfer.chunks.clear();
 		this.notify("transfer");
-	}
-
-	/**
-	 * Set resume point for transfer
-	 * @param {number} index - Chunk index to resume from
-	 */
-	setResumePoint(index) {
-		this.transfer.resumeFrom = index;
-		this.notify("transfer");
-	}
-
-	/**
-	 * Store a chunk for potential resend
-	 * @param {number} index - Chunk index
-	 * @param {string} payload - Chunk payload hex
-	 */
-	storeChunk(index, payload) {
-		this.transfer.chunks.set(index, payload);
-	}
-
-	/**
-	 * Get stored chunk
-	 * @param {number} index - Chunk index
-	 * @returns {string|undefined} - Chunk payload hex or undefined
-	 */
-	getChunk(index) {
-		return this.transfer.chunks.get(index);
 	}
 
 	// === Edit Modal State Methods ===
@@ -327,10 +295,7 @@ export class StateManager {
 				...this.files,
 				items: new Map(this.files.items),
 			},
-			transfer: {
-				...this.transfer,
-				chunks: new Map(this.transfer.chunks),
-			},
+			transfer: { ...this.transfer },
 			editModal: { ...this.editModal },
 		};
 	}
