@@ -180,6 +180,38 @@ export class FileManager {
 	}
 
 	/**
+	 * Throw if the device has no room for a file of this size, like the app
+	 * (D2 before C0). If the device doesn't answer, the upload goes ahead.
+	 * @param {number} size - File size in bytes
+	 * @returns {Promise<void>}
+	 */
+	async checkFreeSpace(size) {
+		let reply;
+		try {
+			reply = await this.sendAndWait(
+				buildCommand(COMMANDS.QUERY_CAPACITY, "", 8),
+				RESPONSES.CAPACITY,
+				TIMEOUTS.ACK,
+			);
+		} catch (error) {
+			this.log(
+				`Couldn't read the free space, uploading anyway: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			return;
+		}
+		const freeKB = parseInt(reply.slice(4, 12), 16);
+		// The app divides by 1000. If the device's KB are 1024 bytes, that
+		// overestimates a little, which is safe.
+		const neededKB = Math.ceil(size / 1000);
+		if (neededKB >= freeKB) {
+			throw new Error(
+				`Not enough space on the device: the file needs ${neededKB} KB, ${freeKB} KB are free. Delete files to make room.`,
+			);
+		}
+	}
+
+	/**
 	 * Pause between chunks: the override if it's in range, else 100 ms
 	 * @param {number|null} override - Optional override from the user (ms)
 	 * @returns {number} Pause in ms
@@ -248,6 +280,10 @@ export class FileManager {
 			const chunkDelay = this.getChunkDelay(chunkDelayOverride);
 			const maxPackets = Math.ceil(size / chunkSize);
 			const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
+
+			// Like the phone app: refuse a file the device has no room for.
+			// Overwrites are checked too.
+			await this.checkFreeSpace(size);
 
 			const c0Payload =
 				intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
