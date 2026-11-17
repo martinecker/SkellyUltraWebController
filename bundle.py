@@ -5,6 +5,7 @@ Combines all ES6 modules into a single file that works with file:// protocol
 """
 
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -35,12 +36,18 @@ def strip_module_syntax(code, is_first_module=False):
     
     return code.strip()
 
+def normalize_bundle(text):
+    """Normalize a bundle for comparison: LF line endings, no timestamp line"""
+    text = text.replace('\r\n', '\n')
+    return re.sub(r'^ \* Generated: .*$', ' * Generated: <timestamp>', text, flags=re.MULTILINE)
+
 def read_file(filepath):
     """Read a file and return its contents"""
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
 def main():
+    check_only = '--check' in sys.argv[1:]
     print('🔧 Bundling ES6 modules...')
     
     # Define module files in dependency order
@@ -110,8 +117,22 @@ def main():
 }})();
 '''
     
-    # Write the bundled file
     output_file = 'app-bundled.js'
+
+    # --check: compare with the committed bundle instead of writing it.
+    # The Generated timestamp and line endings are ignored.
+    if check_only:
+        try:
+            existing = read_file(output_file)
+        except FileNotFoundError:
+            existing = ''
+        if normalize_bundle(existing) == normalize_bundle(bundle):
+            print(f'\n✅ {output_file} is up to date.')
+            return 0
+        print(f'\n❌ {output_file} is out of date. Rebuild it with: python3 bundle.py')
+        return 1
+
+    # Write the bundled file
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(bundle)
     
