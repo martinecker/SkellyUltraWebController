@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-16T20:54:50.380808
+ * Generated: 2026-11-16T21:40:32.311841
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -289,69 +289,83 @@ const MOVEMENT_BITS = {
 };
 
 // BLE Command Tags
+// Frames: AA <tag> <payload, padded to 8 bytes> <crc8>. Payload layouts, replies
+// and device quirks are in PROTOCOL.md in the Home Assistant integration repo:
+// https://github.com/martinecker/SkellyUltra/blob/main/PROTOCOL.md
 const COMMANDS = {
 	// File Transfer
-	START_TRANSFER: "AAC0", // Initialize file transfer
-	CHUNK_DATA: "AAC1", // Send data chunk
-	END_TRANSFER: "AAC2", // End file transfer
-	CONFIRM_TRANSFER: "AAC3", // Confirm file transfer
-	CANCEL: "AAC4", // Cancel transfer
-	RESUME: "AAC5", // Resume transfer
-	PLAY_PAUSE: "AAC6", // Play/pause file
-	DELETE: "AAC7", // Delete file
-	SET_ORDER: "AAC9", // Set file order
+	START_TRANSFER: "AAC0", // size u32, chunk count u16, bare name -> BBC0
+	CHUNK_DATA: "AAC1", // index u16, data (the app sends MTU - 8) -> BBC1
+	END_TRANSFER: "AAC2", // 00 -> BBC2
+	CONFIRM_TRANSFER: "AAC3", // bare name -> BBC3
+	CANCEL: "AAC4", // 00 -> BBC4
+	RESUME: "AAC5", // payload unknown; the app never sends it
+	PLAY_PAUSE: "AAC6", // serial u16, 01 play / 00 stop -> BBC6
+	DELETE: "AAC7", // serial u16, cluster u32 -> BBC7
+	FORMAT: "AAC8", // 00 -> BBC8; erases every file
+	SET_ORDER: "AAC9", // total, position (1-based), serial u16, name
 
-	// Device Queries
-	QUERY_PARAMS: "AAE0", // Query device parameters
-	QUERY_LIVE: "AAE1", // Query live status
-	QUERY_VOLUME: "AAE5", // Query volume
-	QUERY_BT_NAME: "AAE6", // Query Bluetooth name
-	QUERY_VERSION: "AAEE", // Query version
-	QUERY_FILES: "AAD0", // Query file list
-	QUERY_ORDER: "AAD1", // Query file order
-	QUERY_CAPACITY: "AAD2", // Query storage capacity
+	// Device Queries (payload 00)
+	QUERY_PARAMS: "AAE0", // -> BBE0
+	QUERY_LIVE: "AAE1", // -> BBE1
+	QUERY_VOLUME: "AAE5", // -> BBE5
+	QUERY_BT_NAME: "AAE6", // -> BBE6
+	QUERY_VERSION: "AAEE", // -> BBEE
+	QUERY_FILES: "AAD0", // -> one BBD0 per file
+	QUERY_ORDER: "AAD1", // -> BBD1
+	QUERY_CAPACITY: "AAD2", // -> BBD2
 
 	// Various Controls
-	SET_VOLUME: "AAFA", // Set volume (0-255)
-	SET_PIN_AND_NAME: "AAFB", // Set device PIN and Bluetooth name
-	MEDIA_PLAY: "AAFC", // Play media (payload: 01)
-	MEDIA_PAUSE: "AAFC", // Pause media (payload: 00)
-	ENABLE_CLASSIC_BT: "AAFD", // Enable classic Bluetooth audio, aka live mode (payload: 01)
+	SET_VOLUME: "AAFA", // volume (0-100)
+	SET_PIN_AND_NAME: "AAFB", // PIN 4 ASCII, password 8 ASCII, len, name ASCII
+	MEDIA_PLAY: "AAFC", // payload 01
+	MEDIA_PAUSE: "AAFC", // payload 00
+	ENABLE_CLASSIC_BT: "AAFD", // 01 -> BBFD; live mode audio link
+	SET_MUSIC_MODE: "AAFE", // 00 device music, 01 classic BT (app no longer sends it)
 
-	// Lighting
-	SET_MODE: "AAF2", // Set effect mode (1=static, 2=strobe, 3=pulsing)
-	SET_BRIGHTNESS: "AAF3", // Set brightness (0-255)
-	SET_RGB: "AAF4", // Set RGB color (with optional loop for color cycling)
-	SET_SPEED: "AAF6", // Set effect speed (for strobe/pulsing)
+	// Lighting: ch is 0-5 or FF (all); cluster 0 + empty name = live settings
+	SET_ALL_LIGHTS: "AAF1", // cluster u32, audioMode, scene, 6 x 7 light bytes
+	SET_MODE: "AAF2", // ch, mode (1 static, 2 strobe, 3 pulsing), cluster u32, name
+	SET_BRIGHTNESS: "AAF3", // ch, brightness (0-255), cluster u32, name
+	SET_RGB: "AAF4", // ch, R, G, B, color cycle, cluster u32, name
+	SELECT_RGB_CHANNEL: "AAF5", // ch (the channel the app's picker edits)
+	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest), cluster u32, name
 
-	// Appearance
-	SET_EYE: "AAF9", // Set eye icon
-	SET_MOVEMENT: "AACA", // Set movement animation
+	// Appearance: cluster 0 + empty name = live settings
+	SET_EYE: "AAF9", // icon (1-based), 00, cluster u32, name
+	SET_MOVEMENT: "AACA", // movement bits (per device), 00, cluster u32, name
+	SET_JAW_DATA: "AACD", // cluster u32, byte count, bitmap (1 bit per 60 ms)
+
+	// Wi-Fi (no known product has it)
+	SET_WIFI_POWER: "AACB", // on/off
+	QUERY_WIFI_MAC: "AACC", // 00 -> BBCC
 };
 
 // Response Prefixes
+// Frames: BB <tag> <payload> <crc8>. Byte layouts are in PROTOCOL.md (section 7).
 const RESPONSES = {
-	DEVICE_PARAMS: "BBE0", // Device parameters response
-	LIVE_STATUS: "BBE1", // Live status response
-	CAPACITY: "BBD2", // Capacity response
-	ORDER: "BBD1", // Play order response
-	FILE_INFO: "BBD0", // File info response
-	VOLUME: "BBE5", // Volume response
-	BT_NAME: "BBE6", // BT name response
-	VERSION: "BBEE", // Version response
-	ENABLE_CLASSIC_BT: "BBFD", // Enable classic BT response
+	DEVICE_PARAMS: "BBE0", // channels, PIN, Wi-Fi password, show mode, name
+	LIVE_STATUS: "BBE1", // movement, 6 lights, eye icon, scene (scene firmware)
+	CAPACITY: "BBD2", // free KB u32, file count, mode
+	ORDER: "BBD1", // count, serials u16 in play order
+	FILE_INFO: "BBD0", // one file: serial, cluster, total, settings, name
+	VOLUME: "BBE5", // volume
+	BT_NAME: "BBE6", // len, classic BT name ASCII
+	VERSION: "BBEE", // firmware version, e.g. 0x44 = v68
+	ENABLE_CLASSIC_BT: "BBFD", // classic BT on
 
-	TRANSFER_START: "BBC0", // Transfer start ACK
-	CHUNK_DROPPED: "BBC1", // Chunk dropped (resend request)
-	TRANSFER_END: "BBC2", // Transfer end ACK
-	CONFIRM_TRANSFER_ACK: "BBC3", // Confirm transfer ACK
-	CANCEL_ACK: "BBC4", // Cancel ACK
-	RESUME_ACK: "BBC5", // Resume ACK
-	PLAY_ACK: "BBC6", // Play/pause ACK
-	DELETE_ACK: "BBC7", // Delete ACK
-	FORMAT_ACK: "BBC8", // Format ACK
+	TRANSFER_START: "BBC0", // failed, written u32
+	CHUNK_DROPPED: "BBC1", // lost (0 = none, 1 = resend from index), index u16
+	TRANSFER_END: "BBC2", // failed, last chunk index u16
+	CONFIRM_TRANSFER_ACK: "BBC3", // failed
+	CANCEL_ACK: "BBC4", // failed
+	RESUME_ACK: "BBC5", // written u32 (the app never uses it)
+	PLAY_ACK: "BBC6", // serial u16, playing, duration u16 (s); also when a file ends
+	DELETE_ACK: "BBC7", // failed (0 = deleted)
+	FORMAT_ACK: "BBC8", // result (0 = done)
+	WIFI_MAC: "BBCC", // Wi-Fi MAC, 6 bytes
 
-	KEEPALIVE: "FEDC", // Keepalive packet
+	KEEPALIVE: "FEDC", // FE DC <payload> EF, sent by the device on its own
 };
 
 // Log CSS Classes
