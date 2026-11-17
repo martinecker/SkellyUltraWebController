@@ -600,8 +600,21 @@ class SkellyApp {
 		const savedDeviceType =
 			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
 
-		// Restore saved device type in dropdown
+		// One name filter option per profile BLE name: "<type>" for the
+		// default name, "<type>:<index>" for the others
 		if (connectDefaultDevice) {
+			connectDefaultDevice.replaceChildren(
+				...Object.entries(DEVICE_PROFILES).flatMap(([type, profile]) =>
+					profile.bleNames.map((name, index) => {
+						const option = document.createElement("option");
+						option.value = index === 0 ? type : `${type}:${index}`;
+						option.textContent =
+							name === profile.uiName ? name : `${name} (${profile.uiName})`;
+						return option;
+					}),
+				),
+			);
+			// Restore saved device type in dropdown
 			connectDefaultDevice.value = savedDeviceType;
 		}
 
@@ -686,17 +699,12 @@ class SkellyApp {
 				// Default name filter — device type comes directly from the dropdown
 				const selectedOption =
 					connectDefaultDevice?.value || DEVICE_TYPES.SKELLY;
-				// "skelly_old" is the legacy "Animated Skelly" BLE name; treat as skelly device type
-				if (selectedOption === "skelly_old") {
-					deviceType = DEVICE_TYPES.SKELLY;
-					nameFilter = "Animated Skelly";
-				} else if (selectedOption === "santa_claus") {
-					deviceType = DEVICE_TYPES.SANTA;
-					nameFilter = "Santa Claus";
-				} else {
-					deviceType = selectedOption;
-					nameFilter = DEVICE_PROFILES[deviceType]?.defaultBleName || "";
-				}
+				// "<type>" or "<type>:<index into the profile's bleNames>"
+				const [type, index = "0"] = selectedOption.split(":");
+				const profile =
+					DEVICE_PROFILES[type] ?? DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+				deviceType = DEVICE_PROFILES[type] ? type : DEVICE_TYPES.SKELLY;
+				nameFilter = profile.bleNames[Number(index)] ?? profile.bleNames[0];
 			}
 			// All devices: nameFilter stays '', deviceType stays last persisted
 
@@ -2171,7 +2179,7 @@ class SkellyApp {
 	}
 
 	/**
-	 * Detect device type from a BLE device name by matching against all profile defaultBleName values.
+	 * Detect device type from a BLE device name by matching against the profiles' bleNames.
 	 * Returns the matching DEVICE_TYPES key, or null if no profile matches.
 	 * @param {string} deviceName
 	 * @returns {string|null}
@@ -2179,19 +2187,11 @@ class SkellyApp {
 	detectDeviceTypeFromName(deviceName) {
 		if (!deviceName) return null;
 		const lower = deviceName.toLowerCase();
-		// Check all profiles for a name match (prefix or contains)
+		// The first profile with a name the device's name contains
 		for (const [type, profile] of Object.entries(DEVICE_PROFILES)) {
-			if (lower.includes(profile.defaultBleName.toLowerCase())) {
+			if (profile.bleNames.some((name) => lower.includes(name.toLowerCase()))) {
 				return type;
 			}
-		}
-		// Legacy "Animated Skelly" firmware maps to Skelly
-		if (lower.includes("animated skelly")) {
-			return DEVICE_TYPES.SKELLY;
-		}
-		// The Ultra Santa's other name in the phone app
-		if (lower.includes("santa claus")) {
-			return DEVICE_TYPES.SANTA;
 		}
 		return null;
 	}

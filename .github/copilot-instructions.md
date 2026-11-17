@@ -47,7 +47,7 @@ State keys: `device`, `live`, `files`, `transfer`, `editModal`, `deviceType`.
 
 All per-device differences are captured in `DEVICE_PROFILES` in `js/constants.js`, keyed by `DEVICE_TYPES` (`'skelly'` / `'lily'`). Each profile has:
 
-- `defaultBleName` — BLE advertisement name used as scan filter
+- `bleNames` — BLE advertisement names (first is the default), used for type detection and as scan filters
 - `movements` — ordered array of `{ part, label, icon, bit }` (bit is the BLE bitfield value; `part='all'` always first with `bit=255`)
 - `lightModes` — array of `{ value, label }` for effect mode selects
 - `lights` — array of `{ id, label, channel }` defining UI light zones (Lily has only `torso`)

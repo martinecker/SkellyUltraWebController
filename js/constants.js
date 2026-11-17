@@ -29,10 +29,14 @@ export const CAPABILITIES = {
 };
 
 // Device Profiles — per-device UI configuration
+// bleNames: the BLE names the device advertises, the first being the default.
+// A device whose name contains one of them is detected as that type, and each
+// is offered in the connect dialog's name filter.
 // Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
 export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
-		defaultBleName: "Ultra Skelly v2",
+		// "Animated Skelly" is the older (v66) firmware's name
+		bleNames: ["Ultra Skelly v2", "Animated Skelly"],
 		uiName: "Ultra Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 18,
@@ -81,7 +85,7 @@ export const DEVICE_PROFILES = {
 		},
 	},
 	[DEVICE_TYPES.SKELLY_12FT]: {
-		defaultBleName: "12ft Skelly",
+		bleNames: ["12ft Skelly"],
 		uiName: "12ft Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 20,
@@ -107,7 +111,7 @@ export const DEVICE_PROFILES = {
 		},
 	},
 	[DEVICE_TYPES.LILY]: {
-		defaultBleName: "Lethal Lily",
+		bleNames: ["Lethal Lily"],
 		uiName: "Lethal Lily",
 		hasEyeImage: false,
 		movements: [
@@ -155,7 +159,7 @@ export const DEVICE_PROFILES = {
 		},
 	},
 	[DEVICE_TYPES.SANTA]: {
-		defaultBleName: "Ultra Santa",
+		bleNames: ["Ultra Santa", "Santa Claus"],
 		uiName: "Ultra Santa",
 		hasEyeImage: false,
 		movements: [
