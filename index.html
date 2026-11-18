@@ -843,7 +843,7 @@
         <!-- Raw Command (advanced) -->
         <div class="spacer"></div>
         <div id="advRawBlock" class="hidden">
-        <label>Raw Command (hex after AA+TAG+payload[≤8B]+CRC8 auto)</label>
+        <label>Raw Command (payload hex; AA+TAG and CRC8 added automatically)</label>
         <div class="row">
           <select id="tag">
             <option value="AAE0">AAE0 (Query Device Params)</option>
@@ -857,6 +857,7 @@
             <option value="AAFA">AAFA (Set Volume)</option>
             <option value="AAFC">AAFC (Play/Pause)</option>
             <option value="AAFD">AAFD (Enable Live Audio)</option>
+            <option value="AAF1">AAF1 (Set All Lights + Scene)</option>
             <option value="AAF2">AAF2 (Set Light Effect Mode)</option>
             <option value="AAF3">AAF3 (Set Light Brightness)</option>
             <option value="AAF4">AAF4 (Set Light RGB+Color Cycle)</option>
@@ -871,11 +872,12 @@
             <option value="AAC7">AAC7 (Delete File)</option>
             <option value="AAC9">AAC9 (Set File Order)</option>
             <option value="AACA">AACA (Set Movement Action)</option>
+            <option value="AACD">AACD (Set Jaw Data)</option>
           </select>
           <input id="payload" placeholder="payload hex (optional)" />
         </div>
         <div class="actions"><button type="button" class="btn" id="btnSendRaw">Send</button></div>
-        <div class="small muted" style="margin-top:6px">Payload auto-pads to <strong>16 hex chars (8 bytes)</strong> before CRC8 (poly 0x8C).</div>
+        <div class="small muted" style="margin-top:6px">Payloads shorter than <strong>8 bytes</strong> are padded with zeros; longer ones (e.g. AAF1, AACD) are sent in full. CRC8 poly 0x8C.</div>
       </div>
       
       </section>

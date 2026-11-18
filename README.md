@@ -22,19 +22,23 @@ This project also has a [REST Server](https://github.com/martinecker/SkellyUltra
 
 ### 💡 Lighting Control
 
-- **Dual Zone Control**: Separate control for head and torso lights
-- **RGB Color Picker**: Choose any color for head and torso lights independently
-- **Brightness Control**: Adjust brightness from 0-255 for each zone
+- **Per-Light Control**: Every light the animatronic has:
+  - Ultra Skelly: head and torso lights
+  - 12ft Skelly: torso light
+  - Lethal Lily: lantern
+  - Ultra Santa: lantern
+- **RGB Color Picker**: Choose any color for each light independently
+- **Brightness Control**: Adjust brightness from 0-255 for each light
 - **Effect Modes**: 
-  - Static: Solid color
-  - Strobe: Flashing effect with adjustable speed
-  - Pulsing: Breathing effect with adjustable speed
+  - Ultra Skelly and 12ft Skelly: Static, Strobe, Pulsing
+  - Lethal Lily: Flickering, Pulsing, Chasing
+  - Ultra Santa: Static, Sparkle, Pulsing
 - **Color Cycling**: Enable rainbow color cycling mode
 - **Effect Speed**: Fine-tune strobe and pulsing speeds (0-255)
 
 ### 🎭 Appearance & Animation
 
-- **Eye Icons**: Choose from multiple eye designs to display on the Ultra Skelly (not available for Lethal Lily or Ultra Santa)
+- **Eye Icons**: Choose from multiple eye designs to display on the Ultra Skelly and 12ft Skelly (not available for Lethal Lily or Ultra Santa)
 - **Movement Control**: Enable/disable movement animations for:
   - Ultra Skelly:
     - Head movements
@@ -150,4 +154,4 @@ This tool communicates directly with your device's Bluetooth interface. While te
 
 ---
 
-**Note**: This is an unofficial community tool and is not affiliated with or endorsed by the manufacturer of Ultra Skelly/Lethal Lily.
+**Note**: This is an unofficial community tool and is not affiliated with or endorsed by the manufacturer of Ultra Skelly/12ft Skelly/Lethal Lily/Ultra Santa.
