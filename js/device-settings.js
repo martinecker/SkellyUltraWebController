@@ -7,7 +7,12 @@
  * each reimplement it.
  */
 
-import { COMMANDS, LIGHT_SCENES } from "./constants.js";
+import {
+	CAPABILITIES,
+	COMMANDS,
+	hasCapability,
+	LIGHT_SCENES,
+} from "./constants.js";
 import {
 	buildCommand,
 	buildFilenamePayload,
@@ -159,8 +164,9 @@ function byteHex(value, what) {
 /**
  * Build F1: every light channel and the light scene in one command.
  *
- * Only for firmware with the setAllLights capability (see hasCapability):
- * older firmware (the v66 Ultra) doesn't* know F1.
+ * Only for firmware with the setAllLights capability (see
+ * hasCapability): older firmware (the v66 Ultra) doesn't know F1.
+ * applyFileSettings uses it when given a scene (see currentLightScene).
  *
  * @param {Array<Object>} lights - Channels from 0 on (1-6), each
  *   {effectMode, brightness, r, g, b, colorCycle, effectSpeed} in device
@@ -214,6 +220,33 @@ export function buildSetAllLightsCommand(
 }
 
 /**
+ * The current light scene, to send when setting all lights at once (F1), or
+ * null when the lights must go out channel by channel instead: firmware
+ * without F1 (or not read yet), or a scene that isn't known. F1 always sets the scene too, so sending the one the file
+ * (or the device) already has keeps a Halloween or Christmas scene on.
+ *
+ * @param {string} deviceType - DEVICE_PROFILES key
+ * @param {string|number|null} version - Firmware ("v68") or null
+ * @param {number|null|undefined} scene - Current LIGHT_SCENES value
+ * @returns {number|null}
+ */
+export function currentLightScene(deviceType, version, scene) {
+	if (!Number.isInteger(scene)) return null;
+	return hasCapability(deviceType, version, CAPABILITIES.SET_ALL_LIGHTS)
+		? scene
+		: null;
+}
+
+// All channels 0..n-1 present with a mode F1 takes; otherwise per channel.
+function allChannelsComplete(lights) {
+	return (
+		lights.length > 0 &&
+		lights.length <= ALL_LIGHT_CHANNELS &&
+		lights.every((light) => light && [1, 2, 3].includes(light.effectMode))
+	);
+}
+
+/**
  * Send the full set of per-file settings (movement, eye, both light
  * channels) in the order the device expects, pacing writes with `delayMs`
  * between each (write-without-response commands can be dropped if sent
@@ -232,6 +265,8 @@ export function buildSetAllLightsCommand(
  * @param {boolean} [options.hasEyeImage] - Whether to send the eye command
  * @param {number} [options.delayMs] - Delay between commands
  * @param {(label: string) => void} [options.onStep] - Called after each command sends
+ * @param {number|null} [options.scene] - From currentLightScene: when set, all
+ *   lights go in one F1 with this scene instead of F2/F3/F4/F6 per channel
  * @returns {Promise<void>}
  */
 export async function applyFileSettings(
@@ -239,7 +274,7 @@ export async function applyFileSettings(
 	cluster,
 	fileName,
 	settings,
-	{ hasEyeImage = false, delayMs = 0, onStep } = {},
+	{ hasEyeImage = false, delayMs = 0, onStep, scene = null } = {},
 ) {
 	const step = async (label, send) => {
 		await send();
@@ -261,6 +296,13 @@ export async function applyFileSettings(
 	// depends on the device type (currently 1 for Lily, 2 for Skelly), so
 	// iterate whatever the caller provides rather than assuming a fixed count.
 	const lights = settings.lights || [];
+	if (scene != null && allChannelsComplete(lights)) {
+		// F1 has no file name: it addresses the file by cluster alone
+		await step(`All lights (F1) channels=${lights.length} scene=${scene}`, () =>
+			connection.send(buildSetAllLightsCommand(lights, cluster, scene)),
+		);
+		return;
+	}
 	for (let channel = 0; channel < lights.length; channel++) {
 		const light = lights[channel];
 		if (!light) continue;

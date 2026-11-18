@@ -2,8 +2,12 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { LIGHT_SCENES } from "../js/constants.js";
-import { buildSetAllLightsCommand } from "../js/device-settings.js";
+import { DEVICE_TYPES, LIGHT_SCENES } from "../js/constants.js";
+import {
+	applyFileSettings,
+	buildSetAllLightsCommand,
+	currentLightScene,
+} from "../js/device-settings.js";
 import { bytesToHex, crc8 } from "../js/protocol.js";
 
 const RED = {
@@ -86,4 +90,81 @@ test("F1 refuses bad values", () => {
 	for (const args of bad) {
 		assert.throws(() => buildSetAllLightsCommand(...args), RangeError);
 	}
+});
+
+/** A connection that keeps every frame sent, and its tag (AAxx) */
+function recorder() {
+	const frames = [];
+	const tags = [];
+	return {
+		frames,
+		tags,
+		send: async (frame) => {
+			frames.push(frame);
+			tags.push(bytesToHex(frame).toUpperCase().slice(0, 4));
+		},
+	};
+}
+
+const FILE_SETTINGS = { action: 255, eye: 3, lights: [RED, BLUE] };
+
+test("file settings with an F1 scene: lights in one F1 with that scene", async () => {
+	const connection = recorder();
+	await applyFileSettings(connection, 7, "a.mp3", FILE_SETTINGS, {
+		hasEyeImage: true,
+		scene: LIGHT_SCENES.HALLOWEEN,
+	});
+	assert.deepEqual(connection.tags, ["AACA", "AAF9", "AAF1"]);
+	const payload = unframe(connection.frames[2]);
+	assert.equal(payload.slice(0, 12), "000000070101"); // cluster 7, file, Halloween
+	assert.equal(payload.slice(12, 40), RED_HEX + BLUE_HEX);
+});
+
+test("file settings without an F1 scene: per channel as before", async () => {
+	const connection = recorder();
+	await applyFileSettings(connection, 7, "a.mp3", FILE_SETTINGS);
+	assert.deepEqual(connection.tags, [
+		"AACA",
+		"AAF3", // channel 0 is static: no speed
+		"AAF2",
+		"AAF4",
+		"AAF3",
+		"AAF2",
+		"AAF6",
+		"AAF4",
+	]);
+});
+
+test("file settings fall back per channel when a light can't go in F1", async () => {
+	const connection = recorder();
+	await applyFileSettings(
+		connection,
+		7,
+		"a.mp3",
+		{ action: 0, lights: [{ ...RED, effectMode: 0 }] },
+		{ scene: LIGHT_SCENES.CUSTOM },
+	);
+	assert.ok(!connection.tags.includes("AAF1"));
+	assert.ok(connection.tags.includes("AAF2"));
+});
+
+test("F1 only for firmware that has it, and a known scene", () => {
+	const { SKELLY, SKELLY_12FT } = DEVICE_TYPES;
+	assert.equal(currentLightScene(SKELLY, "v68", LIGHT_SCENES.CHRISTMAS), 2);
+	assert.equal(currentLightScene(SKELLY, "v68", LIGHT_SCENES.CUSTOM), 0);
+	assert.equal(currentLightScene(SKELLY, "v66", LIGHT_SCENES.CUSTOM), null);
+	assert.equal(
+		currentLightScene(SKELLY, null, LIGHT_SCENES.CUSTOM),
+		null,
+		"not read yet",
+	);
+	assert.equal(
+		currentLightScene(SKELLY, "v68", null),
+		null,
+		"no scene in the file list",
+	);
+	assert.equal(
+		currentLightScene(SKELLY_12FT, "v14", LIGHT_SCENES.HALLOWEEN),
+		1,
+	);
 });

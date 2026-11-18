@@ -10,7 +10,7 @@ import {
 	getEyeIconPath,
 	LOG_CLASSES,
 } from "./constants.js";
-import { applyFileSettings } from "./device-settings.js";
+import { applyFileSettings, currentLightScene } from "./device-settings.js";
 import {
 	buildCommand,
 	clamp,
@@ -39,6 +39,7 @@ export class EditModalManager {
 			cluster: 0,
 			name: "",
 			eye: 1,
+			scene: null, // LIGHT_SCENES value from the file list; null: unknown
 		};
 
 		// Delete state
@@ -568,6 +569,11 @@ export class EditModalManager {
 					hasEyeImage: profile?.hasEyeImage,
 					delayMs: APPLY_ALL_COMMAND_DELAY_MS,
 					onStep: (label) => this.log(`✓ ${label}`),
+					scene: currentLightScene(
+						this.state.deviceType,
+						this.state.device?.version,
+						this.currentFile.scene,
+					),
 				},
 			);
 
@@ -612,6 +618,7 @@ export class EditModalManager {
 		this.currentFile.cluster = file.cluster;
 		this.currentFile.name = file.name || "";
 		this.currentFile.eye = file.eye || 1;
+		this.currentFile.scene = file.scene ?? null;
 
 		// Populate form fields
 		if ($("#edSerial")) $("#edSerial").value = file.serial;

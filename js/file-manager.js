@@ -13,7 +13,7 @@ import {
 	TIMEOUTS,
 	TRANSFER_CONFIG,
 } from "./constants.js";
-import { applyFileSettings } from "./device-settings.js";
+import { applyFileSettings, currentLightScene } from "./device-settings.js";
 import {
 	buildCommand,
 	buildFilenamePayload,
@@ -802,6 +802,11 @@ export class FileManager {
 			{
 				hasEyeImage: profile?.hasEyeImage,
 				delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+				scene: currentLightScene(
+					this.state.deviceType,
+					this.state.device?.version,
+					savedFile.scene,
+				),
 			},
 		);
 
