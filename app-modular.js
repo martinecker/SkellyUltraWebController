@@ -164,7 +164,6 @@ class SkellyApp {
 				this.fileManager,
 				this.logger.log.bind(this.logger),
 				this.handlePlayPauseMessage.bind(this),
-				this.editModal.handleDeleteConfirmation.bind(this.editModal),
 			);
 			console.log("Protocol parser created");
 

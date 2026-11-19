@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-19T15:19:15.571157
+ * Generated: 2026-11-19T16:59:45.436259
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -405,7 +405,7 @@ const COMMANDS = {
 	SET_BRIGHTNESS: "AAF3", // ch, brightness (0-255), cluster u32, name
 	SET_RGB: "AAF4", // ch, R, G, B, color cycle, cluster u32, name
 	SELECT_RGB_CHANNEL: "AAF5", // ch (the channel the app's picker edits)
-	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest; app uses 0-10), cluster u32, name
+	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest; 255 is also fastest; app uses 0-10), cluster u32, name
 
 	// Appearance: cluster 0 + empty name = live settings
 	SET_EYE: "AAF9", // icon (1-based), 00, cluster u32, name
@@ -3700,20 +3700,21 @@ class FileManager {
 	 * Delete a file
 	 * @param {number} serial - File serial number
 	 * @param {number} cluster - File cluster
-	 * @returns {Promise<void>}
+	 * @returns {Promise<boolean>} Whether the device deleted it (BBC7 failed
+	 *   byte 0). Throws if the command can't be sent or isn't answered.
 	 */
 	async deleteFile(serial, cluster) {
-		if (!this.connection.isConnected()) {
-			this.log("Not connected", LOG_CLASSES.WARNING);
-			return;
-		}
-
 		const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-		await this.connection.send(buildCommand(COMMANDS.DELETE, payload, 8));
 		this.log(
 			`Delete request (C7) serial=${serial} cluster=${cluster}`,
 			LOG_CLASSES.WARNING,
 		);
+		const reply = await this.sendAndWait(
+			buildCommand(COMMANDS.DELETE, payload, 8),
+			RESPONSES.DELETE_ACK,
+			TIMEOUTS.ACK,
+		);
+		return parseInt(reply.slice(4, 6), 16) === 0;
 	}
 
 	/**
@@ -4047,18 +4048,11 @@ class AudioConverter {
  * Protocol Response Parser
  */
 class ProtocolParser {
-	constructor(
-		stateManager,
-		fileManager,
-		logger,
-		onPlayPauseCallback = null,
-		onDeleteCallback = null,
-	) {
+	constructor(stateManager, fileManager, logger, onPlayPauseCallback = null) {
 		this.state = stateManager;
 		this.fileManager = fileManager;
 		this.log = logger;
 		this.onPlayPause = onPlayPauseCallback;
-		this.onDelete = onDeleteCallback;
 	}
 
 	/**
@@ -4509,12 +4503,8 @@ class ProtocolParser {
 	 */
 	parseDeleteAck(hex) {
 		const ok = parseInt(hex.slice(4, 6), 16) === 0;
+		// The delete itself waits for this reply (FileManager.deleteFile)
 		this.log(`Delete ${ok ? "OK" : "FAIL"}`);
-
-		// Notify callback if provided
-		if (this.onDelete) {
-			this.onDelete(ok);
-		}
 	}
 
 	/**
@@ -4559,10 +4549,6 @@ class EditModalManager {
 		};
 		// Custom colors kept while a scene preset shows its own (showSceneColors)
 		this.customColors = null;
-
-		// Delete state
-		this.deletePending = false;
-		this.deleteResolve = null;
 
 		this.initializeModal();
 	}
@@ -5017,9 +5003,7 @@ class EditModalManager {
 				return;
 
 			const serial = Math.max(0, parseInt($("#edSerial")?.value || "0", 10));
-			const serialHex = serial.toString(16).padStart(4, "0").toUpperCase();
 			const cluster = Math.max(0, parseInt($("#edCluster")?.value || "0", 10));
-			const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
 
 			// Disable delete button and show waiting state
 			const deleteBtn = $("#edDelete");
@@ -5028,33 +5012,20 @@ class EditModalManager {
 				deleteBtn.textContent = "Deleting...";
 			}
 
-			// Set up promise to wait for delete confirmation
-			this.deletePending = true;
-			const deletePromise = new Promise((resolve) => {
-				this.deleteResolve = resolve;
-			});
-
-			// Send delete command
-			await this.connection.send(
-				buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8),
-			);
-			this.log(
-				`Delete request (C7) serial=${serial} cluster=${cluster}`,
-				LOG_CLASSES.WARNING,
-			);
-
-			// Wait for BBC7 response (with timeout)
-			const timeoutPromise = new Promise((resolve) => {
-				setTimeout(() => resolve(false), 5000); // 5 second timeout
-			});
-
-			this.log("Waiting for delete confirmation...", LOG_CLASSES.INFO);
-			const success = await Promise.race([deletePromise, timeoutPromise]);
-
-			// Reset button state
-			if (deleteBtn) {
-				deleteBtn.disabled = false;
-				deleteBtn.textContent = "Delete";
+			// Send C7 and wait for its BBC7
+			let success = false;
+			try {
+				success = await this.fileManager.deleteFile(serial, cluster);
+				if (!success) {
+					this.log("Device reported the delete failed", LOG_CLASSES.WARNING);
+				}
+			} catch (error) {
+				this.log(`Delete failed: ${error.message}`, LOG_CLASSES.WARNING);
+			} finally {
+				if (deleteBtn) {
+					deleteBtn.disabled = false;
+					deleteBtn.textContent = "Delete";
+				}
 			}
 
 			if (success) {
@@ -5102,12 +5073,7 @@ class EditModalManager {
 				}
 
 				this.close();
-			} else {
-				this.log("Delete confirmation timeout or failed", LOG_CLASSES.WARNING);
 			}
-
-			this.deletePending = false;
-			this.deleteResolve = null;
 		});
 
 		// Apply All button - sends all settings to device
@@ -5255,9 +5221,9 @@ class EditModalManager {
 		if (light1) {
 			// Light 1 brightness
 			if ($("#edLight1Brightness"))
-				$("#edLight1Brightness").value = light1.brightness || 200;
+				$("#edLight1Brightness").value = light1.brightness ?? 200;
 			if ($("#edLight1BrightnessRange"))
-				$("#edLight1BrightnessRange").value = light1.brightness || 200;
+				$("#edLight1BrightnessRange").value = light1.brightness ?? 200;
 
 			// Light 1 effect mode
 			if ($("#edLight1EffectMode"))
@@ -5311,9 +5277,9 @@ class EditModalManager {
 		if (light0) {
 			// Light 0 brightness
 			if ($("#edLight0Brightness"))
-				$("#edLight0Brightness").value = light0.brightness || 200;
+				$("#edLight0Brightness").value = light0.brightness ?? 200;
 			if ($("#edLight0BrightnessRange"))
-				$("#edLight0BrightnessRange").value = light0.brightness || 200;
+				$("#edLight0BrightnessRange").value = light0.brightness ?? 200;
 
 			// Light 0 effect mode
 			if ($("#edLight0EffectMode"))
@@ -5410,16 +5376,6 @@ class EditModalManager {
 
 		// Show modal
 		this.modal?.classList.remove("hidden");
-	}
-
-	/**
-	 * Handle delete confirmation from protocol parser
-	 * @param {boolean} success - Whether delete was successful
-	 */
-	handleDeleteConfirmation(success) {
-		if (this.deletePending && this.deleteResolve) {
-			this.deleteResolve(success);
-		}
 	}
 
 	/**
@@ -6574,7 +6530,6 @@ class SkellyApp {
 				this.fileManager,
 				this.logger.log.bind(this.logger),
 				this.handlePlayPauseMessage.bind(this),
-				this.editModal.handleDeleteConfirmation.bind(this.editModal),
 			);
 			console.log("Protocol parser created");
 

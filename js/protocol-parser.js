@@ -10,18 +10,11 @@ import { decodeUtf16le, getAsciiFromHex, hexToBytes } from "./protocol.js";
  * Protocol Response Parser
  */
 export class ProtocolParser {
-	constructor(
-		stateManager,
-		fileManager,
-		logger,
-		onPlayPauseCallback = null,
-		onDeleteCallback = null,
-	) {
+	constructor(stateManager, fileManager, logger, onPlayPauseCallback = null) {
 		this.state = stateManager;
 		this.fileManager = fileManager;
 		this.log = logger;
 		this.onPlayPause = onPlayPauseCallback;
-		this.onDelete = onDeleteCallback;
 	}
 
 	/**
@@ -472,12 +465,8 @@ export class ProtocolParser {
 	 */
 	parseDeleteAck(hex) {
 		const ok = parseInt(hex.slice(4, 6), 16) === 0;
+		// The delete itself waits for this reply (FileManager.deleteFile)
 		this.log(`Delete ${ok ? "OK" : "FAIL"}`);
-
-		// Notify callback if provided
-		if (this.onDelete) {
-			this.onDelete(ok);
-		}
 	}
 
 	/**

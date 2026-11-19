@@ -5,7 +5,6 @@
 
 import {
 	APPLY_ALL_COMMAND_DELAY_MS,
-	COMMANDS,
 	DEVICE_PROFILES,
 	getEyeIconPath,
 	LOG_CLASSES,
@@ -18,7 +17,6 @@ import {
 	supportsLightScenes,
 } from "./device-settings.js";
 import {
-	buildCommand,
 	clamp,
 	deviceSpeedToUI,
 	MAX_UI_EFFECT_SPEED,
@@ -50,10 +48,6 @@ export class EditModalManager {
 		};
 		// Custom colors kept while a scene preset shows its own (showSceneColors)
 		this.customColors = null;
-
-		// Delete state
-		this.deletePending = false;
-		this.deleteResolve = null;
 
 		this.initializeModal();
 	}
@@ -508,9 +502,7 @@ export class EditModalManager {
 				return;
 
 			const serial = Math.max(0, parseInt($("#edSerial")?.value || "0", 10));
-			const serialHex = serial.toString(16).padStart(4, "0").toUpperCase();
 			const cluster = Math.max(0, parseInt($("#edCluster")?.value || "0", 10));
-			const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
 
 			// Disable delete button and show waiting state
 			const deleteBtn = $("#edDelete");
@@ -519,33 +511,20 @@ export class EditModalManager {
 				deleteBtn.textContent = "Deleting...";
 			}
 
-			// Set up promise to wait for delete confirmation
-			this.deletePending = true;
-			const deletePromise = new Promise((resolve) => {
-				this.deleteResolve = resolve;
-			});
-
-			// Send delete command
-			await this.connection.send(
-				buildCommand(COMMANDS.DELETE, serialHex + clusterHex, 8),
-			);
-			this.log(
-				`Delete request (C7) serial=${serial} cluster=${cluster}`,
-				LOG_CLASSES.WARNING,
-			);
-
-			// Wait for BBC7 response (with timeout)
-			const timeoutPromise = new Promise((resolve) => {
-				setTimeout(() => resolve(false), 5000); // 5 second timeout
-			});
-
-			this.log("Waiting for delete confirmation...", LOG_CLASSES.INFO);
-			const success = await Promise.race([deletePromise, timeoutPromise]);
-
-			// Reset button state
-			if (deleteBtn) {
-				deleteBtn.disabled = false;
-				deleteBtn.textContent = "Delete";
+			// Send C7 and wait for its BBC7
+			let success = false;
+			try {
+				success = await this.fileManager.deleteFile(serial, cluster);
+				if (!success) {
+					this.log("Device reported the delete failed", LOG_CLASSES.WARNING);
+				}
+			} catch (error) {
+				this.log(`Delete failed: ${error.message}`, LOG_CLASSES.WARNING);
+			} finally {
+				if (deleteBtn) {
+					deleteBtn.disabled = false;
+					deleteBtn.textContent = "Delete";
+				}
 			}
 
 			if (success) {
@@ -593,12 +572,7 @@ export class EditModalManager {
 				}
 
 				this.close();
-			} else {
-				this.log("Delete confirmation timeout or failed", LOG_CLASSES.WARNING);
 			}
-
-			this.deletePending = false;
-			this.deleteResolve = null;
 		});
 
 		// Apply All button - sends all settings to device
@@ -746,9 +720,9 @@ export class EditModalManager {
 		if (light1) {
 			// Light 1 brightness
 			if ($("#edLight1Brightness"))
-				$("#edLight1Brightness").value = light1.brightness || 200;
+				$("#edLight1Brightness").value = light1.brightness ?? 200;
 			if ($("#edLight1BrightnessRange"))
-				$("#edLight1BrightnessRange").value = light1.brightness || 200;
+				$("#edLight1BrightnessRange").value = light1.brightness ?? 200;
 
 			// Light 1 effect mode
 			if ($("#edLight1EffectMode"))
@@ -802,9 +776,9 @@ export class EditModalManager {
 		if (light0) {
 			// Light 0 brightness
 			if ($("#edLight0Brightness"))
-				$("#edLight0Brightness").value = light0.brightness || 200;
+				$("#edLight0Brightness").value = light0.brightness ?? 200;
 			if ($("#edLight0BrightnessRange"))
-				$("#edLight0BrightnessRange").value = light0.brightness || 200;
+				$("#edLight0BrightnessRange").value = light0.brightness ?? 200;
 
 			// Light 0 effect mode
 			if ($("#edLight0EffectMode"))
@@ -901,16 +875,6 @@ export class EditModalManager {
 
 		// Show modal
 		this.modal?.classList.remove("hidden");
-	}
-
-	/**
-	 * Handle delete confirmation from protocol parser
-	 * @param {boolean} success - Whether delete was successful
-	 */
-	handleDeleteConfirmation(success) {
-		if (this.deletePending && this.deleteResolve) {
-			this.deleteResolve(success);
-		}
 	}
 
 	/**

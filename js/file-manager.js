@@ -918,20 +918,21 @@ export class FileManager {
 	 * Delete a file
 	 * @param {number} serial - File serial number
 	 * @param {number} cluster - File cluster
-	 * @returns {Promise<void>}
+	 * @returns {Promise<boolean>} Whether the device deleted it (BBC7 failed
+	 *   byte 0). Throws if the command can't be sent or isn't answered.
 	 */
 	async deleteFile(serial, cluster) {
-		if (!this.connection.isConnected()) {
-			this.log("Not connected", LOG_CLASSES.WARNING);
-			return;
-		}
-
 		const payload = intToHex(serial, 2) + intToHex(cluster, 4);
-		await this.connection.send(buildCommand(COMMANDS.DELETE, payload, 8));
 		this.log(
 			`Delete request (C7) serial=${serial} cluster=${cluster}`,
 			LOG_CLASSES.WARNING,
 		);
+		const reply = await this.sendAndWait(
+			buildCommand(COMMANDS.DELETE, payload, 8),
+			RESPONSES.DELETE_ACK,
+			TIMEOUTS.ACK,
+		);
+		return parseInt(reply.slice(4, 6), 16) === 0;
 	}
 
 	/**
