@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-19T16:59:45.436259
+ * Generated: 2026-11-19T17:02:05.791225
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -5411,6 +5411,22 @@ function truncateFilename(name, maxLength) {
 }
 
 /**
+ * Device file name for ElevenLabs speech: the start of the text as a slug
+ * ("hello_there.mp3"), short enough for the device's name limit.
+ */
+function ttsFileName(text) {
+	const ext = ".mp3";
+	const slug =
+		(text || "")
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "_")
+			.replace(/^_+/, "")
+			.slice(0, TRANSFER_CONFIG.MAX_FILENAME_LENGTH - ext.length)
+			.replace(/_+$/, "") || "tts";
+	return slug + ext;
+}
+
+/**
  * Transfer Modal Manager Class
  */
 class TransferModalManager {
@@ -5728,13 +5744,7 @@ class TransferModalManager {
 		const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
 		if (!rawMp3) return;
 
-		const slug =
-			text
-				.slice(0, 30)
-				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, "_")
-				.replace(/^_|_$/g, "") || "tts";
-		const suggestedName = `${slug}.mp3`;
+		const suggestedName = ttsFileName(text);
 
 		const blob = new Blob([rawMp3], { type: "audio/mpeg" });
 		const url = URL.createObjectURL(blob);
@@ -6116,13 +6126,7 @@ class TransferModalManager {
 			const rawMp3 = await this.getElTTSBytes(apiKey, voiceId, modelId, text);
 			if (!rawMp3) return false;
 
-			const slug =
-				text
-					.slice(0, 30)
-					.toLowerCase()
-					.replace(/[^a-z0-9]+/g, "_")
-					.replace(/^_|_$/g, "") || "tts";
-			const rawName = `${slug}.mp3`;
+			const rawName = ttsFileName(text);
 
 			if ($("#chkConvert")?.checked) {
 				const kbps = $("#chkBitrateOverride")?.checked
