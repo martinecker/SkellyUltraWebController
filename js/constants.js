@@ -440,6 +440,13 @@ export const LIGHT_SCENES = Object.freeze({
 	CHRISTMAS: 2,
 });
 
+// The colors the phone app sends with a scene preset: channel 0 the first,
+// all other channels the second. The device plays its own palette anyway.
+export const LIGHT_SCENE_COLORS = Object.freeze({
+	[LIGHT_SCENES.HALLOWEEN]: ["FD942A", "7637FD"], // orange, purple
+	[LIGHT_SCENES.CHRISTMAS]: ["960100", "036400"], // red, green
+});
+
 // File name marker in protocol
 export const PROTOCOL_MARKERS = {
 	FILENAME: "5C55", // UTF16LE filename marker

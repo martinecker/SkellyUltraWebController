@@ -117,6 +117,7 @@
       background:transparent; cursor:pointer; opacity:.8; transition:.15s;
     }
     .iconToggle:hover { opacity:1; }
+    .iconToggle:disabled { opacity:.35; cursor:not-allowed; }
     .iconToggle.selected{
       border-color:#3b82f6;               /* blue-500 border */
       background:rgba(59,130,246,.12);    /* faint blue fill */
@@ -672,6 +673,20 @@
         </div>
       </div>
 
+    <!-- Light scene (scene firmware only) -->
+    <div id="edSceneRow" class="hidden">
+      <div class="spacer"></div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+        <label for="edScene" style="margin:0">Scene</label>
+        <select id="edScene" aria-label="Light scene" style="width:auto">
+          <option value="0">Custom (own colors)</option>
+          <option value="1">Halloween</option>
+          <option value="2">Christmas</option>
+        </select>
+        <span id="edSceneHint" class="small muted hidden">The scene plays its own colors. Brightness, effect and speed still apply.</span>
+      </div>
+    </div>
+
     <div class="spacer"></div>
     <label>Lights</label>
     <div class="row">
@@ -925,6 +940,17 @@
           <label>Eyes</label>
           <div id="apEyeGrid" class="eye-grid" aria-label="Choose eye icon"></div>
         </div>
+
+        <!-- Light scene (scene firmware only) -->
+        <div id="liveSceneRow" class="compact-row hidden">
+          <label for="liveScene">Scene</label>
+          <select id="liveScene" aria-label="Light scene">
+            <option value="0">Custom (own colors)</option>
+            <option value="1">Halloween</option>
+            <option value="2">Christmas</option>
+          </select>
+        </div>
+        <div id="liveSceneHint" class="small muted hidden">The scene plays its own colors. Brightness, effect and speed still apply.</div>
 
         <!-- Head Light Controls -->
         <div id="liveLight1Group" class="light-group">

@@ -11,6 +11,7 @@ import {
 	CAPABILITIES,
 	COMMANDS,
 	hasCapability,
+	LIGHT_SCENE_COLORS,
 	LIGHT_SCENES,
 } from "./constants.js";
 import {
@@ -235,6 +236,55 @@ export function currentLightScene(deviceType, version, scene) {
 	return hasCapability(deviceType, version, CAPABILITIES.SET_ALL_LIGHTS)
 		? scene
 		: null;
+}
+
+/**
+ * Whether the light scene picker (Custom / Halloween / Christmas) applies:
+ * the firmware knows scenes and F1, which is the only command that sets one.
+ *
+ * @param {string} deviceType - DEVICE_PROFILES key
+ * @param {string|number|null} version - Firmware ("v68") or null
+ * @returns {boolean}
+ */
+export function supportsLightScenes(deviceType, version) {
+	return (
+		hasCapability(deviceType, version, CAPABILITIES.LIGHT_SCENES) &&
+		hasCapability(deviceType, version, CAPABILITIES.SET_ALL_LIGHTS)
+	);
+}
+
+/**
+ * Whether a scene preset is on (Halloween or Christmas). The device then
+ * ignores the channel colors and color cycle and plays the scene's own
+ * colors; mode, brightness and speed still apply.
+ *
+ * @param {number|null|undefined} scene - LIGHT_SCENES value or null
+ * @returns {boolean}
+ */
+export function isScenePreset(scene) {
+	return Number.isInteger(scene) && scene !== LIGHT_SCENES.CUSTOM;
+}
+
+/**
+ * The color a light channel shows (and F1 carries) in a scene preset, as
+ * the phone app sends it: channel 0 the scene's first color, the others
+ * the second, no color cycle.
+ *
+ * @param {number} scene - LIGHT_SCENES value
+ * @param {number} channel - Light channel from 0
+ * @returns {{r: number, g: number, b: number, colorCycle: number}|null}
+ *   null for Custom or a scene without known colors
+ */
+export function sceneLightColor(scene, channel) {
+	const colors = LIGHT_SCENE_COLORS[scene];
+	if (!colors) return null;
+	const hex = colors[channel === 0 ? 0 : 1];
+	return {
+		r: parseInt(hex.slice(0, 2), 16),
+		g: parseInt(hex.slice(2, 4), 16),
+		b: parseInt(hex.slice(4, 6), 16),
+		colorCycle: 0,
+	};
 }
 
 // All channels 0..n-1 present with a mode F1 takes; otherwise per channel.

@@ -7,6 +7,9 @@ import {
 	applyFileSettings,
 	buildSetAllLightsCommand,
 	currentLightScene,
+	isScenePreset,
+	sceneLightColor,
+	supportsLightScenes,
 } from "../js/device-settings.js";
 import { bytesToHex, crc8 } from "../js/protocol.js";
 
@@ -167,4 +170,39 @@ test("F1 only for firmware that has it, and a known scene", () => {
 		currentLightScene(SKELLY_12FT, "v14", LIGHT_SCENES.HALLOWEEN),
 		1,
 	);
+});
+
+test("scene picker only on firmware with scenes and F1", () => {
+	const { SKELLY, SKELLY_12FT, LILY, SANTA } = DEVICE_TYPES;
+	assert.equal(supportsLightScenes(SKELLY, "v68"), true);
+	assert.equal(supportsLightScenes(SKELLY, "v66"), false);
+	assert.equal(supportsLightScenes(SKELLY, null), false);
+	assert.equal(supportsLightScenes(SKELLY_12FT, "v14"), true);
+	assert.equal(supportsLightScenes(LILY, "v24"), true);
+	assert.equal(supportsLightScenes(SANTA, "v1"), true);
+	assert.equal(supportsLightScenes("unknown", "v99"), false);
+});
+
+test("Halloween and Christmas are presets, Custom and unknown are not", () => {
+	assert.equal(isScenePreset(LIGHT_SCENES.HALLOWEEN), true);
+	assert.equal(isScenePreset(LIGHT_SCENES.CHRISTMAS), true);
+	assert.equal(isScenePreset(LIGHT_SCENES.CUSTOM), false);
+	assert.equal(isScenePreset(null), false);
+	assert.equal(isScenePreset(undefined), false);
+});
+
+test("scene colors as the app sends them: channel 0 first, the rest second", () => {
+	const red = { r: 0x96, g: 0x01, b: 0x00, colorCycle: 0 };
+	const green = { r: 0x03, g: 0x64, b: 0x00, colorCycle: 0 };
+	assert.deepEqual(sceneLightColor(LIGHT_SCENES.CHRISTMAS, 0), red);
+	assert.deepEqual(sceneLightColor(LIGHT_SCENES.CHRISTMAS, 1), green);
+	assert.deepEqual(sceneLightColor(LIGHT_SCENES.CHRISTMAS, 5), green);
+	assert.deepEqual(sceneLightColor(LIGHT_SCENES.HALLOWEEN, 0), {
+		r: 0xfd,
+		g: 0x94,
+		b: 0x2a,
+		colorCycle: 0,
+	});
+	assert.equal(sceneLightColor(LIGHT_SCENES.CUSTOM, 0), null);
+	assert.equal(sceneLightColor(7, 0), null);
 });

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-17T17:32:41.199140
+ * Generated: 2026-11-18T16:24:25.148911
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -470,6 +470,13 @@ const LIGHT_SCENES = Object.freeze({
 	CUSTOM: 0, // each light channel's own settings
 	HALLOWEEN: 1,
 	CHRISTMAS: 2,
+});
+
+// The colors the phone app sends with a scene preset: channel 0 the first,
+// all other channels the second. The device plays its own palette anyway.
+const LIGHT_SCENE_COLORS = Object.freeze({
+	[LIGHT_SCENES.HALLOWEEN]: ["FD942A", "7637FD"], // orange, purple
+	[LIGHT_SCENES.CHRISTMAS]: ["960100", "036400"], // red, green
 });
 
 // File name marker in protocol
@@ -985,6 +992,55 @@ function currentLightScene(deviceType, version, scene) {
 	return hasCapability(deviceType, version, CAPABILITIES.SET_ALL_LIGHTS)
 		? scene
 		: null;
+}
+
+/**
+ * Whether the light scene picker (Custom / Halloween / Christmas) applies:
+ * the firmware knows scenes and F1, which is the only command that sets one.
+ *
+ * @param {string} deviceType - DEVICE_PROFILES key
+ * @param {string|number|null} version - Firmware ("v68") or null
+ * @returns {boolean}
+ */
+function supportsLightScenes(deviceType, version) {
+	return (
+		hasCapability(deviceType, version, CAPABILITIES.LIGHT_SCENES) &&
+		hasCapability(deviceType, version, CAPABILITIES.SET_ALL_LIGHTS)
+	);
+}
+
+/**
+ * Whether a scene preset is on (Halloween or Christmas). The device then
+ * ignores the channel colors and color cycle and plays the scene's own
+ * colors; mode, brightness and speed still apply.
+ *
+ * @param {number|null|undefined} scene - LIGHT_SCENES value or null
+ * @returns {boolean}
+ */
+function isScenePreset(scene) {
+	return Number.isInteger(scene) && scene !== LIGHT_SCENES.CUSTOM;
+}
+
+/**
+ * The color a light channel shows (and F1 carries) in a scene preset, as
+ * the phone app sends it: channel 0 the scene's first color, the others
+ * the second, no color cycle.
+ *
+ * @param {number} scene - LIGHT_SCENES value
+ * @param {number} channel - Light channel from 0
+ * @returns {{r: number, g: number, b: number, colorCycle: number}|null}
+ *   null for Custom or a scene without known colors
+ */
+function sceneLightColor(scene, channel) {
+	const colors = LIGHT_SCENE_COLORS[scene];
+	if (!colors) return null;
+	const hex = colors[channel === 0 ? 0 : 1];
+	return {
+		r: parseInt(hex.slice(0, 2), 16),
+		g: parseInt(hex.slice(2, 4), 16),
+		b: parseInt(hex.slice(4, 6), 16),
+		colorCycle: 0,
+	};
 }
 
 // All channels 0..n-1 present with a mode F1 takes; otherwise per channel.
@@ -4444,6 +4500,8 @@ class EditModalManager {
 			eye: 1,
 			scene: null, // LIGHT_SCENES value from the file list; null: unknown
 		};
+		// Custom colors kept while a scene preset shows its own (showSceneColors)
+		this.customColors = null;
 
 		// Delete state
 		this.deletePending = false;
@@ -4687,7 +4745,98 @@ class EditModalManager {
 			e.currentTarget.classList.toggle("selected");
 		});
 
+		// Light scene picker: Apply All sends it with the lights (F1)
+		$("#edScene")?.addEventListener("change", (e) => {
+			const from = this.currentFile.scene;
+			this.currentFile.scene = parseInt(e.target.value, 10);
+			this.showSceneColors(from, this.currentFile.scene);
+			this.updateSceneControls();
+		});
+
 		// Note: Individual apply buttons removed - use "Apply All Settings" button instead
+	}
+
+	/** Color and color cycle of the light controls, channels 0 and 1 */
+	readColors() {
+		return [0, 1].map((ch) => ({
+			r: clamp($(`#edLight${ch}R`)?.value, 0, 255),
+			g: clamp($(`#edLight${ch}G`)?.value, 0, 255),
+			b: clamp($(`#edLight${ch}B`)?.value, 0, 255),
+			colorCycle: $(`#edLight${ch}ColorCycle`)?.classList.contains("selected")
+				? 1
+				: 0,
+		}));
+	}
+
+	/** Show colors (from readColors or sceneLightColor) in the light controls */
+	showColors(colors) {
+		colors.forEach((color, ch) => {
+			if (!color) return;
+			if ($(`#edLight${ch}R`)) $(`#edLight${ch}R`).value = color.r;
+			if ($(`#edLight${ch}G`)) $(`#edLight${ch}G`).value = color.g;
+			if ($(`#edLight${ch}B`)) $(`#edLight${ch}B`).value = color.b;
+			const hex = [color.r, color.g, color.b]
+				.map((c) => Math.round(c).toString(16).padStart(2, "0"))
+				.join("");
+			if ($(`#edLight${ch}ColorPick`))
+				$(`#edLight${ch}ColorPick`).value = `#${hex}`;
+			$(`#edLight${ch}ColorCycle`)?.classList.toggle(
+				"selected",
+				color.colorCycle === 1,
+			);
+		});
+	}
+
+	/**
+	 * Going from `from` to scene `to`: a preset shows (and Apply All sends)
+	 * its own colors, as in the phone app; the custom colors are kept and
+	 * come back with Custom.
+	 */
+	showSceneColors(from, to) {
+		if (isScenePreset(to)) {
+			if (!isScenePreset(from) || !this.customColors) {
+				this.customColors = this.readColors();
+			}
+			this.showColors([0, 1].map((ch) => sceneLightColor(to, ch)));
+		} else if (this.customColors) {
+			this.showColors(this.customColors);
+			this.customColors = null;
+		}
+	}
+
+	/**
+	 * Show the scene picker on scene firmware when the file list gave the
+	 * file's scene, and gray out color and color cycle while a scene preset
+	 * plays its own colors (the colors are still sent and kept).
+	 */
+	updateSceneControls() {
+		const scene = this.currentFile.scene;
+		const shown =
+			Number.isInteger(scene) &&
+			supportsLightScenes(this.state.deviceType, this.state.device?.version);
+		const preset = shown && isScenePreset(scene);
+		$("#edSceneRow")?.classList.toggle("hidden", !shown);
+		$("#edSceneHint")?.classList.toggle("hidden", !preset);
+		const picker = $("#edScene");
+		if (picker && shown) {
+			// A scene this page doesn't know (newer firmware) still shows as a number
+			if (![...picker.options].some((o) => o.value === String(scene))) {
+				picker.add(new Option(`Scene ${scene}`, String(scene)));
+			}
+			picker.value = String(scene);
+		}
+		for (const ch of [0, 1]) {
+			for (const field of ["ColorPick", "R", "G", "B", "ColorCycle"]) {
+				const el = $(`#edLight${ch}${field}`);
+				if (!el) continue;
+				el.disabled = preset;
+				el.title = preset
+					? "The light scene plays its own colors"
+					: field === "ColorCycle"
+						? "Cycle all colors"
+						: "";
+			}
+		}
 	}
 
 	/**
@@ -5173,6 +5322,15 @@ class EditModalManager {
 				el.classList.toggle("selected", eyeNum === this.currentFile.eye);
 			});
 		}
+
+		// A file in a preset: its colors are kept as the custom ones
+		this.customColors = null;
+		if (
+			supportsLightScenes(this.state.deviceType, this.state.device?.version)
+		) {
+			this.showSceneColors(null, this.currentFile.scene);
+		}
+		this.updateSceneControls();
 
 		// Clear the log when opening
 		if (this.logElement) {
@@ -6662,6 +6820,9 @@ class SkellyApp {
 		if (!hasLight1) rules.push("td.col-light1 { display: none; }");
 		if (!hasEyeImage) rules.push("td.col-eye { display: none; }");
 		dynStyle.textContent = rules.join("\n");
+
+		// Scenes depend on the device type too
+		this.updateScenePicker();
 	}
 
 	/**
@@ -7405,6 +7566,180 @@ class SkellyApp {
 		);
 	}
 
+	/**
+	 * A live light channel as its controls show it, in device units for F1.
+	 * @param {number} channel - 0 or 1
+	 */
+	readLiveLight(channel) {
+		const value = (field, max) =>
+			Math.round(clamp($(`#light${channel}${field}`)?.value, 0, max));
+		return {
+			effectMode: parseInt($(`#light${channel}EffectMode`)?.value || "1", 10),
+			brightness: value("Brightness", 255),
+			r: value("R", 255),
+			g: value("G", 255),
+			b: value("B", 255),
+			colorCycle: this[`light${channel}ColorCycleEnabled`] ? 1 : 0,
+			effectSpeed: uiSpeedToDevice(value("EffectSpeed", 254)),
+		};
+	}
+
+	/** Color and color cycle of the live light controls, channels 0 and 1 */
+	readLiveColors() {
+		return [0, 1].map((ch) => {
+			const value = (field) =>
+				Math.round(clamp($(`#light${ch}${field}`)?.value, 0, 255));
+			return {
+				r: value("R"),
+				g: value("G"),
+				b: value("B"),
+				colorCycle: this[`light${ch}ColorCycleEnabled`] ? 1 : 0,
+			};
+		});
+	}
+
+	/** Show colors (from readLiveColors or sceneLightColor) in the live controls */
+	showLiveColors(colors) {
+		colors.forEach((color, ch) => {
+			if (!color) return;
+			if ($(`#light${ch}R`)) $(`#light${ch}R`).value = color.r;
+			if ($(`#light${ch}G`)) $(`#light${ch}G`).value = color.g;
+			if ($(`#light${ch}B`)) $(`#light${ch}B`).value = color.b;
+			const hex = [color.r, color.g, color.b]
+				.map((c) => c.toString(16).padStart(2, "0"))
+				.join("");
+			if ($(`#light${ch}ColorPick`))
+				$(`#light${ch}ColorPick`).value = `#${hex}`;
+			this[`light${ch}ColorCycleEnabled`] = color.colorCycle === 1;
+			$(`#btnLight${ch}ColorCycle`)?.classList.toggle(
+				"selected",
+				color.colorCycle === 1,
+			);
+		});
+	}
+
+	/**
+	 * Going from `from` to scene `to`: a preset shows (and F1 sends) its own
+	 * colors, as in the phone app; the custom colors are kept here and come
+	 * back with Custom.
+	 */
+	showSceneColors(from, to) {
+		if (isScenePreset(to)) {
+			if (!isScenePreset(from) || !this.liveCustomColors) {
+				this.liveCustomColors = this.readLiveColors();
+			}
+			this.showLiveColors([0, 1].map((ch) => sceneLightColor(to, ch)));
+		} else if (this.liveCustomColors) {
+			this.showLiveColors(this.liveCustomColors);
+			this.liveCustomColors = null;
+		}
+	}
+
+	/**
+	 * A preset the device reported (BBE1): keep what the controls show as
+	 * the custom colors (unless already kept) and show the scene's colors.
+	 * Runs again once the firmware version is known, since BBE1 comes first.
+	 */
+	showReportedSceneColors() {
+		const scene = this.state.live.scene;
+		if (
+			isScenePreset(scene) &&
+			supportsLightScenes(this.state.deviceType, this.state.device?.version)
+		) {
+			if (!this.liveCustomColors) this.liveCustomColors = this.readLiveColors();
+			this.showLiveColors([0, 1].map((ch) => sceneLightColor(scene, ch)));
+		} else if (Number.isInteger(scene)) {
+			this.liveCustomColors = null; // Custom: the controls show its colors
+		}
+	}
+
+	/**
+	 * Send every live light channel and the scene in one F1 (cluster 0).
+	 * @param {number} scene - LIGHT_SCENES value
+	 */
+	async sendLiveLights(scene) {
+		const profile =
+			DEVICE_PROFILES[this.state.deviceType] ||
+			DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+		const lights = [];
+		for (let ch = 0; ch < Math.min(profile.lights.length || 1, 2); ch++) {
+			lights.push(this.readLiveLight(ch));
+		}
+		await this.connection.send(buildSetAllLightsCommand(lights, 0, scene));
+		this.logger.log(
+			`Set all lights (F1) scene=${scene}: ${lights
+				.map(
+					(l, ch) =>
+						`ch${ch} mode=${l.effectMode} brightness=${l.brightness} speed=${l.effectSpeed}`,
+				)
+				.join(", ")}`,
+		);
+	}
+
+	/**
+	 * While a scene preset is on, a live brightness, effect or speed change
+	 * goes out as F1 with that scene, so the scene stays on. (Whether the
+	 * per-channel commands would end the scene is untested.)
+	 * @returns {boolean} true when it sent F1 (the caller sends nothing else)
+	 */
+	sendLiveLightsInScene() {
+		const scene = this.state.live.scene;
+		if (
+			!isScenePreset(scene) ||
+			!supportsLightScenes(this.state.deviceType, this.state.device?.version)
+		) {
+			return false;
+		}
+		this.sendLiveLights(scene).catch((error) =>
+			this.logger.log(
+				`Set all lights failed: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			),
+		);
+		return true;
+	}
+
+	/**
+	 * Show the live scene picker on scene firmware once the device reported
+	 * its scene (BBE1), and gray out color and color cycle while a scene
+	 * preset plays its own colors.
+	 */
+	updateScenePicker() {
+		const scene = this.state.live.scene;
+		const shown =
+			Number.isInteger(scene) &&
+			supportsLightScenes(this.state.deviceType, this.state.device?.version);
+		const preset = shown && isScenePreset(scene);
+		$("#liveSceneRow")?.classList.toggle("hidden", !shown);
+		$("#liveSceneHint")?.classList.toggle("hidden", !preset);
+		const picker = $("#liveScene");
+		if (picker && shown) {
+			// A scene this page doesn't know (newer firmware) still shows as a number
+			if (![...picker.options].some((o) => o.value === String(scene))) {
+				picker.add(new Option(`Scene ${scene}`, String(scene)));
+			}
+			picker.value = String(scene);
+		}
+		for (const ch of [0, 1]) {
+			for (const id of [
+				`light${ch}ColorPick`,
+				`light${ch}R`,
+				`light${ch}G`,
+				`light${ch}B`,
+				`btnLight${ch}ColorCycle`,
+			]) {
+				const el = $(`#${id}`);
+				if (!el) continue;
+				el.disabled = preset;
+				el.title = preset
+					? "The light scene plays its own colors"
+					: id.startsWith("btn")
+						? "Cycle all colors"
+						: "";
+			}
+		}
+	}
+
 	/** Returns the display label for the primary (light0) zone of the active profile. */
 	get light0Label() {
 		const profile =
@@ -7434,6 +7769,8 @@ class SkellyApp {
 		// Track color cycle state for each light
 		this.light1ColorCycleEnabled = false;
 		this.light0ColorCycleEnabled = false;
+		// Custom colors kept while a scene preset shows its own (showSceneColors)
+		this.liveCustomColors = null;
 
 		// Light 1 - Brightness control (immediate)
 		const light1BriRange = $("#light1BrightnessRange");
@@ -7441,6 +7778,7 @@ class SkellyApp {
 
 		const sendLight1Brightness = async (value) => {
 			if (!this.connection.isConnected()) return;
+			if (this.sendLiveLightsInScene()) return;
 			const ch = "01"; // Light 1 is channel 1
 			const brightness = parseInt(value, 10);
 			const brightnessHex = brightness
@@ -7472,6 +7810,7 @@ class SkellyApp {
 
 		const sendLight0Brightness = async (value) => {
 			if (!this.connection.isConnected()) return;
+			if (this.sendLiveLightsInScene()) return;
 			const ch = "00"; // Light 0 is channel 0
 			const brightness = parseInt(value, 10);
 			const brightnessHex = brightness
@@ -7627,6 +7966,7 @@ class SkellyApp {
 				light1EffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
 
 				if (!this.connection.isConnected()) return;
+				if (this.sendLiveLightsInScene()) return;
 				const ch = "01"; // Light 1 is channel 1
 				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
 				const cluster = "00000000";
@@ -7649,6 +7989,7 @@ class SkellyApp {
 				light0EffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
 
 				if (!this.connection.isConnected()) return;
+				if (this.sendLiveLightsInScene()) return;
 				const ch = "00"; // Light 0 is channel 0
 				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
 				const cluster = "00000000";
@@ -7667,6 +8008,7 @@ class SkellyApp {
 
 		const sendLight1Speed = async (value) => {
 			if (!this.connection.isConnected()) return;
+			if (this.sendLiveLightsInScene()) return;
 			const ch = "01"; // Light 1 is channel 1
 			const uiSpeed = parseInt(value, 10);
 			const deviceSpeed = uiSpeedToDevice(uiSpeed);
@@ -7698,6 +8040,7 @@ class SkellyApp {
 
 		const sendLight0Speed = async (value) => {
 			if (!this.connection.isConnected()) return;
+			if (this.sendLiveLightsInScene()) return;
 			const ch = "00"; // Light 0 is channel 0
 			const uiSpeed = parseInt(value, 10);
 			const deviceSpeed = uiSpeedToDevice(uiSpeed);
@@ -7758,6 +8101,36 @@ class SkellyApp {
 				await sendLight0Color();
 			});
 		}
+
+		// Light scene picker (scene firmware only, see updateScenePicker)
+		$("#liveScene")?.addEventListener("change", async (e) => {
+			const scene = parseInt(e.target.value, 10);
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				this.updateScenePicker();
+				return;
+			}
+			const shownColors = this.readLiveColors();
+			const customColors = this.liveCustomColors;
+			const previousScene = this.state.live.scene;
+			this.showSceneColors(previousScene, scene);
+			// Set before sending so a device update meanwhile sees the new scene.
+			// No notify: that would reset the light controls to the last report.
+			this.state.live.scene = scene;
+			this.updateScenePicker();
+			try {
+				await this.sendLiveLights(scene);
+			} catch (error) {
+				this.logger.log(
+					`Set light scene failed: ${error.message}`,
+					LOG_CLASSES.WARNING,
+				);
+				this.state.live.scene = previousScene;
+				this.showLiveColors(shownColors);
+				this.liveCustomColors = customColors;
+				this.updateScenePicker();
+			}
+		});
 
 		// Live eye grid selection - send command immediately
 		const apEyeGrid = $("#apEyeGrid");
@@ -8437,6 +8810,10 @@ class SkellyApp {
 	 * Update device UI
 	 */
 	updateDeviceUI(device) {
+		// The firmware version decides whether scenes exist
+		if (!device.connected) this.liveCustomColors = null;
+		else this.showReportedSceneColors();
+		this.updateScenePicker();
 		console.log("updateDeviceUI called, connected:", device.connected);
 
 		// Update status
@@ -8688,6 +9065,9 @@ class SkellyApp {
 					$("#light0EffectSpeedRange").value = light0UISpeed;
 			}
 		}
+
+		this.showReportedSceneColors();
+		this.updateScenePicker();
 	}
 
 	/**

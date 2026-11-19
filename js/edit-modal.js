@@ -10,7 +10,13 @@ import {
 	getEyeIconPath,
 	LOG_CLASSES,
 } from "./constants.js";
-import { applyFileSettings, currentLightScene } from "./device-settings.js";
+import {
+	applyFileSettings,
+	currentLightScene,
+	isScenePreset,
+	sceneLightColor,
+	supportsLightScenes,
+} from "./device-settings.js";
 import {
 	buildCommand,
 	clamp,
@@ -41,6 +47,8 @@ export class EditModalManager {
 			eye: 1,
 			scene: null, // LIGHT_SCENES value from the file list; null: unknown
 		};
+		// Custom colors kept while a scene preset shows its own (showSceneColors)
+		this.customColors = null;
 
 		// Delete state
 		this.deletePending = false;
@@ -284,7 +292,98 @@ export class EditModalManager {
 			e.currentTarget.classList.toggle("selected");
 		});
 
+		// Light scene picker: Apply All sends it with the lights (F1)
+		$("#edScene")?.addEventListener("change", (e) => {
+			const from = this.currentFile.scene;
+			this.currentFile.scene = parseInt(e.target.value, 10);
+			this.showSceneColors(from, this.currentFile.scene);
+			this.updateSceneControls();
+		});
+
 		// Note: Individual apply buttons removed - use "Apply All Settings" button instead
+	}
+
+	/** Color and color cycle of the light controls, channels 0 and 1 */
+	readColors() {
+		return [0, 1].map((ch) => ({
+			r: clamp($(`#edLight${ch}R`)?.value, 0, 255),
+			g: clamp($(`#edLight${ch}G`)?.value, 0, 255),
+			b: clamp($(`#edLight${ch}B`)?.value, 0, 255),
+			colorCycle: $(`#edLight${ch}ColorCycle`)?.classList.contains("selected")
+				? 1
+				: 0,
+		}));
+	}
+
+	/** Show colors (from readColors or sceneLightColor) in the light controls */
+	showColors(colors) {
+		colors.forEach((color, ch) => {
+			if (!color) return;
+			if ($(`#edLight${ch}R`)) $(`#edLight${ch}R`).value = color.r;
+			if ($(`#edLight${ch}G`)) $(`#edLight${ch}G`).value = color.g;
+			if ($(`#edLight${ch}B`)) $(`#edLight${ch}B`).value = color.b;
+			const hex = [color.r, color.g, color.b]
+				.map((c) => Math.round(c).toString(16).padStart(2, "0"))
+				.join("");
+			if ($(`#edLight${ch}ColorPick`))
+				$(`#edLight${ch}ColorPick`).value = `#${hex}`;
+			$(`#edLight${ch}ColorCycle`)?.classList.toggle(
+				"selected",
+				color.colorCycle === 1,
+			);
+		});
+	}
+
+	/**
+	 * Going from `from` to scene `to`: a preset shows (and Apply All sends)
+	 * its own colors, as in the phone app; the custom colors are kept and
+	 * come back with Custom.
+	 */
+	showSceneColors(from, to) {
+		if (isScenePreset(to)) {
+			if (!isScenePreset(from) || !this.customColors) {
+				this.customColors = this.readColors();
+			}
+			this.showColors([0, 1].map((ch) => sceneLightColor(to, ch)));
+		} else if (this.customColors) {
+			this.showColors(this.customColors);
+			this.customColors = null;
+		}
+	}
+
+	/**
+	 * Show the scene picker on scene firmware when the file list gave the
+	 * file's scene, and gray out color and color cycle while a scene preset
+	 * plays its own colors (the colors are still sent and kept).
+	 */
+	updateSceneControls() {
+		const scene = this.currentFile.scene;
+		const shown =
+			Number.isInteger(scene) &&
+			supportsLightScenes(this.state.deviceType, this.state.device?.version);
+		const preset = shown && isScenePreset(scene);
+		$("#edSceneRow")?.classList.toggle("hidden", !shown);
+		$("#edSceneHint")?.classList.toggle("hidden", !preset);
+		const picker = $("#edScene");
+		if (picker && shown) {
+			// A scene this page doesn't know (newer firmware) still shows as a number
+			if (![...picker.options].some((o) => o.value === String(scene))) {
+				picker.add(new Option(`Scene ${scene}`, String(scene)));
+			}
+			picker.value = String(scene);
+		}
+		for (const ch of [0, 1]) {
+			for (const field of ["ColorPick", "R", "G", "B", "ColorCycle"]) {
+				const el = $(`#edLight${ch}${field}`);
+				if (!el) continue;
+				el.disabled = preset;
+				el.title = preset
+					? "The light scene plays its own colors"
+					: field === "ColorCycle"
+						? "Cycle all colors"
+						: "";
+			}
+		}
 	}
 
 	/**
@@ -770,6 +869,15 @@ export class EditModalManager {
 				el.classList.toggle("selected", eyeNum === this.currentFile.eye);
 			});
 		}
+
+		// A file in a preset: its colors are kept as the custom ones
+		this.customColors = null;
+		if (
+			supportsLightScenes(this.state.deviceType, this.state.device?.version)
+		) {
+			this.showSceneColors(null, this.currentFile.scene);
+		}
+		this.updateSceneControls();
 
 		// Clear the log when opening
 		if (this.logElement) {
