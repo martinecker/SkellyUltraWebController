@@ -231,12 +231,13 @@ export class ProtocolParser {
 	}
 
 	/**
-	 * Parse capacity (BBD2)
+	 * Parse capacity (BBD2): free KB u32, file count, mode (one byte, 0 =
+	 * transfer mode; meaning unverified, see PROTOCOL.md)
 	 */
 	parseCapacity(hex) {
 		const capacityKB = parseInt(hex.slice(4, 12), 16);
 		const count = parseInt(hex.slice(12, 14), 16);
-		const field4 = parseInt(hex.slice(14, 22), 16);
+		const mode = parseInt(hex.slice(14, 16), 16);
 
 		this.state.updateDevice({
 			capacity: capacityKB,
@@ -244,7 +245,7 @@ export class ProtocolParser {
 		});
 
 		this.log(
-			`Capacity ${capacityKB}KB remaining, filesReported=${count}, extra=0x${field4.toString(16).toUpperCase()}`,
+			`Capacity ${capacityKB}KB remaining, filesReported=${count}, mode=${mode}`,
 		);
 	}
 
