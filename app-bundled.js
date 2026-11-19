@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-18T16:24:25.148911
+ * Generated: 2026-11-19T15:03:49.114099
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -2592,6 +2592,12 @@ class ConnectionManager {
 
 		// Store notification handlers to register with active connection
 		this.notificationHandlers = [];
+
+		// Writes go out one at a time: Web Bluetooth rejects a write while
+		// another GATT operation is in progress, and overlapping REST posts
+		// can reach the device out of order. Each send waits for the one
+		// before it; a failed send doesn't hold up the ones after it.
+		this.writeQueue = Promise.resolve();
 	}
 
 	/**
@@ -2627,6 +2633,10 @@ class ConnectionManager {
 		if (this.activeConnection) {
 			await this.disconnect();
 		}
+
+		// Writes still queued for the old connection fail on their own; the
+		// new one doesn't wait for them
+		this.writeQueue = Promise.resolve();
 
 		if (type === ConnectionType.REST_PROXY) {
 			// Connect via REST proxy
@@ -2674,16 +2684,20 @@ class ConnectionManager {
 	}
 
 	/**
-	 * Send command bytes to device
+	 * Send command bytes to device, after any sends still in progress
+	 * (see writeQueue)
 	 * @param {Uint8Array} commandBytes - Command bytes to send
-	 * @returns {Promise<void>}
+	 * @returns {Promise<void>} Settles when this write has gone out or failed
 	 */
-	async send(commandBytes) {
-		if (!this.activeConnection) {
-			throw new Error("No active connection");
+	send(commandBytes) {
+		const connection = this.activeConnection;
+		if (!connection) {
+			return Promise.reject(new Error("No active connection"));
 		}
 
-		return this.activeConnection.send(commandBytes);
+		const write = this.writeQueue.then(() => connection.send(commandBytes));
+		this.writeQueue = write.catch(() => {});
+		return write;
 	}
 
 	/**
