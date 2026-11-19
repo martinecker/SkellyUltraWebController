@@ -359,7 +359,7 @@ export class FileManager {
 		// Remember the order by name, so it can be put right afterwards.
 		const previousOrderNames = existingFile ? null : this.orderedFileNames();
 
-		this.state.startTransfer(fileName);
+		this.state.startTransfer();
 
 		try {
 			const size = fileBytes.length;
@@ -403,10 +403,6 @@ export class FileManager {
 				RESPONSES.CONFIRM_TRANSFER_ACK,
 				TIMEOUTS.ACK,
 			);
-			if (!c3Response) {
-				throw new Error("Timeout waiting for confirm transfer acknowledgment");
-			}
-
 			const c3Failed = parseInt(c3Response.slice(4, 6), 16);
 			if (c3Failed !== 0) {
 				throw new Error("Device failed to confirm transfer");
@@ -467,11 +463,8 @@ export class FileManager {
 		const c0Response = await this.sendAndWait(
 			buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
 			RESPONSES.TRANSFER_START,
-			TIMEOUTS.ACK_LONG,
+			TIMEOUTS.ACK,
 		);
-		if (!c0Response) {
-			throw new Error("Timeout waiting for transfer start acknowledgment");
-		}
 		if (parseInt(c0Response.slice(4, 6), 16) !== 0) {
 			throw new Error("Device rejected transfer start");
 		}
@@ -897,21 +890,6 @@ export class FileManager {
 		} else {
 			this.log("Restored settings verified ✔", LOG_CLASSES.INFO);
 		}
-	}
-
-	/**
-	 * Play a file by serial number
-	 * @param {number} serial - File serial number
-	 * @returns {Promise<void>}
-	 */
-	async playFile(serial) {
-		if (!this.connection.isConnected()) {
-			this.log("Not connected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const payload = `${intToHex(serial, 2)}01`;
-		await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
 	}
 
 	/**

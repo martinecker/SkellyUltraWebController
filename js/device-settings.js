@@ -61,7 +61,7 @@ export function sendSetEye(connection, cluster, fileName, eyeIcon) {
 	);
 }
 
-/** Send light brightness (F3) for a channel (0 or 1). */
+/** Send light brightness (F3) for a channel (0-5, or 0xFF for all). */
 export function sendSetLightBrightness(
 	connection,
 	cluster,
@@ -297,8 +297,8 @@ function allChannelsComplete(lights) {
 }
 
 /**
- * Send the full set of per-file settings (movement, eye, both light
- * channels) in the order the device expects, pacing writes with `delayMs`
+ * Send the full set of per-file settings (movement, eye, every light
+ * channel) in the order the device expects, pacing writes with `delayMs`
  * between each (write-without-response commands can be dropped if sent
  * back-to-back).
  *

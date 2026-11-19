@@ -52,22 +52,10 @@ export class StateManager {
 		this.transfer = {
 			inProgress: false,
 			cancel: false,
-			currentFile: null,
-		};
-
-		// Edit modal state
-		this.editModal = {
-			serial: null,
-			cluster: 0,
-			name: "",
-			eye: 1,
 		};
 
 		// Observers: key -> Set of callbacks
 		this.observers = new Map();
-
-		// Build flag
-		this.targetsBuiltFromE0 = false;
 	}
 
 	/**
@@ -225,12 +213,10 @@ export class StateManager {
 
 	/**
 	 * Start a transfer
-	 * @param {string} fileName - Name of file being transferred
 	 */
-	startTransfer(fileName) {
+	startTransfer() {
 		this.transfer.inProgress = true;
 		this.transfer.cancel = false;
-		this.transfer.currentFile = fileName;
 		this.notify("transfer");
 	}
 
@@ -248,96 +234,6 @@ export class StateManager {
 	endTransfer() {
 		this.transfer.inProgress = false;
 		this.transfer.cancel = false;
-		this.transfer.currentFile = null;
 		this.notify("transfer");
-	}
-
-	// === Edit Modal State Methods ===
-
-	/**
-	 * Open edit modal with file data
-	 * @param {Object} fileData - File data object
-	 */
-	openEditModal(fileData) {
-		this.editModal.serial = fileData.serial;
-		this.editModal.cluster = fileData.cluster;
-		this.editModal.name = fileData.name || "";
-		this.editModal.eye = fileData.eye || 1;
-		this.notify("editModal");
-	}
-
-	/**
-	 * Update edit modal state
-	 * @param {Object} updates - Partial edit modal updates
-	 */
-	updateEditModal(updates) {
-		Object.assign(this.editModal, updates);
-		this.notify("editModal");
-	}
-
-	/**
-	 * Close edit modal
-	 */
-	closeEditModal() {
-		this.editModal.serial = null;
-		this.notify("editModal");
-	}
-
-	// === Utility Methods ===
-
-	/**
-	 * Get current state snapshot
-	 * @returns {Object} - Complete state object
-	 */
-	getSnapshot() {
-		return {
-			device: { ...this.device },
-			live: { ...this.live },
-			files: {
-				...this.files,
-				items: new Map(this.files.items),
-			},
-			transfer: { ...this.transfer },
-			editModal: { ...this.editModal },
-		};
-	}
-
-	/**
-	 * Reset all state
-	 */
-	reset() {
-		this.device = {
-			name: "",
-			btName: "",
-			connected: false,
-			showMode: null,
-			version: null,
-			channels: [],
-			volume: null,
-			capacity: null,
-			filesReported: null,
-		};
-		this.live = {
-			action: null,
-			eye: null,
-			lights: [],
-			scene: null,
-		};
-		this.resetFiles();
-		this.endTransfer();
-		this.editModal = {
-			serial: null,
-			cluster: 0,
-			name: "",
-			eye: 1,
-		};
-		this.targetsBuiltFromE0 = false;
-
-		// Notify all observers
-		this.notify("device");
-		this.notify("live");
-		this.notify("files");
-		this.notify("transfer");
-		this.notify("editModal");
 	}
 }

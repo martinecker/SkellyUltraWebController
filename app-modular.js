@@ -1,9 +1,6 @@
 ﻿/**
  * Main Application Entry Point
  * Orchestrates all modules and initializes the application
- *
- * This is a SIMPLIFIED version showing the modular architecture.
- * The full UI controller implementation would be much larger.
  */
 
 import { ConnectionManager, ConnectionType } from "./js/connection-manager.js";
@@ -95,16 +92,12 @@ function setProgress(idx, total) {
 class SkellyApp {
 	constructor() {
 		try {
-			console.log("SkellyApp initializing...");
-
 			// Initialize logger
 			this.logger = new Logger($("#log"), $("#chkAutoscroll"));
 			this.logger.setFilterCallback(() => this.applyLogFilter());
-			console.log("Logger created");
 
 			// Initialize state manager
 			this.state = new StateManager();
-			console.log("State manager created");
 
 			// Initialize play state tracking
 			this.playState = {
@@ -120,7 +113,6 @@ class SkellyApp {
 				this.state,
 				this.logger.log.bind(this.logger),
 			);
-			console.log("Connection manager created");
 
 			// Initialize file manager with progress callback
 			this.fileManager = new FileManager(
@@ -129,13 +121,11 @@ class SkellyApp {
 				this.logger.log.bind(this.logger),
 				(current, total) => setProgress(current, total),
 			);
-			console.log("File manager created");
 
 			// Initialize audio converter
 			this.audioConverter = new AudioConverter(
 				this.logger.log.bind(this.logger),
 			);
-			console.log("Audio converter created");
 
 			// Initialize edit modal manager (before parser so we can pass callback)
 			this.editModal = new EditModalManager(
@@ -156,7 +146,6 @@ class SkellyApp {
 			this.editModal.setReplaceFileHandler((filename) => {
 				this.transferModal.open("replace", filename);
 			});
-			console.log("Edit modal manager created");
 
 			// Initialize protocol parser with callbacks
 			this.parser = new ProtocolParser(
@@ -165,29 +154,23 @@ class SkellyApp {
 				this.logger.log.bind(this.logger),
 				this.handlePlayPauseMessage.bind(this),
 			);
-			console.log("Protocol parser created");
 
 			// Register protocol parser with connection manager
 			this.connection.onNotification((hex, bytes) => {
 				this.parser.parse(hex, bytes);
 			});
-			console.log("Notification handler registered");
 
 			// Subscribe to state changes
 			this.subscribeToStateChanges();
-			console.log("State subscriptions registered");
 
 			// Initialize UI
 			this.initializeUI();
-			console.log("UI initialized");
 
 			// Set initial UI state
 			this.updateDeviceUI(this.state.device);
 			this.updateFilesTable();
 			this.transferModal.updateButtons(this.state.transfer);
-			console.log("Initial UI state set");
 
-			console.log("Application initialized successfully");
 			this.logger.log("Application initialized", LOG_CLASSES.WARNING);
 		} catch (error) {
 			console.error("Failed to initialize application:", error);
@@ -221,8 +204,6 @@ class SkellyApp {
 	 * Initialize UI and event handlers
 	 */
 	initializeUI() {
-		console.log("Initializing UI...");
-
 		// Initial disconnected state
 		document.body.classList.add("disconnected");
 
@@ -231,9 +212,7 @@ class SkellyApp {
 		const btnDisconnect = $("#btnDisconnect");
 
 		if (btnConnect) {
-			console.log("Binding connect button");
 			btnConnect.addEventListener("click", () => {
-				console.log("Connect button clicked");
 				this.handleConnect();
 			});
 		} else {
@@ -281,10 +260,7 @@ class SkellyApp {
 				LOG_CLASSES.WARNING,
 			);
 			// Don't show blocking alert - REST proxy is available as alternative
-			console.log("REST Server Proxy can be used as an alternative");
 		} else {
-			console.log("Web Bluetooth API is available");
-
 			// Check for secure context (HTTPS or localhost)
 			if (!window.isSecureContext) {
 				console.error(
@@ -294,12 +270,8 @@ class SkellyApp {
 					"Web Bluetooth requires HTTPS or localhost for direct BLE. Use HTTPS or the REST Server Proxy.",
 					LOG_CLASSES.WARNING,
 				);
-			} else {
-				console.log("Running in secure context");
 			}
 		}
-
-		console.log("UI initialization complete");
 
 		// Apply persisted device profile on startup
 		const startupDeviceType =
@@ -1827,40 +1799,6 @@ class SkellyApp {
 	}
 
 	/**
-	 * Apply movement from UI (unused by default; movement binding is in bindMovementGrid)
-	 */
-	applyMovement(gridId) {
-		const grid = document.getElementById(gridId);
-		if (!grid) return;
-
-		const toggles = grid.querySelectorAll(".iconToggle.selected");
-		if (toggles.length === 0) {
-			this.logger.log("No movement selected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const allSelected = Array.from(toggles).some(
-			(b) => b.dataset.part === "all",
-		);
-		if (allSelected) {
-			this.connection.send(
-				buildCommand(COMMANDS.SET_MOVEMENT, "FF00000000", 8),
-			);
-		} else {
-			let bitfield = 0;
-			toggles.forEach((btn) => {
-				bitfield |= parseInt(btn.dataset.bit || "0", 10);
-			});
-			const hex = bitfield.toString(16).padStart(2, "0").toUpperCase();
-			this.connection.send(
-				buildCommand(COMMANDS.SET_MOVEMENT, `${hex}00000000`, 8),
-			);
-		}
-		const parts = Array.from(toggles).map((b) => b.dataset.part);
-		this.logger.log(`Applied movement: ${parts.join(", ")}`);
-	}
-
-	/**
 	 * Initialize file controls
 	 */
 	initializeFileControls() {
@@ -1907,7 +1845,6 @@ class SkellyApp {
 			if (btn.dataset.action === "play" || btn.dataset.action === "stop") {
 				this.handlePlayFile(serial);
 			} else if (btn.dataset.action === "edit") {
-				if (btn.disabled) return;
 				this.handleEditFile(item);
 			}
 		});
@@ -1933,9 +1870,6 @@ class SkellyApp {
 	 */
 	initializeFileDragAndDrop() {
 		let draggedRow = null;
-		let touchStartY = 0;
-		let touchCurrentY = 0;
-		const _placeholder = null;
 
 		const tbody = $("#filesTable tbody");
 		if (!tbody) return;
@@ -2010,7 +1944,6 @@ class SkellyApp {
 				if (!row) return;
 
 				draggedRow = row;
-				touchStartY = e.touches[0].clientY;
 
 				// Create visual feedback
 				row.style.opacity = "0.6";
@@ -2028,8 +1961,6 @@ class SkellyApp {
 				if (!draggedRow) return;
 
 				e.preventDefault();
-				touchCurrentY = e.touches[0].clientY;
-				const _deltaY = touchCurrentY - touchStartY;
 
 				// Get all draggable rows
 				const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
@@ -2333,7 +2264,6 @@ class SkellyApp {
 	 * Handle connect button - show connection modal
 	 */
 	async handleConnect() {
-		console.log("handleConnect called - showing modal");
 		const connectModal = $("#connectModal");
 		connectModal?.classList.remove("hidden");
 	}
@@ -2342,7 +2272,6 @@ class SkellyApp {
 	 * Perform actual connection with filter
 	 */
 	async performConnection(options) {
-		console.log("performConnection called");
 		try {
 			const connectionOptions = {
 				type: options.connectionType || ConnectionType.DIRECT_BLE,
@@ -2350,9 +2279,7 @@ class SkellyApp {
 				restUrl: options.restUrl || "",
 			};
 
-			console.log("Connecting with options:", connectionOptions);
 			await this.connection.connect(connectionOptions);
-			console.log("Connected successfully");
 
 			// Auto-detect device type from BLE name and apply matching profile
 			const connectedName = this.state.device.name || "";
@@ -2454,19 +2381,6 @@ class SkellyApp {
 	}
 
 	/**
-	 * UTF-16LE hex encoding helper
-	 */
-	utf16leHex(str) {
-		let hex = "";
-		for (let i = 0; i < str.length; i++) {
-			const code = str.charCodeAt(i);
-			hex += (code & 0xff).toString(16).padStart(2, "0");
-			hex += ((code >> 8) & 0xff).toString(16).padStart(2, "0");
-		}
-		return hex.toUpperCase();
-	}
-
-	/**
 	 * Update device UI
 	 */
 	updateDeviceUI(device) {
@@ -2474,7 +2388,6 @@ class SkellyApp {
 		if (!device.connected) this.liveCustomColors = null;
 		else this.showReportedSceneColors();
 		this.updateScenePicker();
-		console.log("updateDeviceUI called, connected:", device.connected);
 
 		// Update status
 		const statusSpan = $("#status span");
@@ -2794,8 +2707,6 @@ class SkellyApp {
 				return a.serial - b.serial;
 			});
 
-		const canEdit = true; // Edit feature is now always enabled
-
 		let rowIndex = 1;
 		for (const file of files) {
 			const tr = document.createElement("tr");
@@ -2884,8 +2795,7 @@ class SkellyApp {
         <td class="detail-column">${file.cluster}</td>
         <td>
           ${playButtonHtml}
-          <button class="btn sm" data-action="edit" data-serial="${file.serial}"
-            ${canEdit ? "" : "disabled"}>✏️ Edit</button>
+          <button class="btn sm" data-action="edit" data-serial="${file.serial}">✏️ Edit</button>
         </td>
       `;
 			tbody.appendChild(tr);
@@ -2923,14 +2833,8 @@ class SkellyApp {
 // Initialize application when DOM is ready
 // Note: ES6 modules are deferred by default, so DOM is already loaded
 function initializeApp() {
-	console.log("Initializing SkellyApp...");
-	console.log("DOM ready state:", document.readyState);
-
 	// Check if critical elements exist
 	const btnConnect = document.querySelector("#btnConnect");
-	const logEl = document.querySelector("#log");
-	console.log("Connect button found:", !!btnConnect);
-	console.log("Log element found:", !!logEl);
 
 	if (!btnConnect) {
 		console.error("Critical UI elements missing! Cannot initialize.");

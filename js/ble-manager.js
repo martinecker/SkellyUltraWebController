@@ -157,14 +157,6 @@ export class BLEManager {
 				} catch (error) {
 					lastError = error;
 
-					// Don't retry if it's a user cancellation or device not found
-					if (
-						error.message.includes("User cancelled") ||
-						error.message.includes("No device selected")
-					) {
-						throw error;
-					}
-
 					// If not the last attempt, continue to retry
 					if (attempt < maxRetries) {
 						this.log(

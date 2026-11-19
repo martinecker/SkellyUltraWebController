@@ -224,15 +224,6 @@ export function escapeHtml(s) {
 }
 
 /**
- * Normalize device name for comparison
- * @param {string} s - Device name
- * @returns {string} - Normalized name
- */
-export function normalizeDeviceName(s) {
-	return (s || "").trim().toLowerCase();
-}
-
-/**
  * Light effect speed scales. The UI scale runs from 0 slowest to
  * MAX_UI_EFFECT_SPEED fastest. The device uses the inverse, 0 fastest to
  * 10 slowest, the range the manufacturer's app uses. The device takes values

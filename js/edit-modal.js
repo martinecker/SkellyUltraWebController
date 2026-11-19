@@ -445,12 +445,6 @@ export class EditModalManager {
 	 * Initialize file-related controls
 	 */
 	initializeFileControls() {
-		// Filename conflict checking
-		$("#edName")?.addEventListener("input", () => {
-			const name = $("#edName")?.value || "";
-			this.checkFileNameConflict(name);
-		});
-
 		// Replace File button
 		$("#btnReplaceFile")?.addEventListener("click", () => {
 			if (this._onReplaceFile) {
@@ -676,23 +670,6 @@ export class EditModalManager {
 
 			this.close();
 		});
-	}
-
-	/**
-	 * Check for filename conflicts
-	 */
-	checkFileNameConflict(name) {
-		const conflict = this.state.hasFileName(name);
-		const inputEl = $("#edName");
-		if (inputEl) {
-			inputEl.classList.toggle("warn-border", !!conflict);
-		}
-		if (conflict) {
-			this.log(
-				`Warning: A file named "${conflict.name}" already exists on the device.`,
-				LOG_CLASSES.WARNING,
-			);
-		}
 	}
 
 	/**

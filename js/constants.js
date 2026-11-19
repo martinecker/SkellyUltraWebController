@@ -304,16 +304,13 @@ export const APPLY_ALL_COMMAND_DELAY_MS = 40;
 // Timeout Values (milliseconds)
 export const TIMEOUTS = {
 	ACK: 5000,
-	ACK_LONG: 5000,
 	FILE_TRANSFER: 240000,
 	FILE_LIST: 6000,
 	FILE_ORDER: 5000, // Wait for the play order (BBD1) once the file list is complete
-	CONNECTION: 5000,
 };
 
 // Audio Configuration
 export const AUDIO_CONFIG = {
-	LONG_TRACK_LIMIT_SECONDS: 30,
 	// Uploads are mono CBR MP3 at 32 kbps, like the phone app's. Audio is resampled
 	// to 44.1 kHz, the app's rate, for the encoder; lamejs can't be told the output
 	// rate and encodes 32 kbps at 22.05 kHz (MPEG-2), like the app's cloud voices,
@@ -322,14 +319,6 @@ export const AUDIO_CONFIG = {
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,
-};
-
-// Movement Bitfield Definitions
-export const MOVEMENT_BITS = {
-	HEAD: 0b001, // bit 0
-	ARM: 0b010, // bit 1
-	TORSO: 0b100, // bit 2
-	ALL_ON: 255, // special value for all movements enabled
 };
 
 // BLE Command Tags
@@ -362,8 +351,7 @@ export const COMMANDS = {
 	// Various Controls
 	SET_VOLUME: "AAFA", // volume (0-100)
 	SET_PIN_AND_NAME: "AAFB", // PIN 4 ASCII, password 8 ASCII, len, name ASCII
-	MEDIA_PLAY: "AAFC", // payload 01
-	MEDIA_PAUSE: "AAFC", // payload 00
+	MEDIA_PLAY_PAUSE: "AAFC", // 01 play / 00 pause (not used here)
 	ENABLE_CLASSIC_BT: "AAFD", // 01 -> BBFD; live mode audio link
 	SET_MUSIC_MODE: "AAFE", // 00 device music, 01 classic BT (app no longer sends it)
 
@@ -418,20 +406,6 @@ export const LOG_CLASSES = {
 	WARNING: "warn",
 	TX: "tx",
 	RX: "rx",
-};
-
-// Default Values
-export const DEFAULTS = {
-	CHANNEL_COUNT: 6,
-	TARGET_CHANNEL: "FF", // All channels
-	VOLUME: 0,
-	BRIGHTNESS: 255,
-	COLOR_RED: 255,
-	COLOR_GREEN: 0,
-	COLOR_BLUE: 0,
-	EYE_ICON: 1,
-	LIGHTING_MODE: 1,
-	SPEED: 0,
 };
 
 // Light scene presets, in file info (BBD0), live status (BBE1) and F1

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-19T21:39:02.677162
+ * Generated: 2026-11-19T21:44:11.908095
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -336,16 +336,13 @@ const APPLY_ALL_COMMAND_DELAY_MS = 40;
 // Timeout Values (milliseconds)
 const TIMEOUTS = {
 	ACK: 5000,
-	ACK_LONG: 5000,
 	FILE_TRANSFER: 240000,
 	FILE_LIST: 6000,
 	FILE_ORDER: 5000, // Wait for the play order (BBD1) once the file list is complete
-	CONNECTION: 5000,
 };
 
 // Audio Configuration
 const AUDIO_CONFIG = {
-	LONG_TRACK_LIMIT_SECONDS: 30,
 	// Uploads are mono CBR MP3 at 32 kbps, like the phone app's. Audio is resampled
 	// to 44.1 kHz, the app's rate, for the encoder; lamejs can't be told the output
 	// rate and encodes 32 kbps at 22.05 kHz (MPEG-2), like the app's cloud voices,
@@ -354,14 +351,6 @@ const AUDIO_CONFIG = {
 	TARGET_CHANNELS: 1, // mono
 	DEFAULT_MP3_KBPS: 32,
 	MP3_ENCODE_BLOCK_SIZE: 1152,
-};
-
-// Movement Bitfield Definitions
-const MOVEMENT_BITS = {
-	HEAD: 0b001, // bit 0
-	ARM: 0b010, // bit 1
-	TORSO: 0b100, // bit 2
-	ALL_ON: 255, // special value for all movements enabled
 };
 
 // BLE Command Tags
@@ -394,8 +383,7 @@ const COMMANDS = {
 	// Various Controls
 	SET_VOLUME: "AAFA", // volume (0-100)
 	SET_PIN_AND_NAME: "AAFB", // PIN 4 ASCII, password 8 ASCII, len, name ASCII
-	MEDIA_PLAY: "AAFC", // payload 01
-	MEDIA_PAUSE: "AAFC", // payload 00
+	MEDIA_PLAY_PAUSE: "AAFC", // 01 play / 00 pause (not used here)
 	ENABLE_CLASSIC_BT: "AAFD", // 01 -> BBFD; live mode audio link
 	SET_MUSIC_MODE: "AAFE", // 00 device music, 01 classic BT (app no longer sends it)
 
@@ -450,20 +438,6 @@ const LOG_CLASSES = {
 	WARNING: "warn",
 	TX: "tx",
 	RX: "rx",
-};
-
-// Default Values
-const DEFAULTS = {
-	CHANNEL_COUNT: 6,
-	TARGET_CHANNEL: "FF", // All channels
-	VOLUME: 0,
-	BRIGHTNESS: 255,
-	COLOR_RED: 255,
-	COLOR_GREEN: 0,
-	COLOR_BLUE: 0,
-	EYE_ICON: 1,
-	LIGHTING_MODE: 1,
-	SPEED: 0,
 };
 
 // Light scene presets, in file info (BBD0), live status (BBE1) and F1
@@ -726,15 +700,6 @@ function escapeHtml(s) {
 }
 
 /**
- * Normalize device name for comparison
- * @param {string} s - Device name
- * @returns {string} - Normalized name
- */
-function normalizeDeviceName(s) {
-	return (s || "").trim().toLowerCase();
-}
-
-/**
  * Light effect speed scales. The UI scale runs from 0 slowest to
  * MAX_UI_EFFECT_SPEED fastest. The device uses the inverse, 0 fastest to
  * 10 slowest, the range the manufacturer's app uses. The device takes values
@@ -826,7 +791,7 @@ function sendSetEye(connection, cluster, fileName, eyeIcon) {
 	);
 }
 
-/** Send light brightness (F3) for a channel (0 or 1). */
+/** Send light brightness (F3) for a channel (0-5, or 0xFF for all). */
 function sendSetLightBrightness(
 	connection,
 	cluster,
@@ -1062,8 +1027,8 @@ function allChannelsComplete(lights) {
 }
 
 /**
- * Send the full set of per-file settings (movement, eye, both light
- * channels) in the order the device expects, pacing writes with `delayMs`
+ * Send the full set of per-file settings (movement, eye, every light
+ * channel) in the order the device expects, pacing writes with `delayMs`
  * between each (write-without-response commands can be dropped if sent
  * back-to-back).
  *
@@ -1232,22 +1197,10 @@ class StateManager {
 		this.transfer = {
 			inProgress: false,
 			cancel: false,
-			currentFile: null,
-		};
-
-		// Edit modal state
-		this.editModal = {
-			serial: null,
-			cluster: 0,
-			name: "",
-			eye: 1,
 		};
 
 		// Observers: key -> Set of callbacks
 		this.observers = new Map();
-
-		// Build flag
-		this.targetsBuiltFromE0 = false;
 	}
 
 	/**
@@ -1405,12 +1358,10 @@ class StateManager {
 
 	/**
 	 * Start a transfer
-	 * @param {string} fileName - Name of file being transferred
 	 */
-	startTransfer(fileName) {
+	startTransfer() {
 		this.transfer.inProgress = true;
 		this.transfer.cancel = false;
-		this.transfer.currentFile = fileName;
 		this.notify("transfer");
 	}
 
@@ -1428,97 +1379,7 @@ class StateManager {
 	endTransfer() {
 		this.transfer.inProgress = false;
 		this.transfer.cancel = false;
-		this.transfer.currentFile = null;
 		this.notify("transfer");
-	}
-
-	// === Edit Modal State Methods ===
-
-	/**
-	 * Open edit modal with file data
-	 * @param {Object} fileData - File data object
-	 */
-	openEditModal(fileData) {
-		this.editModal.serial = fileData.serial;
-		this.editModal.cluster = fileData.cluster;
-		this.editModal.name = fileData.name || "";
-		this.editModal.eye = fileData.eye || 1;
-		this.notify("editModal");
-	}
-
-	/**
-	 * Update edit modal state
-	 * @param {Object} updates - Partial edit modal updates
-	 */
-	updateEditModal(updates) {
-		Object.assign(this.editModal, updates);
-		this.notify("editModal");
-	}
-
-	/**
-	 * Close edit modal
-	 */
-	closeEditModal() {
-		this.editModal.serial = null;
-		this.notify("editModal");
-	}
-
-	// === Utility Methods ===
-
-	/**
-	 * Get current state snapshot
-	 * @returns {Object} - Complete state object
-	 */
-	getSnapshot() {
-		return {
-			device: { ...this.device },
-			live: { ...this.live },
-			files: {
-				...this.files,
-				items: new Map(this.files.items),
-			},
-			transfer: { ...this.transfer },
-			editModal: { ...this.editModal },
-		};
-	}
-
-	/**
-	 * Reset all state
-	 */
-	reset() {
-		this.device = {
-			name: "",
-			btName: "",
-			connected: false,
-			showMode: null,
-			version: null,
-			channels: [],
-			volume: null,
-			capacity: null,
-			filesReported: null,
-		};
-		this.live = {
-			action: null,
-			eye: null,
-			lights: [],
-			scene: null,
-		};
-		this.resetFiles();
-		this.endTransfer();
-		this.editModal = {
-			serial: null,
-			cluster: 0,
-			name: "",
-			eye: 1,
-		};
-		this.targetsBuiltFromE0 = false;
-
-		// Notify all observers
-		this.notify("device");
-		this.notify("live");
-		this.notify("files");
-		this.notify("transfer");
-		this.notify("editModal");
 	}
 }
 
@@ -1680,14 +1541,6 @@ class BLEManager {
 					return true;
 				} catch (error) {
 					lastError = error;
-
-					// Don't retry if it's a user cancellation or device not found
-					if (
-						error.message.includes("User cancelled") ||
-						error.message.includes("No device selected")
-					) {
-						throw error;
-					}
 
 					// If not the last attempt, continue to retry
 					if (attempt < maxRetries) {
@@ -2007,13 +1860,11 @@ class RestProxy {
 			params.append("timeout", timeout.toString());
 
 			const scanUrl = `${this.baseUrl}/ble/scan_devices?${params.toString()}`;
-			console.log("Scanning for devices:", scanUrl);
 			this.log(`Scanning for devices via REST proxy...`, LOG_CLASSES.WARNING);
 
 			let response;
 			try {
 				response = await fetch(scanUrl);
-				console.log("Fetch completed, status:", response.status);
 			} catch (fetchError) {
 				console.error("Fetch failed:", fetchError);
 				// Check for common network issues
@@ -2035,7 +1886,6 @@ class RestProxy {
 			}
 
 			const data = await response.json();
-			console.log("Scan response:", data);
 
 			if (!data.success) {
 				throw new Error(data.error || "Scan failed");
@@ -2074,11 +1924,9 @@ class RestProxy {
 				`Connecting via REST proxy: ${this.baseUrl}`,
 				LOG_CLASSES.WARNING,
 			);
-			console.log("REST proxy connect request body:", requestBody);
 
 			// Send connect request
 			const connectUrl = `${this.baseUrl}/ble/connect`;
-			console.log("Fetching:", connectUrl);
 
 			let response;
 			try {
@@ -2089,7 +1937,6 @@ class RestProxy {
 					},
 					body: JSON.stringify(requestBody),
 				});
-				console.log("Response status:", response.status, response.statusText);
 			} catch (fetchError) {
 				console.error("Fetch failed:", fetchError);
 				if (
@@ -2112,7 +1959,6 @@ class RestProxy {
 			}
 
 			const data = await response.json();
-			console.log("Connect response data:", data);
 
 			if (!data.success) {
 				throw new Error(data.error || "Connection failed");
@@ -2289,16 +2135,12 @@ class RestProxy {
 	 * Long-poll for notifications
 	 */
 	async pollNotifications() {
-		console.log("REST proxy: Starting notification polling");
 		while (this.pollingActive && this.isConnected()) {
 			try {
 				// Create abort controller for this request
 				this.pollingAbortController = new AbortController();
 
 				const url = `${this.baseUrl}/ble/notifications?session_id=${encodeURIComponent(this.sessionId)}&since=${this.nextSequence}&timeout=30`;
-				console.log(
-					`REST proxy: Polling notifications, sequence=${this.nextSequence}`,
-				);
 
 				const response = await fetch(url, {
 					signal: this.pollingAbortController.signal,
@@ -2318,9 +2160,6 @@ class RestProxy {
 				}
 
 				const data = await response.json();
-				console.log(
-					`REST proxy: Poll response - notifications: ${data.notifications?.length || 0}, next_sequence: ${data.next_sequence}, has_more: ${data.has_more}`,
-				);
 
 				// Reset error count on successful poll
 				this.pollingErrorCount = 0;
@@ -2332,9 +2171,6 @@ class RestProxy {
 
 				// Process notifications
 				if (data.notifications && data.notifications.length > 0) {
-					console.log(
-						`REST proxy: Processing ${data.notifications.length} notification(s)`,
-					);
 					for (const notification of data.notifications) {
 						const seq = notification.sequence;
 						if (Number.isInteger(seq)) {
@@ -2399,9 +2235,6 @@ class RestProxy {
 			const hex = notification.data.replace(/\s+/g, ""); // Remove spaces
 			const bytes = hexToBytes(hex);
 
-			console.log(
-				`REST proxy: Received notification - hex: ${hex}, handlers: ${this.notificationHandlers.length}`,
-			);
 			this.log(`RX ${hex}`, LOG_CLASSES.RX);
 
 			// Handle any pending waiters first
@@ -2410,7 +2243,6 @@ class RestProxy {
 			// Notify all registered handlers
 			for (const handler of this.notificationHandlers) {
 				try {
-					console.log("REST proxy: Calling notification handler");
 					handler(hex, bytes);
 				} catch (error) {
 					console.error("Error in notification handler:", error);
@@ -2672,9 +2504,6 @@ class ConnectionManager {
 		// Clear any existing handlers in the active connection to avoid duplicates
 		// then register all stored notification handlers
 		this.activeConnection.clearNotificationHandlers();
-		console.log(
-			`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`,
-		);
 		for (const handler of this.notificationHandlers) {
 			this.activeConnection.onNotification(handler);
 		}
@@ -2719,15 +2548,9 @@ class ConnectionManager {
 	onNotification(handler) {
 		// Store handler for registration with active connection
 		this.notificationHandlers.push(handler);
-		console.log(
-			`ConnectionManager: Registered handler, total handlers: ${this.notificationHandlers.length}`,
-		);
 
 		// If already connected, register with active connection immediately
 		if (this.activeConnection) {
-			console.log(
-				"ConnectionManager: Registering handler with active connection",
-			);
 			this.activeConnection.onNotification(handler);
 		}
 
@@ -2777,14 +2600,6 @@ class ConnectionManager {
 		}
 
 		return info;
-	}
-
-	/**
-	 * Get current connection type
-	 * @returns {string|null} - Connection type or null if not connected
-	 */
-	getConnectionType() {
-		return this.connectionType;
 	}
 
 	/**
@@ -3141,7 +2956,7 @@ class FileManager {
 		// Remember the order by name, so it can be put right afterwards.
 		const previousOrderNames = existingFile ? null : this.orderedFileNames();
 
-		this.state.startTransfer(fileName);
+		this.state.startTransfer();
 
 		try {
 			const size = fileBytes.length;
@@ -3185,10 +3000,6 @@ class FileManager {
 				RESPONSES.CONFIRM_TRANSFER_ACK,
 				TIMEOUTS.ACK,
 			);
-			if (!c3Response) {
-				throw new Error("Timeout waiting for confirm transfer acknowledgment");
-			}
-
 			const c3Failed = parseInt(c3Response.slice(4, 6), 16);
 			if (c3Failed !== 0) {
 				throw new Error("Device failed to confirm transfer");
@@ -3249,11 +3060,8 @@ class FileManager {
 		const c0Response = await this.sendAndWait(
 			buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
 			RESPONSES.TRANSFER_START,
-			TIMEOUTS.ACK_LONG,
+			TIMEOUTS.ACK,
 		);
-		if (!c0Response) {
-			throw new Error("Timeout waiting for transfer start acknowledgment");
-		}
 		if (parseInt(c0Response.slice(4, 6), 16) !== 0) {
 			throw new Error("Device rejected transfer start");
 		}
@@ -3679,21 +3487,6 @@ class FileManager {
 		} else {
 			this.log("Restored settings verified ✔", LOG_CLASSES.INFO);
 		}
-	}
-
-	/**
-	 * Play a file by serial number
-	 * @param {number} serial - File serial number
-	 * @returns {Promise<void>}
-	 */
-	async playFile(serial) {
-		if (!this.connection.isConnected()) {
-			this.log("Not connected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const payload = `${intToHex(serial, 2)}01`;
-		await this.connection.send(buildCommand(COMMANDS.PLAY_PAUSE, payload, 8));
 	}
 
 	/**
@@ -4947,12 +4740,6 @@ class EditModalManager {
 	 * Initialize file-related controls
 	 */
 	initializeFileControls() {
-		// Filename conflict checking
-		$("#edName")?.addEventListener("input", () => {
-			const name = $("#edName")?.value || "";
-			this.checkFileNameConflict(name);
-		});
-
 		// Replace File button
 		$("#btnReplaceFile")?.addEventListener("click", () => {
 			if (this._onReplaceFile) {
@@ -5178,23 +4965,6 @@ class EditModalManager {
 
 			this.close();
 		});
-	}
-
-	/**
-	 * Check for filename conflicts
-	 */
-	checkFileNameConflict(name) {
-		const conflict = this.state.hasFileName(name);
-		const inputEl = $("#edName");
-		if (inputEl) {
-			inputEl.classList.toggle("warn-border", !!conflict);
-		}
-		if (conflict) {
-			this.log(
-				`Warning: A file named "${conflict.name}" already exists on the device.`,
-				LOG_CLASSES.WARNING,
-			);
-		}
 	}
 
 	/**
@@ -6406,9 +6176,6 @@ class ElevenLabsClient {
 ﻿/**
  * Main Application Entry Point
  * Orchestrates all modules and initializes the application
- *
- * This is a SIMPLIFIED version showing the modular architecture.
- * The full UI controller implementation would be much larger.
  */
 
 /**
@@ -6466,16 +6233,12 @@ function setProgress(idx, total) {
 class SkellyApp {
 	constructor() {
 		try {
-			console.log("SkellyApp initializing...");
-
 			// Initialize logger
 			this.logger = new Logger($("#log"), $("#chkAutoscroll"));
 			this.logger.setFilterCallback(() => this.applyLogFilter());
-			console.log("Logger created");
 
 			// Initialize state manager
 			this.state = new StateManager();
-			console.log("State manager created");
 
 			// Initialize play state tracking
 			this.playState = {
@@ -6491,7 +6254,6 @@ class SkellyApp {
 				this.state,
 				this.logger.log.bind(this.logger),
 			);
-			console.log("Connection manager created");
 
 			// Initialize file manager with progress callback
 			this.fileManager = new FileManager(
@@ -6500,13 +6262,11 @@ class SkellyApp {
 				this.logger.log.bind(this.logger),
 				(current, total) => setProgress(current, total),
 			);
-			console.log("File manager created");
 
 			// Initialize audio converter
 			this.audioConverter = new AudioConverter(
 				this.logger.log.bind(this.logger),
 			);
-			console.log("Audio converter created");
 
 			// Initialize edit modal manager (before parser so we can pass callback)
 			this.editModal = new EditModalManager(
@@ -6527,7 +6287,6 @@ class SkellyApp {
 			this.editModal.setReplaceFileHandler((filename) => {
 				this.transferModal.open("replace", filename);
 			});
-			console.log("Edit modal manager created");
 
 			// Initialize protocol parser with callbacks
 			this.parser = new ProtocolParser(
@@ -6536,29 +6295,23 @@ class SkellyApp {
 				this.logger.log.bind(this.logger),
 				this.handlePlayPauseMessage.bind(this),
 			);
-			console.log("Protocol parser created");
 
 			// Register protocol parser with connection manager
 			this.connection.onNotification((hex, bytes) => {
 				this.parser.parse(hex, bytes);
 			});
-			console.log("Notification handler registered");
 
 			// Subscribe to state changes
 			this.subscribeToStateChanges();
-			console.log("State subscriptions registered");
 
 			// Initialize UI
 			this.initializeUI();
-			console.log("UI initialized");
 
 			// Set initial UI state
 			this.updateDeviceUI(this.state.device);
 			this.updateFilesTable();
 			this.transferModal.updateButtons(this.state.transfer);
-			console.log("Initial UI state set");
 
-			console.log("Application initialized successfully");
 			this.logger.log("Application initialized", LOG_CLASSES.WARNING);
 		} catch (error) {
 			console.error("Failed to initialize application:", error);
@@ -6592,8 +6345,6 @@ class SkellyApp {
 	 * Initialize UI and event handlers
 	 */
 	initializeUI() {
-		console.log("Initializing UI...");
-
 		// Initial disconnected state
 		document.body.classList.add("disconnected");
 
@@ -6602,9 +6353,7 @@ class SkellyApp {
 		const btnDisconnect = $("#btnDisconnect");
 
 		if (btnConnect) {
-			console.log("Binding connect button");
 			btnConnect.addEventListener("click", () => {
-				console.log("Connect button clicked");
 				this.handleConnect();
 			});
 		} else {
@@ -6652,10 +6401,7 @@ class SkellyApp {
 				LOG_CLASSES.WARNING,
 			);
 			// Don't show blocking alert - REST proxy is available as alternative
-			console.log("REST Server Proxy can be used as an alternative");
 		} else {
-			console.log("Web Bluetooth API is available");
-
 			// Check for secure context (HTTPS or localhost)
 			if (!window.isSecureContext) {
 				console.error(
@@ -6665,12 +6411,8 @@ class SkellyApp {
 					"Web Bluetooth requires HTTPS or localhost for direct BLE. Use HTTPS or the REST Server Proxy.",
 					LOG_CLASSES.WARNING,
 				);
-			} else {
-				console.log("Running in secure context");
 			}
 		}
-
-		console.log("UI initialization complete");
 
 		// Apply persisted device profile on startup
 		const startupDeviceType =
@@ -8198,40 +7940,6 @@ class SkellyApp {
 	}
 
 	/**
-	 * Apply movement from UI (unused by default; movement binding is in bindMovementGrid)
-	 */
-	applyMovement(gridId) {
-		const grid = document.getElementById(gridId);
-		if (!grid) return;
-
-		const toggles = grid.querySelectorAll(".iconToggle.selected");
-		if (toggles.length === 0) {
-			this.logger.log("No movement selected", LOG_CLASSES.WARNING);
-			return;
-		}
-
-		const allSelected = Array.from(toggles).some(
-			(b) => b.dataset.part === "all",
-		);
-		if (allSelected) {
-			this.connection.send(
-				buildCommand(COMMANDS.SET_MOVEMENT, "FF00000000", 8),
-			);
-		} else {
-			let bitfield = 0;
-			toggles.forEach((btn) => {
-				bitfield |= parseInt(btn.dataset.bit || "0", 10);
-			});
-			const hex = bitfield.toString(16).padStart(2, "0").toUpperCase();
-			this.connection.send(
-				buildCommand(COMMANDS.SET_MOVEMENT, `${hex}00000000`, 8),
-			);
-		}
-		const parts = Array.from(toggles).map((b) => b.dataset.part);
-		this.logger.log(`Applied movement: ${parts.join(", ")}`);
-	}
-
-	/**
 	 * Initialize file controls
 	 */
 	initializeFileControls() {
@@ -8278,7 +7986,6 @@ class SkellyApp {
 			if (btn.dataset.action === "play" || btn.dataset.action === "stop") {
 				this.handlePlayFile(serial);
 			} else if (btn.dataset.action === "edit") {
-				if (btn.disabled) return;
 				this.handleEditFile(item);
 			}
 		});
@@ -8304,9 +8011,6 @@ class SkellyApp {
 	 */
 	initializeFileDragAndDrop() {
 		let draggedRow = null;
-		let touchStartY = 0;
-		let touchCurrentY = 0;
-		const _placeholder = null;
 
 		const tbody = $("#filesTable tbody");
 		if (!tbody) return;
@@ -8381,7 +8085,6 @@ class SkellyApp {
 				if (!row) return;
 
 				draggedRow = row;
-				touchStartY = e.touches[0].clientY;
 
 				// Create visual feedback
 				row.style.opacity = "0.6";
@@ -8399,8 +8102,6 @@ class SkellyApp {
 				if (!draggedRow) return;
 
 				e.preventDefault();
-				touchCurrentY = e.touches[0].clientY;
-				const _deltaY = touchCurrentY - touchStartY;
 
 				// Get all draggable rows
 				const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
@@ -8704,7 +8405,6 @@ class SkellyApp {
 	 * Handle connect button - show connection modal
 	 */
 	async handleConnect() {
-		console.log("handleConnect called - showing modal");
 		const connectModal = $("#connectModal");
 		connectModal?.classList.remove("hidden");
 	}
@@ -8713,7 +8413,6 @@ class SkellyApp {
 	 * Perform actual connection with filter
 	 */
 	async performConnection(options) {
-		console.log("performConnection called");
 		try {
 			const connectionOptions = {
 				type: options.connectionType || ConnectionType.DIRECT_BLE,
@@ -8721,9 +8420,7 @@ class SkellyApp {
 				restUrl: options.restUrl || "",
 			};
 
-			console.log("Connecting with options:", connectionOptions);
 			await this.connection.connect(connectionOptions);
-			console.log("Connected successfully");
 
 			// Auto-detect device type from BLE name and apply matching profile
 			const connectedName = this.state.device.name || "";
@@ -8825,19 +8522,6 @@ class SkellyApp {
 	}
 
 	/**
-	 * UTF-16LE hex encoding helper
-	 */
-	utf16leHex(str) {
-		let hex = "";
-		for (let i = 0; i < str.length; i++) {
-			const code = str.charCodeAt(i);
-			hex += (code & 0xff).toString(16).padStart(2, "0");
-			hex += ((code >> 8) & 0xff).toString(16).padStart(2, "0");
-		}
-		return hex.toUpperCase();
-	}
-
-	/**
 	 * Update device UI
 	 */
 	updateDeviceUI(device) {
@@ -8845,7 +8529,6 @@ class SkellyApp {
 		if (!device.connected) this.liveCustomColors = null;
 		else this.showReportedSceneColors();
 		this.updateScenePicker();
-		console.log("updateDeviceUI called, connected:", device.connected);
 
 		// Update status
 		const statusSpan = $("#status span");
@@ -9165,8 +8848,6 @@ class SkellyApp {
 				return a.serial - b.serial;
 			});
 
-		const canEdit = true; // Edit feature is now always enabled
-
 		let rowIndex = 1;
 		for (const file of files) {
 			const tr = document.createElement("tr");
@@ -9255,8 +8936,7 @@ class SkellyApp {
         <td class="detail-column">${file.cluster}</td>
         <td>
           ${playButtonHtml}
-          <button class="btn sm" data-action="edit" data-serial="${file.serial}"
-            ${canEdit ? "" : "disabled"}>✏️ Edit</button>
+          <button class="btn sm" data-action="edit" data-serial="${file.serial}">✏️ Edit</button>
         </td>
       `;
 			tbody.appendChild(tr);
@@ -9294,14 +8974,8 @@ class SkellyApp {
 // Initialize application when DOM is ready
 // Note: ES6 modules are deferred by default, so DOM is already loaded
 function initializeApp() {
-	console.log("Initializing SkellyApp...");
-	console.log("DOM ready state:", document.readyState);
-
 	// Check if critical elements exist
 	const btnConnect = document.querySelector("#btnConnect");
-	const logEl = document.querySelector("#log");
-	console.log("Connect button found:", !!btnConnect);
-	console.log("Log element found:", !!logEl);
 
 	if (!btnConnect) {
 		console.error("Critical UI elements missing! Cannot initialize.");

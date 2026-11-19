@@ -7,11 +7,19 @@ build-bundle.bat        # Windows — runs bundle.py via python3
 python3 bundle.py       # Cross-platform
 ```
 
-The bundler concatenates all ES6 modules (in dependency order) into `app-bundled.js`, which works over `file://`. There are no tests or linters.
+The bundler concatenates all ES6 modules (in dependency order) into `app-bundled.js`, which works over `file://`. `python3 bundle.py --check` tells whether the bundle is up to date.
+
+## Tests and lint
+
+```sh
+npm ci                  # dev tools (Biome)
+npm test                # unit tests in tests/*.test.js (node:test)
+npm run check           # Biome lint + format check
+```
 
 ## Architecture
 
-This is a **vanilla JS, no-framework** web app. No npm, no node_modules. Two entry points:
+This is a **vanilla JS, no-framework** web app. npm is only used for dev tools and tests; the app itself has no dependencies. Two entry points:
 
 - **`app-modular.js`** — ES6 `type="module"` entry point. Requires an HTTP server (not `file://`). This is the source of truth.
 - **`app-bundled.js`** — Auto-generated single-file bundle. **Never edit directly.** Regenerate by running `bundle.py` after changing source files.
@@ -21,9 +29,10 @@ This is a **vanilla JS, no-framework** web app. No npm, no node_modules. Two ent
 ### Module dependency order (as bundled)
 
 ```
-js/constants.js → js/protocol.js → js/state-manager.js → js/ble-manager.js
-→ js/rest-proxy.js → js/connection-manager.js → js/file-manager.js
-→ js/protocol-parser.js → js/edit-modal.js → app-modular.js
+js/constants.js → js/protocol.js → js/device-settings.js → js/state-manager.js
+→ js/ble-manager.js → js/rest-proxy.js → js/connection-manager.js
+→ js/file-manager.js → js/protocol-parser.js → js/edit-modal.js
+→ js/transfer-modal.js → js/elevenlabs.js → app-modular.js
 ```
 
 ### Connection abstraction
@@ -41,11 +50,11 @@ Call `connectionManager.send(bytes)`, `onNotification(handler)`, and `waitForRes
 - Each mutation calls `this.notify(key)`, which fires all subscribed callbacks for that key
 - Subscribe with `state.subscribe('device', callback)` — returns an unsubscribe function
 
-State keys: `device`, `live`, `files`, `transfer`, `editModal`, `deviceType`.
+State keys: `device`, `live`, `files`, `transfer`, `deviceType`.
 
 ## Device Profiles
 
-All per-device differences are captured in `DEVICE_PROFILES` in `js/constants.js`, keyed by `DEVICE_TYPES` (`'skelly'` / `'lily'`). Each profile has:
+All per-device differences are captured in `DEVICE_PROFILES` in `js/constants.js`, keyed by `DEVICE_TYPES` (`'skelly'`, `'skelly12ft'`, `'lily'`, `'santa'`). Each profile has:
 
 - `bleNames` — BLE advertisement names (first is the default), used for type detection and as scan filters
 - `movements` — ordered array of `{ part, label, icon, bit }` (bit is the BLE bitfield value; `part='all'` always first with `bit=255`)

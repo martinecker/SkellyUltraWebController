@@ -77,13 +77,11 @@ export class RestProxy {
 			params.append("timeout", timeout.toString());
 
 			const scanUrl = `${this.baseUrl}/ble/scan_devices?${params.toString()}`;
-			console.log("Scanning for devices:", scanUrl);
 			this.log(`Scanning for devices via REST proxy...`, LOG_CLASSES.WARNING);
 
 			let response;
 			try {
 				response = await fetch(scanUrl);
-				console.log("Fetch completed, status:", response.status);
 			} catch (fetchError) {
 				console.error("Fetch failed:", fetchError);
 				// Check for common network issues
@@ -105,7 +103,6 @@ export class RestProxy {
 			}
 
 			const data = await response.json();
-			console.log("Scan response:", data);
 
 			if (!data.success) {
 				throw new Error(data.error || "Scan failed");
@@ -144,11 +141,9 @@ export class RestProxy {
 				`Connecting via REST proxy: ${this.baseUrl}`,
 				LOG_CLASSES.WARNING,
 			);
-			console.log("REST proxy connect request body:", requestBody);
 
 			// Send connect request
 			const connectUrl = `${this.baseUrl}/ble/connect`;
-			console.log("Fetching:", connectUrl);
 
 			let response;
 			try {
@@ -159,7 +154,6 @@ export class RestProxy {
 					},
 					body: JSON.stringify(requestBody),
 				});
-				console.log("Response status:", response.status, response.statusText);
 			} catch (fetchError) {
 				console.error("Fetch failed:", fetchError);
 				if (
@@ -182,7 +176,6 @@ export class RestProxy {
 			}
 
 			const data = await response.json();
-			console.log("Connect response data:", data);
 
 			if (!data.success) {
 				throw new Error(data.error || "Connection failed");
@@ -359,16 +352,12 @@ export class RestProxy {
 	 * Long-poll for notifications
 	 */
 	async pollNotifications() {
-		console.log("REST proxy: Starting notification polling");
 		while (this.pollingActive && this.isConnected()) {
 			try {
 				// Create abort controller for this request
 				this.pollingAbortController = new AbortController();
 
 				const url = `${this.baseUrl}/ble/notifications?session_id=${encodeURIComponent(this.sessionId)}&since=${this.nextSequence}&timeout=30`;
-				console.log(
-					`REST proxy: Polling notifications, sequence=${this.nextSequence}`,
-				);
 
 				const response = await fetch(url, {
 					signal: this.pollingAbortController.signal,
@@ -388,9 +377,6 @@ export class RestProxy {
 				}
 
 				const data = await response.json();
-				console.log(
-					`REST proxy: Poll response - notifications: ${data.notifications?.length || 0}, next_sequence: ${data.next_sequence}, has_more: ${data.has_more}`,
-				);
 
 				// Reset error count on successful poll
 				this.pollingErrorCount = 0;
@@ -402,9 +388,6 @@ export class RestProxy {
 
 				// Process notifications
 				if (data.notifications && data.notifications.length > 0) {
-					console.log(
-						`REST proxy: Processing ${data.notifications.length} notification(s)`,
-					);
 					for (const notification of data.notifications) {
 						const seq = notification.sequence;
 						if (Number.isInteger(seq)) {
@@ -469,9 +452,6 @@ export class RestProxy {
 			const hex = notification.data.replace(/\s+/g, ""); // Remove spaces
 			const bytes = hexToBytes(hex);
 
-			console.log(
-				`REST proxy: Received notification - hex: ${hex}, handlers: ${this.notificationHandlers.length}`,
-			);
 			this.log(`RX ${hex}`, LOG_CLASSES.RX);
 
 			// Handle any pending waiters first
@@ -480,7 +460,6 @@ export class RestProxy {
 			// Notify all registered handlers
 			for (const handler of this.notificationHandlers) {
 				try {
-					console.log("REST proxy: Calling notification handler");
 					handler(hex, bytes);
 				} catch (error) {
 					console.error("Error in notification handler:", error);

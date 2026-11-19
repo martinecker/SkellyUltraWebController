@@ -101,9 +101,6 @@ export class ConnectionManager {
 		// Clear any existing handlers in the active connection to avoid duplicates
 		// then register all stored notification handlers
 		this.activeConnection.clearNotificationHandlers();
-		console.log(
-			`ConnectionManager: Registering ${this.notificationHandlers.length} stored handlers with active connection`,
-		);
 		for (const handler of this.notificationHandlers) {
 			this.activeConnection.onNotification(handler);
 		}
@@ -148,15 +145,9 @@ export class ConnectionManager {
 	onNotification(handler) {
 		// Store handler for registration with active connection
 		this.notificationHandlers.push(handler);
-		console.log(
-			`ConnectionManager: Registered handler, total handlers: ${this.notificationHandlers.length}`,
-		);
 
 		// If already connected, register with active connection immediately
 		if (this.activeConnection) {
-			console.log(
-				"ConnectionManager: Registering handler with active connection",
-			);
 			this.activeConnection.onNotification(handler);
 		}
 
@@ -206,14 +197,6 @@ export class ConnectionManager {
 		}
 
 		return info;
-	}
-
-	/**
-	 * Get current connection type
-	 * @returns {string|null} - Connection type or null if not connected
-	 */
-	getConnectionType() {
-		return this.connectionType;
 	}
 
 	/**
