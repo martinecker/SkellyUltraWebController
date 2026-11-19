@@ -307,6 +307,7 @@ export const TIMEOUTS = {
 	ACK_LONG: 5000,
 	FILE_TRANSFER: 240000,
 	FILE_LIST: 6000,
+	FILE_ORDER: 5000, // Wait for the play order (BBD1) once the file list is complete
 	CONNECTION: 5000,
 };
 

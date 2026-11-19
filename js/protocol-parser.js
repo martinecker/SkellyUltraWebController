@@ -276,8 +276,8 @@ export class ProtocolParser {
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
-			this.state.updateFilesMetadata({ activeFetch: false });
-			this.state.notify("files");
+			clearTimeout(this.state.files.fetchTimer);
+			this.state.updateFilesMetadata({ activeFetch: false, fetchTimer: null });
 		}
 	}
 
@@ -358,7 +358,10 @@ export class ProtocolParser {
 				LOG_CLASSES.WARNING,
 			);
 			this.state.files.items.clear();
-			this.state.updateFilesMetadata({ expected: total });
+			this.state.updateFilesMetadata({
+				expected: total,
+				orderRequested: false,
+			});
 		}
 
 		// Update expected count

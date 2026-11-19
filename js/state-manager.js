@@ -44,6 +44,7 @@ export class StateManager {
 			items: new Map(), // serial -> file object
 			activeFetch: false, // When true, UI is disabled waiting for complete list
 			fetchTimer: null,
+			orderRequested: false, // D2/D1 sent for this refresh (the list was complete)
 			lastRefresh: null, // Timestamp of last successful refresh
 		};
 
@@ -154,6 +155,7 @@ export class StateManager {
 		this.files.expected = null;
 		this.files.items.clear(); // Clear old items immediately at start of refresh
 		this.files.activeFetch = false;
+		this.files.orderRequested = false;
 		if (this.files.fetchTimer) {
 			clearTimeout(this.files.fetchTimer);
 			this.files.fetchTimer = null;

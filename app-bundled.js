@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-19T15:03:49.114099
+ * Generated: 2026-11-19T15:12:50.700111
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -339,6 +339,8 @@ const TIMEOUTS = {
 	ACK_LONG: 5000,
 	FILE_TRANSFER: 240000,
 	FILE_LIST: 6000,
+	// Wait for the play order (BBD1) once the file list is complete
+	FILE_ORDER: 5000,
 	CONNECTION: 5000,
 };
 
@@ -1215,6 +1217,7 @@ class StateManager {
 			items: new Map(), // serial -> file object
 			activeFetch: false, // When true, UI is disabled waiting for complete list
 			fetchTimer: null,
+			orderRequested: false, // D2/D1 sent for this refresh (the list was complete)
 			lastRefresh: null, // Timestamp of last successful refresh
 		};
 
@@ -1325,6 +1328,7 @@ class StateManager {
 		this.files.expected = null;
 		this.files.items.clear(); // Clear old items immediately at start of refresh
 		this.files.activeFetch = false;
+		this.files.orderRequested = false;
 		if (this.files.fetchTimer) {
 			clearTimeout(this.files.fetchTimer);
 			this.files.fetchTimer = null;
@@ -2897,12 +2901,10 @@ class FileManager {
 		this.state.resetFiles();
 		this.state.updateFilesMetadata({ activeFetch: true });
 
-		// Send query command for files
-		await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
-
 		// Set timeout for no response, or an incomplete list (e.g. device-reported
 		// count doesn't match the entries it actually sends) — either way, stop
-		// waiting so the UI doesn't spin forever.
+		// waiting so the UI doesn't spin forever. Set before sending, since the
+		// whole list can arrive before send() returns.
 		const timer = setTimeout(() => {
 			if (this.state.files.activeFetch && !this.state.isFileListComplete()) {
 				const received = this.state.files.items.size;
@@ -2918,44 +2920,75 @@ class FileManager {
 				}
 			}
 		}, TIMEOUTS.FILE_LIST);
-
 		this.state.updateFilesMetadata({ fetchTimer: timer });
+
+		try {
+			await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
+		} catch (error) {
+			this.log(
+				`Couldn't ask for the file list: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			this.endFetch();
+		}
 	}
 
 	/**
-	 * Check if file list is complete and trigger follow-up queries
+	 * End the refresh: stop its timeout and enable the file list again
+	 */
+	endFetch() {
+		clearTimeout(this.state.files.fetchTimer);
+		this.state.updateFilesMetadata({ activeFetch: false, fetchTimer: null });
+	}
+
+	/**
+	 * Check if file list is complete and trigger follow-up queries. Called
+	 * for every file info (BBD0); asks for capacity and play order once.
+	 * Never throws: the parser calls it without waiting.
 	 */
 	async finalizeFilesIfDone() {
-		if (!this.state.files.activeFetch || !this.state.files.expected) {
+		const files = this.state.files;
+		if (!files.activeFetch || !files.expected || files.orderRequested) {
+			return;
+		}
+		if (!this.state.isFileListComplete()) {
 			return;
 		}
 
-		if (this.state.isFileListComplete()) {
-			// Keep activeFetch true - will be cleared when order arrives
-			this.state.updateFilesMetadata({ lastRefresh: new Date() });
-			if (this.state.files.fetchTimer) {
-				clearTimeout(this.state.files.fetchTimer);
-			}
-
-			// Update the received file count
-			const filesReceived = this.state.files.items.size;
-			this.state.updateDevice({ filesReceived });
-
-			this.log("File list complete ✔", LOG_CLASSES.WARNING);
-
-			// Send follow-up queries - order response will trigger UI update
-			if (this.connection.isConnected()) {
-				await this.connection.send(
-					buildCommand(COMMANDS.QUERY_CAPACITY, "", 8),
-				);
-				await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
-			} else {
+		// Keep activeFetch true - the play order (BBD1) ends the refresh. If
+		// it doesn't come, end it after FILE_ORDER so the list isn't stuck.
+		clearTimeout(files.fetchTimer);
+		const timer = setTimeout(() => {
+			if (this.state.files.activeFetch) {
 				this.log(
-					"Not connected - cannot send follow-up queries",
+					"No play order received (timeout). Showing the list without it.",
 					LOG_CLASSES.WARNING,
 				);
-				this.state.updateFilesMetadata({ activeFetch: false });
+				this.endFetch();
 			}
+		}, TIMEOUTS.FILE_ORDER);
+		this.state.updateFilesMetadata({
+			lastRefresh: new Date(),
+			fetchTimer: timer,
+			orderRequested: true,
+		});
+
+		// Update the received file count
+		const filesReceived = files.items.size;
+		this.state.updateDevice({ filesReceived });
+
+		this.log("File list complete ✔", LOG_CLASSES.WARNING);
+
+		// Send follow-up queries - order response will trigger UI update
+		try {
+			await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, "", 8));
+			await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+		} catch (error) {
+			this.log(
+				`Couldn't ask for the play order: ${error.message}`,
+				LOG_CLASSES.WARNING,
+			);
+			this.endFetch();
 		}
 	}
 
@@ -4273,8 +4306,8 @@ class ProtocolParser {
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
-			this.state.updateFilesMetadata({ activeFetch: false });
-			this.state.notify("files");
+			clearTimeout(this.state.files.fetchTimer);
+			this.state.updateFilesMetadata({ activeFetch: false, fetchTimer: null });
 		}
 	}
 
@@ -4355,7 +4388,10 @@ class ProtocolParser {
 				LOG_CLASSES.WARNING,
 			);
 			this.state.files.items.clear();
-			this.state.updateFilesMetadata({ expected: total });
+			this.state.updateFilesMetadata({
+				expected: total,
+				orderRequested: false,
+			});
 		}
 
 		// Update expected count
