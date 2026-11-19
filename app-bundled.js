@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-19T15:12:50.700111
+ * Generated: 2026-11-19T15:19:15.571157
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -339,8 +339,7 @@ const TIMEOUTS = {
 	ACK_LONG: 5000,
 	FILE_TRANSFER: 240000,
 	FILE_LIST: 6000,
-	// Wait for the play order (BBD1) once the file list is complete
-	FILE_ORDER: 5000,
+	FILE_ORDER: 5000, // Wait for the play order (BBD1) once the file list is complete
 	CONNECTION: 5000,
 };
 
@@ -406,7 +405,7 @@ const COMMANDS = {
 	SET_BRIGHTNESS: "AAF3", // ch, brightness (0-255), cluster u32, name
 	SET_RGB: "AAF4", // ch, R, G, B, color cycle, cluster u32, name
 	SELECT_RGB_CHANNEL: "AAF5", // ch (the channel the app's picker edits)
-	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest), cluster u32, name
+	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest; app uses 0-10), cluster u32, name
 
 	// Appearance: cluster 0 + empty name = live settings
 	SET_EYE: "AAF9", // icon (1-based), 00, cluster u32, name
@@ -736,35 +735,43 @@ function normalizeDeviceName(s) {
 }
 
 /**
+ * Light effect speed scales. The UI scale runs from 0 slowest to
+ * MAX_UI_EFFECT_SPEED fastest. The device uses the inverse, 0 fastest to
+ * 10 slowest, the range the manufacturer's app uses. The device takes values
+ * up to 254, and also reports 255 for fastest. Same as the HA integration.
+ */
+const MAX_UI_EFFECT_SPEED = 10;
+
+/**
  * Convert device speed value to UI speed value
- * Device: 255 or 0 = fastest, 254 = slowest
- * UI: 0 = slowest, 254 = fastest
+ * Device: 255 or 0 = fastest, 10 = slowest
+ * UI: 0 = slowest, 10 = fastest
+ * A device speed slower than the UI's slowest (11-254, set by older versions
+ * or other tools) shows as the slowest, 0.
  * @param {number} deviceSpeed - Speed value from device (0-255)
- * @returns {number} - Speed value for UI (0-254)
+ * @returns {number} - Speed value for UI (0-10)
  */
 function deviceSpeedToUI(deviceSpeed) {
 	const speed = parseInt(deviceSpeed, 10);
-	// Device speed 255 is fastest (same as 0), map to UI 254
-	if (speed === 255) {
-		return 254;
+	// Device speed 255 is fastest (same as 0)
+	if (speed >= 255) {
+		return MAX_UI_EFFECT_SPEED;
 	}
-	// Invert: device 0 (fast) -> UI 254 (fast)
-	//         device 254 (slow) -> UI 0 (slow)
-	return 254 - speed;
+	// Invert: device 0 (fast) -> UI 10 (fast)
+	//         device 10 (slow) -> UI 0 (slow)
+	return Math.max(0, MAX_UI_EFFECT_SPEED - speed);
 }
 
 /**
  * Convert UI speed value to device speed value
- * UI: 0 = slowest, 254 = fastest
- * Device: 255 or 0 = fastest, 254 = slowest
- * @param {number} uiSpeed - Speed value from UI (0-254)
- * @returns {number} - Speed value for device (0-255)
+ * UI: 0 = slowest, 10 = fastest
+ * Device: 0 = fastest, 10 = slowest
+ * @param {number} uiSpeed - Speed value from UI (0-10)
+ * @returns {number} - Speed value for device (0-10)
  */
 function uiSpeedToDevice(uiSpeed) {
-	const speed = clamp(uiSpeed, 0, 254);
-	// Invert: UI 254 (fast) -> device 0 (fast)
-	//         UI 0 (slow) -> device 254 (slow)
-	return 254 - speed;
+	const speed = clamp(uiSpeed, 0, MAX_UI_EFFECT_SPEED);
+	return MAX_UI_EFFECT_SPEED - speed;
 }
 
   // ============================================================
@@ -4643,7 +4650,12 @@ class EditModalManager {
 			);
 			edLight1EffectSpeedNum.addEventListener(
 				"input",
-				(e) => (edLight1EffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+				(e) =>
+					(edLight1EffectSpeedRange.value = clamp(
+						e.target.value,
+						0,
+						MAX_UI_EFFECT_SPEED,
+					)),
 			);
 		}
 
@@ -4683,7 +4695,12 @@ class EditModalManager {
 			);
 			edLight0EffectSpeedNum.addEventListener(
 				"input",
-				(e) => (edLight0EffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+				(e) =>
+					(edLight0EffectSpeedRange.value = clamp(
+						e.target.value,
+						0,
+						MAX_UI_EFFECT_SPEED,
+					)),
 			);
 		}
 	}
@@ -5131,7 +5148,11 @@ class EditModalManager {
 					),
 					effectMode,
 					effectSpeed: uiSpeedToDevice(
-						clamp($(`#ed${prefix}EffectSpeed`)?.value || 0, 0, 254),
+						clamp(
+							$(`#ed${prefix}EffectSpeed`)?.value || 0,
+							0,
+							MAX_UI_EFFECT_SPEED,
+						),
 					),
 					r: clamp($(`#ed${prefix}R`)?.value || defaults.r, 0, 255),
 					g: clamp($(`#ed${prefix}G`)?.value || defaults.g, 0, 255),
@@ -7630,7 +7651,7 @@ class SkellyApp {
 			g: value("G", 255),
 			b: value("B", 255),
 			colorCycle: this[`light${channel}ColorCycleEnabled`] ? 1 : 0,
-			effectSpeed: uiSpeedToDevice(value("EffectSpeed", 254)),
+			effectSpeed: uiSpeedToDevice(value("EffectSpeed", MAX_UI_EFFECT_SPEED)),
 		};
 	}
 
@@ -8078,7 +8099,7 @@ class SkellyApp {
 				sendLight1Speed(e.target.value);
 			});
 			light1EffectSpeedNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 254);
+				const clamped = clamp(e.target.value, 0, MAX_UI_EFFECT_SPEED);
 				light1EffectSpeedRange.value = clamped;
 				sendLight1Speed(clamped);
 			});
@@ -8110,7 +8131,7 @@ class SkellyApp {
 				sendLight0Speed(e.target.value);
 			});
 			light0EffectSpeedNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 254);
+				const clamped = clamp(e.target.value, 0, MAX_UI_EFFECT_SPEED);
 				light0EffectSpeedRange.value = clamped;
 				sendLight0Speed(clamped);
 			});

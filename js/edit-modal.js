@@ -21,6 +21,7 @@ import {
 	buildCommand,
 	clamp,
 	deviceSpeedToUI,
+	MAX_UI_EFFECT_SPEED,
 	uiSpeedToDevice,
 } from "./protocol.js";
 
@@ -140,7 +141,12 @@ export class EditModalManager {
 			);
 			edLight1EffectSpeedNum.addEventListener(
 				"input",
-				(e) => (edLight1EffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+				(e) =>
+					(edLight1EffectSpeedRange.value = clamp(
+						e.target.value,
+						0,
+						MAX_UI_EFFECT_SPEED,
+					)),
 			);
 		}
 
@@ -180,7 +186,12 @@ export class EditModalManager {
 			);
 			edLight0EffectSpeedNum.addEventListener(
 				"input",
-				(e) => (edLight0EffectSpeedRange.value = clamp(e.target.value, 0, 254)),
+				(e) =>
+					(edLight0EffectSpeedRange.value = clamp(
+						e.target.value,
+						0,
+						MAX_UI_EFFECT_SPEED,
+					)),
 			);
 		}
 	}
@@ -628,7 +639,11 @@ export class EditModalManager {
 					),
 					effectMode,
 					effectSpeed: uiSpeedToDevice(
-						clamp($(`#ed${prefix}EffectSpeed`)?.value || 0, 0, 254),
+						clamp(
+							$(`#ed${prefix}EffectSpeed`)?.value || 0,
+							0,
+							MAX_UI_EFFECT_SPEED,
+						),
 					),
 					r: clamp($(`#ed${prefix}R`)?.value || defaults.r, 0, 255),
 					g: clamp($(`#ed${prefix}G`)?.value || defaults.g, 0, 255),

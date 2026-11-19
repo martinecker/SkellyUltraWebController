@@ -34,7 +34,7 @@ This project also has a [REST Server](https://github.com/martinecker/SkellyUltra
   - Lethal Lily: Flickering, Pulsing, Chasing
   - Ultra Santa: Static, Sparkle, Pulsing
 - **Color Cycling**: Enable rainbow color cycling mode
-- **Effect Speed**: Fine-tune strobe and pulsing speeds (0-255)
+- **Effect Speed**: Fine-tune strobe and pulsing speeds (0 slowest to 10 fastest, like the official app)
 
 ### 🎭 Appearance & Animation
 

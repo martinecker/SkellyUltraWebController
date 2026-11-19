@@ -233,33 +233,41 @@ export function normalizeDeviceName(s) {
 }
 
 /**
+ * Light effect speed scales. The UI scale runs from 0 slowest to
+ * MAX_UI_EFFECT_SPEED fastest. The device uses the inverse, 0 fastest to
+ * 10 slowest, the range the manufacturer's app uses. The device takes values
+ * up to 254, and also reports 255 for fastest. Same as the HA integration.
+ */
+export const MAX_UI_EFFECT_SPEED = 10;
+
+/**
  * Convert device speed value to UI speed value
- * Device: 255 or 0 = fastest, 254 = slowest
- * UI: 0 = slowest, 254 = fastest
+ * Device: 255 or 0 = fastest, 10 = slowest
+ * UI: 0 = slowest, 10 = fastest
+ * A device speed slower than the UI's slowest (11-254, set by older versions
+ * or other tools) shows as the slowest, 0.
  * @param {number} deviceSpeed - Speed value from device (0-255)
- * @returns {number} - Speed value for UI (0-254)
+ * @returns {number} - Speed value for UI (0-10)
  */
 export function deviceSpeedToUI(deviceSpeed) {
 	const speed = parseInt(deviceSpeed, 10);
-	// Device speed 255 is fastest (same as 0), map to UI 254
-	if (speed === 255) {
-		return 254;
+	// Device speed 255 is fastest (same as 0)
+	if (speed >= 255) {
+		return MAX_UI_EFFECT_SPEED;
 	}
-	// Invert: device 0 (fast) -> UI 254 (fast)
-	//         device 254 (slow) -> UI 0 (slow)
-	return 254 - speed;
+	// Invert: device 0 (fast) -> UI 10 (fast)
+	//         device 10 (slow) -> UI 0 (slow)
+	return Math.max(0, MAX_UI_EFFECT_SPEED - speed);
 }
 
 /**
  * Convert UI speed value to device speed value
- * UI: 0 = slowest, 254 = fastest
- * Device: 255 or 0 = fastest, 254 = slowest
- * @param {number} uiSpeed - Speed value from UI (0-254)
- * @returns {number} - Speed value for device (0-255)
+ * UI: 0 = slowest, 10 = fastest
+ * Device: 0 = fastest, 10 = slowest
+ * @param {number} uiSpeed - Speed value from UI (0-10)
+ * @returns {number} - Speed value for device (0-10)
  */
 export function uiSpeedToDevice(uiSpeed) {
-	const speed = clamp(uiSpeed, 0, 254);
-	// Invert: UI 254 (fast) -> device 0 (fast)
-	//         UI 0 (slow) -> device 254 (slow)
-	return 254 - speed;
+	const speed = clamp(uiSpeed, 0, MAX_UI_EFFECT_SPEED);
+	return MAX_UI_EFFECT_SPEED - speed;
 }

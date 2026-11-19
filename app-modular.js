@@ -30,6 +30,7 @@ import {
 	clamp,
 	deviceSpeedToUI,
 	escapeHtml,
+	MAX_UI_EFFECT_SPEED,
 	uiSpeedToDevice,
 } from "./js/protocol.js";
 import { ProtocolParser } from "./js/protocol-parser.js";
@@ -1240,7 +1241,7 @@ class SkellyApp {
 			g: value("G", 255),
 			b: value("B", 255),
 			colorCycle: this[`light${channel}ColorCycleEnabled`] ? 1 : 0,
-			effectSpeed: uiSpeedToDevice(value("EffectSpeed", 254)),
+			effectSpeed: uiSpeedToDevice(value("EffectSpeed", MAX_UI_EFFECT_SPEED)),
 		};
 	}
 
@@ -1688,7 +1689,7 @@ class SkellyApp {
 				sendLight1Speed(e.target.value);
 			});
 			light1EffectSpeedNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 254);
+				const clamped = clamp(e.target.value, 0, MAX_UI_EFFECT_SPEED);
 				light1EffectSpeedRange.value = clamped;
 				sendLight1Speed(clamped);
 			});
@@ -1720,7 +1721,7 @@ class SkellyApp {
 				sendLight0Speed(e.target.value);
 			});
 			light0EffectSpeedNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 254);
+				const clamped = clamp(e.target.value, 0, MAX_UI_EFFECT_SPEED);
 				light0EffectSpeedRange.value = clamped;
 				sendLight0Speed(clamped);
 			});

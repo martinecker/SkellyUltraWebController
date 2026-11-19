@@ -373,7 +373,7 @@ export const COMMANDS = {
 	SET_BRIGHTNESS: "AAF3", // ch, brightness (0-255), cluster u32, name
 	SET_RGB: "AAF4", // ch, R, G, B, color cycle, cluster u32, name
 	SELECT_RGB_CHANNEL: "AAF5", // ch (the channel the app's picker edits)
-	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest), cluster u32, name
+	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest; 255 is also fastest; app uses 0-10), cluster u32, name
 
 	// Appearance: cluster 0 + empty name = live settings
 	SET_EYE: "AAF9", // icon (1-based), 00, cluster u32, name
