@@ -214,9 +214,16 @@ export class BLEManager {
 				);
 			}
 
-			// Disconnect GATT
-			if (this.device?.gatt.connected) {
-				this.device.gatt.disconnect();
+			// Disconnect GATT. handleDisconnect runs below, so the
+			// gattserverdisconnected event must not run it a second time.
+			if (this.device) {
+				this.device.removeEventListener(
+					"gattserverdisconnected",
+					this.handleDisconnect,
+				);
+				if (this.device.gatt.connected) {
+					this.device.gatt.disconnect();
+				}
 			}
 		} finally {
 			this.handleDisconnect();
@@ -279,7 +286,8 @@ export class BLEManager {
 	 * @param {Event} event - Characteristic value changed event
 	 */
 	handleNotification(event) {
-		const value = new Uint8Array(event.target.value.buffer);
+		const data = event.target.value; // DataView, may be a slice of its buffer
+		const value = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 		const hex = bytesToHex(value);
 
 		this.log(`RX ${hex}`, LOG_CLASSES.RX);

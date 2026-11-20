@@ -79,23 +79,28 @@ export class ConnectionManager {
 		this.writeQueue = Promise.resolve();
 
 		if (type === ConnectionType.REST_PROXY) {
-			// Connect via REST proxy
 			if (!restUrl) {
 				throw new Error("REST server URL is required");
 			}
-
-			this.activeConnection = this.restProxy;
-			this.connectionType = ConnectionType.REST_PROXY;
-
-			await this.restProxy.connect(restUrl, nameFilter);
-		} else if (type === ConnectionType.DIRECT_BLE) {
-			// Connect via direct BLE
-			this.activeConnection = this.bleManager;
-			this.connectionType = ConnectionType.DIRECT_BLE;
-
-			await this.bleManager.connect(nameFilter);
-		} else {
+		} else if (type !== ConnectionType.DIRECT_BLE) {
 			throw new Error(`Unknown connection type: ${type}`);
+		}
+
+		// Set before connecting, so state observers that run during the
+		// connect already find the backend; cleared again if it fails
+		this.activeConnection =
+			type === ConnectionType.REST_PROXY ? this.restProxy : this.bleManager;
+		this.connectionType = type;
+		try {
+			if (type === ConnectionType.REST_PROXY) {
+				await this.restProxy.connect(restUrl, nameFilter);
+			} else {
+				await this.bleManager.connect(nameFilter);
+			}
+		} catch (error) {
+			this.activeConnection = null;
+			this.connectionType = null;
+			throw error;
 		}
 
 		// Clear any existing handlers in the active connection to avoid duplicates

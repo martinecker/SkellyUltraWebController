@@ -69,3 +69,16 @@ test("a queued send goes to the connection it was made on", async () => {
 	assert.deepEqual(first.sent, [1, 2]);
 	assert.deepEqual(second.sent, [3]);
 });
+
+test("a failed connect leaves no active connection", async () => {
+	const cm = new ConnectionManager({}, () => {});
+	cm.bleManager = {
+		async connect() {
+			throw new Error("GATT connect failed");
+		},
+	};
+	await assert.rejects(cm.connect({ type: "direct" }), /GATT connect failed/);
+	assert.equal(cm.activeConnection, null);
+	assert.equal(cm.connectionType, null);
+	assert.equal(cm.isConnected(), false);
+});

@@ -474,7 +474,11 @@ export class ProtocolParser {
 	 * Parse format ACK (BBC8)
 	 */
 	parseFormatAck(hex) {
-		const ok = parseInt(hex.slice(4, 6), 16);
-		this.log(`Format ok=${ok}`);
+		const failed = parseInt(hex.slice(4, 6), 16);
+		if (failed === 0) {
+			this.log("Format done ✔");
+		} else {
+			this.log(`Format failed (result=${failed})`, LOG_CLASSES.WARNING);
+		}
 	}
 }

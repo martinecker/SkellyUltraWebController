@@ -3,7 +3,7 @@
  * Implements BLE communication via the Skelly Ultra REST server
  */
 
-import { LOG_CLASSES } from "./constants.js";
+import { LOG_CLASSES, TIMEOUTS } from "./constants.js";
 import { bytesToHex, hexToBytes } from "./protocol.js";
 
 /**
@@ -476,7 +476,7 @@ export class RestProxy {
 	 * @param {number} timeoutMs - Timeout in milliseconds
 	 * @returns {Promise<string>} - Response hex string
 	 */
-	waitForResponse(prefix, timeoutMs) {
+	waitForResponse(prefix, timeoutMs = TIMEOUTS.ACK) {
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
 				// Remove waiter from list

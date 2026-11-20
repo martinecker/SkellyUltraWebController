@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-19T21:44:11.908095
+ * Generated: 2026-11-20T15:19:41.331050
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1599,9 +1599,16 @@ class BLEManager {
 				);
 			}
 
-			// Disconnect GATT
-			if (this.device?.gatt.connected) {
-				this.device.gatt.disconnect();
+			// Disconnect GATT. handleDisconnect runs below, so the
+			// gattserverdisconnected event must not run it a second time.
+			if (this.device) {
+				this.device.removeEventListener(
+					"gattserverdisconnected",
+					this.handleDisconnect,
+				);
+				if (this.device.gatt.connected) {
+					this.device.gatt.disconnect();
+				}
 			}
 		} finally {
 			this.handleDisconnect();
@@ -1664,7 +1671,8 @@ class BLEManager {
 	 * @param {Event} event - Characteristic value changed event
 	 */
 	handleNotification(event) {
-		const value = new Uint8Array(event.target.value.buffer);
+		const data = event.target.value; // DataView, may be a slice of its buffer
+		const value = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 		const hex = bytesToHex(value);
 
 		this.log(`RX ${hex}`, LOG_CLASSES.RX);
@@ -2259,7 +2267,7 @@ class RestProxy {
 	 * @param {number} timeoutMs - Timeout in milliseconds
 	 * @returns {Promise<string>} - Response hex string
 	 */
-	waitForResponse(prefix, timeoutMs) {
+	waitForResponse(prefix, timeoutMs = TIMEOUTS.ACK) {
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
 				// Remove waiter from list
@@ -2482,23 +2490,28 @@ class ConnectionManager {
 		this.writeQueue = Promise.resolve();
 
 		if (type === ConnectionType.REST_PROXY) {
-			// Connect via REST proxy
 			if (!restUrl) {
 				throw new Error("REST server URL is required");
 			}
-
-			this.activeConnection = this.restProxy;
-			this.connectionType = ConnectionType.REST_PROXY;
-
-			await this.restProxy.connect(restUrl, nameFilter);
-		} else if (type === ConnectionType.DIRECT_BLE) {
-			// Connect via direct BLE
-			this.activeConnection = this.bleManager;
-			this.connectionType = ConnectionType.DIRECT_BLE;
-
-			await this.bleManager.connect(nameFilter);
-		} else {
+		} else if (type !== ConnectionType.DIRECT_BLE) {
 			throw new Error(`Unknown connection type: ${type}`);
+		}
+
+		// Set before connecting, so state observers that run during the
+		// connect already find the backend; cleared again if it fails
+		this.activeConnection =
+			type === ConnectionType.REST_PROXY ? this.restProxy : this.bleManager;
+		this.connectionType = type;
+		try {
+			if (type === ConnectionType.REST_PROXY) {
+				await this.restProxy.connect(restUrl, nameFilter);
+			} else {
+				await this.bleManager.connect(nameFilter);
+			}
+		} catch (error) {
+			this.activeConnection = null;
+			this.connectionType = null;
+			throw error;
 		}
 
 		// Clear any existing handlers in the active connection to avoid duplicates
@@ -4305,8 +4318,12 @@ class ProtocolParser {
 	 * Parse format ACK (BBC8)
 	 */
 	parseFormatAck(hex) {
-		const ok = parseInt(hex.slice(4, 6), 16);
-		this.log(`Format ok=${ok}`);
+		const failed = parseInt(hex.slice(4, 6), 16);
+		if (failed === 0) {
+			this.log("Format done ✔");
+		} else {
+			this.log(`Format failed (result=${failed})`, LOG_CLASSES.WARNING);
+		}
 	}
 }
 
@@ -7166,7 +7183,7 @@ class SkellyApp {
 				this.logger.log("Not connected", LOG_CLASSES.WARNING);
 				return;
 			}
-			const tag = $("#tag")?.value || "E0";
+			const tag = $("#tag")?.value || COMMANDS.QUERY_PARAMS;
 			const payload = $("#payload")?.value || "";
 			await this.connection.send(buildCommand(tag, payload, 8));
 			this.logger.log(
@@ -7310,7 +7327,7 @@ class SkellyApp {
 			if (!this.connection.isConnected()) {
 				return;
 			}
-			const v = Math.max(0, Math.min(255, parseInt(value, 10)));
+			const v = Math.max(0, Math.min(100, parseInt(value, 10)));
 			await this.connection.send(
 				buildCommand(
 					COMMANDS.SET_VOLUME,
@@ -7744,7 +7761,7 @@ class SkellyApp {
 				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
 				const cluster = "00000000";
 				await this.connection.send(
-					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 9),
+					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
 				);
 				this.logger.log(
 					`Set Light 1 mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,

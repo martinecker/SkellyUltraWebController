@@ -1025,7 +1025,7 @@ class SkellyApp {
 				this.logger.log("Not connected", LOG_CLASSES.WARNING);
 				return;
 			}
-			const tag = $("#tag")?.value || "E0";
+			const tag = $("#tag")?.value || COMMANDS.QUERY_PARAMS;
 			const payload = $("#payload")?.value || "";
 			await this.connection.send(buildCommand(tag, payload, 8));
 			this.logger.log(
@@ -1169,7 +1169,7 @@ class SkellyApp {
 			if (!this.connection.isConnected()) {
 				return;
 			}
-			const v = Math.max(0, Math.min(255, parseInt(value, 10)));
+			const v = Math.max(0, Math.min(100, parseInt(value, 10)));
 			await this.connection.send(
 				buildCommand(
 					COMMANDS.SET_VOLUME,
@@ -1603,7 +1603,7 @@ class SkellyApp {
 				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
 				const cluster = "00000000";
 				await this.connection.send(
-					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 9),
+					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
 				);
 				this.logger.log(
 					`Set Light 1 mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
