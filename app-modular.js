@@ -674,7 +674,9 @@ class SkellyApp {
 
 			// Determine filter value and device type
 			let nameFilter = "";
-			let deviceType = savedDeviceType;
+			// The type persisted now; it may have changed since the page loaded
+			let deviceType =
+				localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
 
 			if (connectFilterDefault?.checked) {
 				// Default name filter — device type comes directly from the dropdown
@@ -2385,8 +2387,13 @@ class SkellyApp {
 	 */
 	updateDeviceUI(device) {
 		// The firmware version decides whether scenes exist
-		if (!device.connected) this.liveCustomColors = null;
-		else this.showReportedSceneColors();
+		if (!device.connected) {
+			this.liveCustomColors = null;
+			this.shownPin = null;
+			this.shownBtName = null;
+		} else {
+			this.showReportedSceneColors();
+		}
 		this.updateScenePicker();
 
 		// Update status
@@ -2486,15 +2493,22 @@ class SkellyApp {
 			$("#statPin").textContent = device.pin || "—";
 		}
 
-		// Update PIN input field
-		if ($("#pinInput") && device.pin) {
+		// Fill the PIN and name inputs only when the device reports a new
+		// value, so other device updates don't overwrite what is being typed
+		if ($("#pinInput") && device.pin && device.pin !== this.shownPin) {
 			$("#pinInput").value = device.pin;
+			this.shownPin = device.pin;
 		}
 
-		// Update device name input field (remove "(Live)" suffix if present)
-		if ($("#deviceNameInput") && device.btName) {
+		// Device name without the "(Live)" suffix
+		if (
+			$("#deviceNameInput") &&
+			device.btName &&
+			device.btName !== this.shownBtName
+		) {
 			const displayName = device.btName.replace(/\s*\(Live\)\s*$/i, "");
 			$("#deviceNameInput").value = displayName;
+			this.shownBtName = device.btName;
 		}
 	}
 

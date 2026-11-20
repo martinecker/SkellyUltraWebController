@@ -473,6 +473,7 @@ export class EditModalManager {
 		document.addEventListener("keydown", (e) => {
 			if (
 				e.key === "Escape" &&
+				!e.defaultPrevented &&
 				this.modal &&
 				!this.modal.classList.contains("hidden") &&
 				(document
@@ -480,6 +481,7 @@ export class EditModalManager {
 					?.classList.contains("hidden") ??
 					true)
 			) {
+				e.preventDefault();
 				this.close();
 			}
 		});

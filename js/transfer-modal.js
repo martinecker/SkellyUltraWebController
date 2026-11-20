@@ -631,13 +631,21 @@ export class TransferModalManager {
 			if (!this.state.transfer.inProgress) this.close();
 		});
 
-		// Escape key closes transfer modal (higher priority than edit modal handler)
+		// Escape key closes transfer modal (higher priority than edit modal
+		// handler, which skips an Escape handled here), unless the overwrite
+		// confirmation is open on top: its own handler cancels just that
 		document.addEventListener("keydown", (e) => {
+			const overwriteOpen = !(
+				$("#overwriteModal")?.classList.contains("hidden") ?? true
+			);
 			if (
 				e.key === "Escape" &&
+				!e.defaultPrevented &&
+				!overwriteOpen &&
 				!this.modal?.classList.contains("hidden") &&
 				!this.state.transfer.inProgress
 			) {
+				e.preventDefault();
 				this.close();
 			}
 		});
@@ -916,6 +924,7 @@ export class TransferModalManager {
 			// Handle escape key
 			const handleEscape = (e) => {
 				if (e.key === "Escape") {
+					e.preventDefault();
 					handleCancel();
 				}
 			};

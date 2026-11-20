@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-20T15:19:41.331050
+ * Generated: 2026-11-20T17:37:27.689534
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -4785,6 +4785,7 @@ class EditModalManager {
 		document.addEventListener("keydown", (e) => {
 			if (
 				e.key === "Escape" &&
+				!e.defaultPrevented &&
 				this.modal &&
 				!this.modal.classList.contains("hidden") &&
 				(document
@@ -4792,6 +4793,7 @@ class EditModalManager {
 					?.classList.contains("hidden") ??
 					true)
 			) {
+				e.preventDefault();
 				this.close();
 			}
 		});
@@ -5804,13 +5806,21 @@ class TransferModalManager {
 			if (!this.state.transfer.inProgress) this.close();
 		});
 
-		// Escape key closes transfer modal (higher priority than edit modal handler)
+		// Escape key closes transfer modal (higher priority than edit modal
+		// handler, which skips an Escape handled here), unless the overwrite
+		// confirmation is open on top: its own handler cancels just that
 		document.addEventListener("keydown", (e) => {
+			const overwriteOpen = !(
+				$("#overwriteModal")?.classList.contains("hidden") ?? true
+			);
 			if (
 				e.key === "Escape" &&
+				!e.defaultPrevented &&
+				!overwriteOpen &&
 				!this.modal?.classList.contains("hidden") &&
 				!this.state.transfer.inProgress
 			) {
+				e.preventDefault();
 				this.close();
 			}
 		});
@@ -6089,6 +6099,7 @@ class TransferModalManager {
 			// Handle escape key
 			const handleEscape = (e) => {
 				if (e.key === "Escape") {
+					e.preventDefault();
 					handleCancel();
 				}
 			};
@@ -6832,7 +6843,9 @@ class SkellyApp {
 
 			// Determine filter value and device type
 			let nameFilter = "";
-			let deviceType = savedDeviceType;
+			// The type persisted now; it may have changed since the page loaded
+			let deviceType =
+				localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
 
 			if (connectFilterDefault?.checked) {
 				// Default name filter — device type comes directly from the dropdown
@@ -8543,8 +8556,13 @@ class SkellyApp {
 	 */
 	updateDeviceUI(device) {
 		// The firmware version decides whether scenes exist
-		if (!device.connected) this.liveCustomColors = null;
-		else this.showReportedSceneColors();
+		if (!device.connected) {
+			this.liveCustomColors = null;
+			this.shownPin = null;
+			this.shownBtName = null;
+		} else {
+			this.showReportedSceneColors();
+		}
 		this.updateScenePicker();
 
 		// Update status
@@ -8644,15 +8662,22 @@ class SkellyApp {
 			$("#statPin").textContent = device.pin || "—";
 		}
 
-		// Update PIN input field
-		if ($("#pinInput") && device.pin) {
+		// Fill the PIN and name inputs only when the device reports a new
+		// value, so other device updates don't overwrite what is being typed
+		if ($("#pinInput") && device.pin && device.pin !== this.shownPin) {
 			$("#pinInput").value = device.pin;
+			this.shownPin = device.pin;
 		}
 
-		// Update device name input field (remove "(Live)" suffix if present)
-		if ($("#deviceNameInput") && device.btName) {
+		// Device name without the "(Live)" suffix
+		if (
+			$("#deviceNameInput") &&
+			device.btName &&
+			device.btName !== this.shownBtName
+		) {
 			const displayName = device.btName.replace(/\s*\(Live\)\s*$/i, "");
 			$("#deviceNameInput").value = displayName;
+			this.shownBtName = device.btName;
 		}
 	}
 
