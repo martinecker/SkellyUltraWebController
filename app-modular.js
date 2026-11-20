@@ -8,6 +8,7 @@ import {
 	COMMANDS,
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
+	deviceTypeFromName,
 	getEyeIconPath,
 	KNOWN_FIRMWARE,
 	LOG_CLASSES,
@@ -2285,7 +2286,7 @@ class SkellyApp {
 
 			// Auto-detect device type from BLE name and apply matching profile
 			const connectedName = this.state.device.name || "";
-			const detectedType = this.detectDeviceTypeFromName(connectedName);
+			const detectedType = deviceTypeFromName(connectedName);
 			if (detectedType && detectedType !== this.state.deviceType) {
 				this.logger.log(
 					`Auto-detected device type: ${DEVICE_PROFILES[detectedType].uiName} (from "${connectedName}")`,
@@ -2326,24 +2327,6 @@ class SkellyApp {
 				LOG_CLASSES.WARNING,
 			);
 		}
-	}
-
-	/**
-	 * Detect device type from a BLE device name by matching against the profiles' bleNames.
-	 * Returns the matching DEVICE_TYPES key, or null if no profile matches.
-	 * @param {string} deviceName
-	 * @returns {string|null}
-	 */
-	detectDeviceTypeFromName(deviceName) {
-		if (!deviceName) return null;
-		const lower = deviceName.toLowerCase();
-		// The first profile with a name the device's name contains
-		for (const [type, profile] of Object.entries(DEVICE_PROFILES)) {
-			if (profile.bleNames.some((name) => lower.includes(name.toLowerCase()))) {
-				return type;
-			}
-		}
-		return null;
 	}
 
 	/**

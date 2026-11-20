@@ -30,13 +30,16 @@ export const CAPABILITIES = {
 
 // Device Profiles — per-device UI configuration
 // bleNames: the BLE names the device advertises, the first being the default.
-// A device whose name contains one of them is detected as that type, and each
-// is offered in the connect dialog's name filter.
+// Each is offered in the connect dialog's name filter.
+// nameMatches: lowercase parts of a name that identify the type (a device
+// whose name contains one is that type), the same as the HA integration's
+// ble_names, so e.g. "Ultra Skelly" without "v2" is a Skelly too.
 // Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
 export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		// "Animated Skelly" is the older (v66) firmware's name
 		bleNames: ["Ultra Skelly v2", "Animated Skelly"],
+		nameMatches: ["animated skelly", "ultra skelly"],
 		uiName: "Ultra Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 18,
@@ -86,6 +89,7 @@ export const DEVICE_PROFILES = {
 	},
 	[DEVICE_TYPES.SKELLY_12FT]: {
 		bleNames: ["12ft Skelly"],
+		nameMatches: ["12ft skelly"],
 		uiName: "12ft Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 20,
@@ -112,6 +116,7 @@ export const DEVICE_PROFILES = {
 	},
 	[DEVICE_TYPES.LILY]: {
 		bleNames: ["Lethal Lily"],
+		nameMatches: ["lethal lily"],
 		uiName: "Lethal Lily",
 		hasEyeImage: false,
 		movements: [
@@ -160,6 +165,7 @@ export const DEVICE_PROFILES = {
 	},
 	[DEVICE_TYPES.SANTA]: {
 		bleNames: ["Ultra Santa", "Santa Claus"],
+		nameMatches: ["ultra santa", "santa claus"],
 		uiName: "Ultra Santa",
 		hasEyeImage: false,
 		movements: [
@@ -224,6 +230,23 @@ export function hasCapability(deviceType, version, capability) {
 			? version
 			: Number.parseInt(String(version).replace(/^v/i, ""), 10);
 	return Number.isFinite(number) && number >= minVersion;
+}
+
+/**
+ * The device type a BLE name belongs to (a DEVICE_TYPES value), or null: the
+ * first profile with one of its nameMatches in the name, ignoring case.
+ * @param {string} deviceName
+ * @returns {string|null}
+ */
+export function deviceTypeFromName(deviceName) {
+	if (!deviceName) return null;
+	const lower = deviceName.toLowerCase();
+	for (const [type, profile] of Object.entries(DEVICE_PROFILES)) {
+		if (profile.nameMatches.some((match) => lower.includes(match))) {
+			return type;
+		}
+	}
+	return null;
 }
 
 // Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
@@ -439,4 +462,6 @@ export const KNOWN_FIRMWARE = {
 	[DEVICE_TYPES.LILY]: {
 		v24: {},
 	},
+	// No Santa firmware has been tried yet, so every version gets the warning
+	[DEVICE_TYPES.SANTA]: {},
 };
