@@ -10,7 +10,7 @@ import {
 	DEVICE_TYPES,
 	deviceTypeFromName,
 	getEyeIconPath,
-	KNOWN_FIRMWARE,
+	isTestedFirmware,
 	LOG_CLASSES,
 	STORAGE_KEYS,
 } from "./js/constants.js";
@@ -2429,7 +2429,7 @@ class SkellyApp {
 		// Show warning if the detected firmware version hasn't been tested with this app
 		if (device.version && device.version !== this._warnedFwVersion) {
 			this._warnedFwVersion = device.version;
-			if (!KNOWN_FIRMWARE[this.state.deviceType]?.[device.version]) {
+			if (!isTestedFirmware(this.state.deviceType, device.version)) {
 				const el = $("#fwWarningVersion");
 				if (el) el.textContent = `${device.version} (${this.state.deviceType})`;
 				$("#fwWarningModal")?.classList.remove("hidden");

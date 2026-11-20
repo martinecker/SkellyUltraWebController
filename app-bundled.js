@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-20T17:47:29.525793
+ * Generated: 2026-11-20T20:26:37.090312
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -111,6 +111,8 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Strobe" },
 			{ value: 3, label: "Pulsing" },
 		],
+		// Firmware versions tried with this app; others get a warning dialog
+		testedFirmware: [66, 68],
 		// Capability -> lowest firmware version that has it (0: any version).
 		// v66 (advertises "Animated Skelly") has none, v68 ("Ultra Skelly v2") has them.
 		capabilities: {
@@ -140,6 +142,7 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Strobe" },
 			{ value: 3, label: "Pulsing" },
 		],
+		testedFirmware: [14],
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 14,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 14,
@@ -189,6 +192,7 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Pulsing" },
 			{ value: 3, label: "Chasing" },
 		],
+		testedFirmware: [24],
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 24,
 			[CAPABILITIES.SET_ALL_LIGHTS]: 24,
@@ -238,6 +242,8 @@ const DEVICE_PROFILES = {
 			{ value: 2, label: "Sparkle" },
 			{ value: 3, label: "Pulsing" },
 		],
+		// No Santa firmware has been tried yet, so every version gets the warning
+		testedFirmware: [],
 		// The app treats Santa as a scene model; no firmware version is known
 		// yet, so any version counts as capable
 		capabilities: {
@@ -256,12 +262,30 @@ const DEVICE_PROFILES = {
  */
 function hasCapability(deviceType, version, capability) {
 	const minVersion = DEVICE_PROFILES[deviceType]?.capabilities?.[capability];
-	if (minVersion == null || version == null) return false;
+	const number = firmwareNumber(version);
+	return minVersion != null && number != null && number >= minVersion;
+}
+
+/**
+ * Whether this firmware version (as for hasCapability) has been tried with
+ * this device type (the profile's testedFirmware).
+ */
+function isTestedFirmware(deviceType, version) {
+	const number = firmwareNumber(version);
+	return (
+		number != null &&
+		(DEVICE_PROFILES[deviceType]?.testedFirmware ?? []).includes(number)
+	);
+}
+
+// Firmware version "v68" or 68 as a number, or null when unknown
+function firmwareNumber(version) {
+	if (version == null) return null;
 	const number =
 		typeof version === "number"
 			? version
 			: Number.parseInt(String(version).replace(/^v/i, ""), 10);
-	return Number.isFinite(number) && number >= minVersion;
+	return Number.isFinite(number) ? number : null;
 }
 
 /**
@@ -480,22 +504,6 @@ const LIGHT_SCENE_COLORS = Object.freeze({
 // File name marker in protocol
 const PROTOCOL_MARKERS = {
 	FILENAME: "5C55", // UTF16LE filename marker
-};
-
-// Firmware versions that have been tested, keyed by device type then version string.
-const KNOWN_FIRMWARE = {
-	[DEVICE_TYPES.SKELLY]: {
-		v66: {},
-		v68: {},
-	},
-	[DEVICE_TYPES.SKELLY_12FT]: {
-		v14: {},
-	},
-	[DEVICE_TYPES.LILY]: {
-		v24: {},
-	},
-	// No Santa firmware has been tried yet, so every version gets the warning
-	[DEVICE_TYPES.SANTA]: {},
 };
 
   // ============================================================
@@ -8622,7 +8630,7 @@ class SkellyApp {
 		// Show warning if the detected firmware version hasn't been tested with this app
 		if (device.version && device.version !== this._warnedFwVersion) {
 			this._warnedFwVersion = device.version;
-			if (!KNOWN_FIRMWARE[this.state.deviceType]?.[device.version]) {
+			if (!isTestedFirmware(this.state.deviceType, device.version)) {
 				const el = $("#fwWarningVersion");
 				if (el) el.textContent = `${device.version} (${this.state.deviceType})`;
 				$("#fwWarningModal")?.classList.remove("hidden");

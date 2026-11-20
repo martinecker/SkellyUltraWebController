@@ -6,7 +6,7 @@ import {
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
 	deviceTypeFromName,
-	KNOWN_FIRMWARE,
+	isTestedFirmware,
 } from "../js/constants.js";
 
 test("each profile's own BLE names are detected as that type", () => {
@@ -30,8 +30,20 @@ test("unknown or empty names have no type", () => {
 	assert.equal(deviceTypeFromName(null), null);
 });
 
-test("every device type has a KNOWN_FIRMWARE entry", () => {
-	for (const type of Object.values(DEVICE_TYPES)) {
-		assert.ok(KNOWN_FIRMWARE[type], type);
+test("every profile lists its tested firmware", () => {
+	for (const [type, profile] of Object.entries(DEVICE_PROFILES)) {
+		assert.ok(Array.isArray(profile.testedFirmware), type);
 	}
+});
+
+test("tested firmware, as the device state holds it or as a number", () => {
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY, "v66"), true);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY, "v68"), true);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY, 68), true);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY, "v69"), false);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY_12FT, "v14"), true);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.LILY, "v24"), true);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SANTA, "v1"), false);
+	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY, null), false);
+	assert.equal(isTestedFirmware("unknown", "v68"), false);
 });
