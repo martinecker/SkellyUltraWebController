@@ -35,6 +35,7 @@ import {
 	clamp,
 	deviceSpeedToUI,
 	escapeHtml,
+	intToHex,
 	MAX_UI_EFFECT_SPEED,
 	rgbToHex,
 	uiSpeedToDevice,
@@ -1113,10 +1114,7 @@ class SkellyApp {
 		const wifiBytes = new TextEncoder().encode("01234567");
 		const wifiHex = bytesToHex(wifiBytes);
 
-		const nameLengthHex = btName.length
-			.toString(16)
-			.padStart(2, "0")
-			.toUpperCase();
+		const nameLengthHex = intToHex(btName.length, 1);
 
 		// BT name as ASCII bytes
 		const nameBytes = new TextEncoder().encode(btName);
@@ -1148,11 +1146,7 @@ class SkellyApp {
 			}
 			const v = Math.max(0, Math.min(100, parseInt(value, 10)));
 			await this.connection.send(
-				buildCommand(
-					COMMANDS.SET_VOLUME,
-					v.toString(16).padStart(2, "0").toUpperCase(),
-					8,
-				),
+				buildCommand(COMMANDS.SET_VOLUME, intToHex(v, 1), 8),
 			);
 			this.logger.log(`Set volume to ${v}`);
 		};
@@ -1886,7 +1880,7 @@ class SkellyApp {
 	 * Handle play file button click
 	 */
 	async handlePlayFile(serial) {
-		const serialHex = serial.toString(16).padStart(4, "0").toUpperCase();
+		const serialHex = intToHex(serial, 2);
 
 		// Check if this file is currently playing
 		const isPlaying =

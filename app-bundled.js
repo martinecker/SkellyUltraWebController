@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T10:53:30.725382
+ * Generated: 2026-11-22T19:42:05.459504
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -591,6 +591,20 @@ function intToHex(n, bytes) {
 }
 
 /**
+ * One byte as two hex digits, refusing anything that isn't an integer
+ * 0-255 (intToHex would wrap it instead)
+ * @param {number} value - Byte value
+ * @param {string} what - What the value is, for the error
+ * @returns {string} - Uppercase hex string
+ */
+function byteHex(value, what) {
+	if (!Number.isInteger(value) || value < 0 || value > 255) {
+		throw new RangeError(`${what} must be 0-255, got ${value}`);
+	}
+	return intToHex(value, 1);
+}
+
+/**
  * Convert string to UTF16-LE hex representation
  * @param {string} str - Input string
  * @returns {string} - Uppercase hex string
@@ -598,27 +612,12 @@ function intToHex(n, bytes) {
 function utf16leHex(str) {
 	if (!str) return "";
 	let hex = "";
-	for (const ch of str) {
-		const cp = ch.codePointAt(0);
-		if (cp <= 0xffff) {
-			const lo = cp & 0xff;
-			const hi = (cp >> 8) & 0xff;
-			hex +=
-				lo.toString(16).padStart(2, "0") + hi.toString(16).padStart(2, "0");
-		} else {
-			// Surrogate pair for characters outside BMP
-			const v = cp - 0x10000;
-			const hiS = 0xd800 + ((v >> 10) & 0x3ff);
-			const loS = 0xdc00 + (v & 0x3ff);
-			hex +=
-				(hiS & 0xff).toString(16).padStart(2, "0") +
-				((hiS >> 8) & 0xff).toString(16).padStart(2, "0");
-			hex +=
-				(loS & 0xff).toString(16).padStart(2, "0") +
-				((loS >> 8) & 0xff).toString(16).padStart(2, "0");
-		}
+	// JS strings are UTF-16 code units already (surrogate pairs included)
+	for (let i = 0; i < str.length; i++) {
+		const unit = str.charCodeAt(i);
+		hex += intToHex(unit & 0xff, 1) + intToHex(unit >> 8, 1);
 	}
-	return hex.toUpperCase();
+	return hex;
 }
 
 /**
@@ -703,11 +702,7 @@ function buildFilenamePayload(name, { withLength = false } = {}) {
  * @returns {string} - Hex string
  */
 function chunkToHex(u8, offset, length) {
-	const end = Math.min(offset + length, u8.length);
-	const chunk = u8.subarray(offset, end);
-	return Array.from(chunk, (b) =>
-		b.toString(16).toUpperCase().padStart(2, "0"),
-	).join("");
+	return bytesToHex(u8.subarray(offset, Math.min(offset + length, u8.length)));
 }
 
 /**
@@ -811,12 +806,8 @@ function uiSpeedToDevice(uiSpeed) {
  * each reimplement it.
  */
 
-function hex2(n) {
-	return (n || 0).toString(16).padStart(2, "0").toUpperCase();
-}
-
 function targetPayload(cluster, fileName, dataHex) {
-	const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
+	const clusterHex = intToHex(cluster, 4);
 	const { fullPayload: filenamePart } = buildFilenamePayload(fileName, {
 		withLength: true,
 	});
@@ -831,7 +822,7 @@ function sendSetMovement(connection, cluster, fileName, actionBits) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_MOVEMENT,
-			targetPayload(cluster, fileName, `${hex2(actionBits)}00`),
+			targetPayload(cluster, fileName, `${intToHex(actionBits, 1)}00`),
 			8,
 		),
 	);
@@ -845,7 +836,7 @@ function sendSetEye(connection, cluster, fileName, eyeIcon) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_EYE,
-			targetPayload(cluster, fileName, `${hex2(eyeIcon)}00`),
+			targetPayload(cluster, fileName, `${intToHex(eyeIcon, 1)}00`),
 			8,
 		),
 	);
@@ -865,7 +856,7 @@ function sendSetLightBrightness(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(brightness)}`,
+				`${intToHex(channel, 1)}${intToHex(brightness, 1)}`,
 			),
 			8,
 		),
@@ -886,7 +877,7 @@ function sendSetLightMode(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(effectMode)}`,
+				`${intToHex(channel, 1)}${intToHex(effectMode, 1)}`,
 			),
 			8,
 		),
@@ -910,7 +901,7 @@ function sendSetLightSpeed(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(effectSpeed)}`,
+				`${intToHex(channel, 1)}${intToHex(effectSpeed, 1)}`,
 			),
 			8,
 		),
@@ -935,7 +926,7 @@ function sendSetLightRgb(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(r)}${hex2(g)}${hex2(b)}${cycleHex}`,
+				`${intToHex(channel, 1)}${intToHex(r, 1)}${intToHex(g, 1)}${intToHex(b, 1)}${cycleHex}`,
 			),
 			8,
 		),
@@ -944,13 +935,6 @@ function sendSetLightRgb(
 
 // F1 always carries this many light channels
 const ALL_LIGHT_CHANNELS = 6;
-
-function byteHex(value, what) {
-	if (!Number.isInteger(value) || value < 0 || value > 255) {
-		throw new RangeError(`${what} must be 0-255, got ${value}`);
-	}
-	return value.toString(16).padStart(2, "0").toUpperCase();
-}
 
 /**
  * Build F1: every light channel and the light scene in one command.
@@ -7207,10 +7191,7 @@ class SkellyApp {
 		const wifiBytes = new TextEncoder().encode("01234567");
 		const wifiHex = bytesToHex(wifiBytes);
 
-		const nameLengthHex = btName.length
-			.toString(16)
-			.padStart(2, "0")
-			.toUpperCase();
+		const nameLengthHex = intToHex(btName.length, 1);
 
 		// BT name as ASCII bytes
 		const nameBytes = new TextEncoder().encode(btName);
@@ -7242,11 +7223,7 @@ class SkellyApp {
 			}
 			const v = Math.max(0, Math.min(100, parseInt(value, 10)));
 			await this.connection.send(
-				buildCommand(
-					COMMANDS.SET_VOLUME,
-					v.toString(16).padStart(2, "0").toUpperCase(),
-					8,
-				),
+				buildCommand(COMMANDS.SET_VOLUME, intToHex(v, 1), 8),
 			);
 			this.logger.log(`Set volume to ${v}`);
 		};
@@ -7980,7 +7957,7 @@ class SkellyApp {
 	 * Handle play file button click
 	 */
 	async handlePlayFile(serial) {
-		const serialHex = serial.toString(16).padStart(4, "0").toUpperCase();
+		const serialHex = intToHex(serial, 2);
 
 		// Check if this file is currently playing
 		const isPlaying =

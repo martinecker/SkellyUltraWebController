@@ -66,6 +66,20 @@ export function intToHex(n, bytes) {
 }
 
 /**
+ * One byte as two hex digits, refusing anything that isn't an integer
+ * 0-255 (intToHex would wrap it instead)
+ * @param {number} value - Byte value
+ * @param {string} what - What the value is, for the error
+ * @returns {string} - Uppercase hex string
+ */
+export function byteHex(value, what) {
+	if (!Number.isInteger(value) || value < 0 || value > 255) {
+		throw new RangeError(`${what} must be 0-255, got ${value}`);
+	}
+	return intToHex(value, 1);
+}
+
+/**
  * Convert string to UTF16-LE hex representation
  * @param {string} str - Input string
  * @returns {string} - Uppercase hex string
@@ -73,27 +87,12 @@ export function intToHex(n, bytes) {
 export function utf16leHex(str) {
 	if (!str) return "";
 	let hex = "";
-	for (const ch of str) {
-		const cp = ch.codePointAt(0);
-		if (cp <= 0xffff) {
-			const lo = cp & 0xff;
-			const hi = (cp >> 8) & 0xff;
-			hex +=
-				lo.toString(16).padStart(2, "0") + hi.toString(16).padStart(2, "0");
-		} else {
-			// Surrogate pair for characters outside BMP
-			const v = cp - 0x10000;
-			const hiS = 0xd800 + ((v >> 10) & 0x3ff);
-			const loS = 0xdc00 + (v & 0x3ff);
-			hex +=
-				(hiS & 0xff).toString(16).padStart(2, "0") +
-				((hiS >> 8) & 0xff).toString(16).padStart(2, "0");
-			hex +=
-				(loS & 0xff).toString(16).padStart(2, "0") +
-				((loS >> 8) & 0xff).toString(16).padStart(2, "0");
-		}
+	// JS strings are UTF-16 code units already (surrogate pairs included)
+	for (let i = 0; i < str.length; i++) {
+		const unit = str.charCodeAt(i);
+		hex += intToHex(unit & 0xff, 1) + intToHex(unit >> 8, 1);
 	}
-	return hex.toUpperCase();
+	return hex;
 }
 
 /**
@@ -178,11 +177,7 @@ export function buildFilenamePayload(name, { withLength = false } = {}) {
  * @returns {string} - Hex string
  */
 export function chunkToHex(u8, offset, length) {
-	const end = Math.min(offset + length, u8.length);
-	const chunk = u8.subarray(offset, end);
-	return Array.from(chunk, (b) =>
-		b.toString(16).toUpperCase().padStart(2, "0"),
-	).join("");
+	return bytesToHex(u8.subarray(offset, Math.min(offset + length, u8.length)));
 }
 
 /**

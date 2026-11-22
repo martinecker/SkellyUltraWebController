@@ -17,16 +17,13 @@ import {
 import {
 	buildCommand,
 	buildFilenamePayload,
+	byteHex,
 	intToHex,
 	sleep,
 } from "./protocol.js";
 
-function hex2(n) {
-	return (n || 0).toString(16).padStart(2, "0").toUpperCase();
-}
-
 function targetPayload(cluster, fileName, dataHex) {
-	const clusterHex = cluster.toString(16).padStart(8, "0").toUpperCase();
+	const clusterHex = intToHex(cluster, 4);
 	const { fullPayload: filenamePart } = buildFilenamePayload(fileName, {
 		withLength: true,
 	});
@@ -41,7 +38,7 @@ export function sendSetMovement(connection, cluster, fileName, actionBits) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_MOVEMENT,
-			targetPayload(cluster, fileName, `${hex2(actionBits)}00`),
+			targetPayload(cluster, fileName, `${intToHex(actionBits, 1)}00`),
 			8,
 		),
 	);
@@ -55,7 +52,7 @@ export function sendSetEye(connection, cluster, fileName, eyeIcon) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_EYE,
-			targetPayload(cluster, fileName, `${hex2(eyeIcon)}00`),
+			targetPayload(cluster, fileName, `${intToHex(eyeIcon, 1)}00`),
 			8,
 		),
 	);
@@ -75,7 +72,7 @@ export function sendSetLightBrightness(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(brightness)}`,
+				`${intToHex(channel, 1)}${intToHex(brightness, 1)}`,
 			),
 			8,
 		),
@@ -96,7 +93,7 @@ export function sendSetLightMode(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(effectMode)}`,
+				`${intToHex(channel, 1)}${intToHex(effectMode, 1)}`,
 			),
 			8,
 		),
@@ -120,7 +117,7 @@ export function sendSetLightSpeed(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(effectSpeed)}`,
+				`${intToHex(channel, 1)}${intToHex(effectSpeed, 1)}`,
 			),
 			8,
 		),
@@ -145,7 +142,7 @@ export function sendSetLightRgb(
 			targetPayload(
 				cluster,
 				fileName,
-				`${intToHex(channel, 1)}${hex2(r)}${hex2(g)}${hex2(b)}${cycleHex}`,
+				`${intToHex(channel, 1)}${intToHex(r, 1)}${intToHex(g, 1)}${intToHex(b, 1)}${cycleHex}`,
 			),
 			8,
 		),
@@ -154,13 +151,6 @@ export function sendSetLightRgb(
 
 // F1 always carries this many light channels
 const ALL_LIGHT_CHANNELS = 6;
-
-function byteHex(value, what) {
-	if (!Number.isInteger(value) || value < 0 || value > 255) {
-		throw new RangeError(`${what} must be 0-255, got ${value}`);
-	}
-	return value.toString(16).padStart(2, "0").toUpperCase();
-}
 
 /**
  * Build F1: every light channel and the light scene in one command.
