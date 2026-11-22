@@ -9,6 +9,7 @@ import {
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
 	deviceTypeFromName,
+	displayedLights,
 	getEyeIconPath,
 	isTestedFirmware,
 	LOG_CLASSES,
@@ -80,6 +81,19 @@ class Logger {
  * Simple UI Helper
  */
 const $ = (selector) => document.querySelector(selector);
+
+/**
+ * A file's light in the files table: its color as a dot, or the cycle icon
+ * @param {Object} light - Parsed light (r, g, b, colorCycle)
+ * @returns {string} HTML
+ */
+function lightSwatchHtml(light) {
+	if (light.colorCycle) {
+		return '<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
+	}
+	const { r, g, b } = light;
+	return `<div style="width:24px;height:24px;border-radius:50%;background-color:rgb(${r}, ${g}, ${b});border:1px solid #444" title="RGB(${r},${g},${b})"></div>`;
+}
 
 /**
  * Set progress display
@@ -399,50 +413,25 @@ class SkellyApp {
 		// Live light controls, one group per light
 		this.buildLiveLights(profile);
 
-		// Show/hide the edit dialog's Light 1 group
-		const hasLight1 = profile.lights.length > 1;
-		const editLight1Group = $("#editLight1Group");
-		if (editLight1Group)
-			editLight1Group.style.display = hasLight1 ? "" : "none";
+		// The edit dialog's light controls, one group per light
+		this.editModal?.buildLights(profile);
 
-		// Update Light 0 label
-		const light0 = profile.lights[0];
-		const light0Label = light0 ? light0.label : "Light";
-		const editLight0Label = $("#editLight0Label");
-		if (editLight0Label) editLight0Label.textContent = light0Label;
-
-		// Repopulate the edit dialog's effect mode selects
-		const modeSelects = ["edLight1EffectMode", "edLight0EffectMode"];
-		for (const selectId of modeSelects) {
-			const sel = $(`#${selectId}`);
-			if (!sel) continue;
-			const current = sel.value;
-			sel.innerHTML = "";
-			profile.lightModes.forEach(({ value, label }) => {
-				const opt = document.createElement("option");
-				opt.value = String(value);
-				opt.textContent = label;
-				sel.appendChild(opt);
-			});
-			// Try to restore previously selected value; fall back to first option
-			sel.value = current;
-			if (!sel.value) sel.value = String(profile.lightModes[0].value);
-		}
-
-		// Update files table column visibility and labels
-		const light1 = profile.lights[1];
-		const light1Label = light1 ? light1.label : "Light 1";
-		const filesLight1Col = $("#filesLight1Col");
-		if (filesLight1Col) {
-			filesLight1Col.style.display = hasLight1 ? "" : "none";
-			filesLight1Col.textContent = light1Label;
+		// Files table: one light column per light, eye column if any
+		const movementCol = $("#filesMovementCol");
+		if (movementCol) {
+			for (const th of document.querySelectorAll("#filesTable th.col-light")) {
+				th.remove();
+			}
+			for (const { label } of displayedLights(profile)) {
+				const th = document.createElement("th");
+				th.className = "col-light";
+				th.textContent = label;
+				movementCol.before(th);
+			}
 		}
 
 		const filesEyeCol = $("#filesEyeCol");
 		if (filesEyeCol) filesEyeCol.style.display = hasEyeImage ? "" : "none";
-
-		const filesLight0Col = $("#filesLight0Col");
-		if (filesLight0Col) filesLight0Col.textContent = light0Label;
 
 		// Keep body cell classes in sync — add/remove display style via dynamic <style>
 		let dynStyle = document.getElementById("_profileColStyle");
@@ -451,10 +440,8 @@ class SkellyApp {
 			dynStyle.id = "_profileColStyle";
 			document.head.appendChild(dynStyle);
 		}
-		const rules = [];
-		if (!hasLight1) rules.push("td.col-light1 { display: none; }");
-		if (!hasEyeImage) rules.push("td.col-eye { display: none; }");
-		dynStyle.textContent = rules.join("\n");
+		dynStyle.textContent = hasEyeImage ? "" : "td.col-eye { display: none; }";
+		this.updateFilesTable();
 
 		// Scenes depend on the device type too
 		this.updateScenePicker();
@@ -1216,9 +1203,10 @@ class SkellyApp {
 					`<option value="${value}">${escapeHtml(label)}</option>`,
 			)
 			.join("");
-		const lights = profile.lights
-			.map((light) => ({ ...light, ch: parseInt(light.channel, 16) }))
-			.reverse();
+		const lights = displayedLights(profile).map(({ label, channel }) => ({
+			label,
+			ch: channel,
+		}));
 		container.innerHTML = lights
 			.map(
 				({ label, ch }) => `
@@ -2472,38 +2460,18 @@ class SkellyApp {
 			const eyeImgIdx = file.eye || 0;
 			const eyeImgPath = getEyeIconPath(this.state.deviceType, eyeImgIdx);
 
-			// Generate Light 1 color indicator (lights[1])
-			let light1ColorHtml = "";
-			if (file.lights?.[1]) {
-				const light1 = file.lights[1];
-				if (light1.colorCycle) {
-					light1ColorHtml =
-						'<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
-				} else {
-					const rgb = `rgb(${light1.r}, ${light1.g}, ${light1.b})`;
-					light1ColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${light1.r},${light1.g},${light1.b})"></div>`;
-				}
-			}
-
-			// Generate Light 0 color indicator (lights[0])
-			let light0ColorHtml = "";
-			if (file.lights?.[0]) {
-				const light0 = file.lights[0];
-				if (light0.colorCycle) {
-					light0ColorHtml =
-						'<img src="images/icon_light_cycle_no.png" alt="Cycle" title="Color cycle enabled" style="width:24px;height:24px" />';
-				} else {
-					const rgb = `rgb(${light0.r}, ${light0.g}, ${light0.b})`;
-					light0ColorHtml = `<div style="width:24px;height:24px;border-radius:50%;background-color:${rgb};border:1px solid #444" title="RGB(${light0.r},${light0.g},${light0.b})"></div>`;
-				}
-			}
+			// One color dot (or the cycle icon) per light, as in the header
+			const lightCellsHtml = displayedLights(this.profile)
+				.map(({ channel }) => {
+					const light = file.lights?.[channel];
+					return `<td>${light ? lightSwatchHtml(light) : ""}</td>`;
+				})
+				.join("");
 
 			// Generate movement icons based on action bitfield using current profile
 			let movementIcons = "";
 			const actionBits = file.action || 0;
-			const profile =
-				DEVICE_PROFILES[this.state.deviceType] ||
-				DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
+			const profile = this.profile;
 			if (actionBits === 255) {
 				const allMove = profile.movements.find((m) => m.part === "all");
 				if (allMove) {
@@ -2545,8 +2513,7 @@ class SkellyApp {
         <td>${rowIndex}</td>
         <td style="text-align:center"><input type="checkbox" class="file-enabled-checkbox" data-serial="${file.serial}" ${isEnabled ? "checked" : ""} /></td>
         <td>${escapeHtml(file.name || "")}</td>
-        <td class="col-light1">${light1ColorHtml}</td>
-        <td>${light0ColorHtml}</td>
+        ${lightCellsHtml}
         <td>${movementIcons}</td>
         <td class="col-eye">${eyeImgIdx ? `${eyeImgPath ? `<img class="eye-thumb" src="${eyeImgPath}" alt="eye ${eyeImgIdx}" />` : ""}${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>

@@ -273,6 +273,22 @@ export function deviceTypeFromName(deviceName) {
 	return null;
 }
 
+/**
+ * A profile's lights in the order the UI shows them, each with its channel
+ * as a number: highest channel first, so the head light stays above (and in
+ * the file table, left of) the torso light.
+ * @param {Object} profile - DEVICE_PROFILES entry
+ * @returns {Array<{label: string, channel: number}>}
+ */
+export function displayedLights(profile) {
+	return profile.lights
+		.map((light) => ({
+			label: light.label,
+			channel: parseInt(light.channel, 16),
+		}))
+		.reverse();
+}
+
 // Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
 export function getEyeIconPath(deviceType, eyeIdx) {
 	const profile = DEVICE_PROFILES[deviceType];

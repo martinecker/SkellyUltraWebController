@@ -6,6 +6,7 @@ import {
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
 	deviceTypeFromName,
+	displayedLights,
 	isTestedFirmware,
 } from "../js/constants.js";
 
@@ -46,4 +47,14 @@ test("tested firmware, as the device state holds it or as a number", () => {
 	assert.equal(isTestedFirmware(DEVICE_TYPES.SANTA, "v1"), false);
 	assert.equal(isTestedFirmware(DEVICE_TYPES.SKELLY, null), false);
 	assert.equal(isTestedFirmware("unknown", "v68"), false);
+});
+
+test("lights are shown highest channel first", () => {
+	assert.deepEqual(displayedLights(DEVICE_PROFILES[DEVICE_TYPES.SKELLY]), [
+		{ label: "Head Light", channel: 1 },
+		{ label: "Torso Light", channel: 0 },
+	]);
+	assert.deepEqual(displayedLights(DEVICE_PROFILES[DEVICE_TYPES.LILY]), [
+		{ label: "Lantern", channel: 0 },
+	]);
 });

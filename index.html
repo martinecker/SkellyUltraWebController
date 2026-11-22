@@ -689,87 +689,8 @@
 
     <div class="spacer"></div>
     <label>Lights</label>
-    <div class="row">
-      <!-- Head Light Group -->
-      <div id="editLight1Group" class="light-group" style="flex:1; margin-top:0">
-        <h3>Head Light</h3>
-        
-        <label>Brightness (0–255)</label>
-        <div class="row">
-          <input id="edLight1BrightnessRange" type="range" min="0" max="255" value="200" />
-          <input id="edLight1Brightness" type="number" min="0" max="255" value="200" />
-        </div>
-
-        <div class="spacer"></div>
-        <label>Color</label>
-        <div class="row">
-          <input id="edLight1ColorPick" type="color" value="#ff0000" />
-          <input id="edLight1R" type="number" min="0" max="255" value="255" />
-          <input id="edLight1G" type="number" min="0" max="255" value="0" />
-          <input id="edLight1B" type="number" min="0" max="255" value="0" />
-          <button type="button" class="iconToggle" id="edLight1ColorCycle" title="Cycle all colors">
-            <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:24px;height:24px" />
-          </button>
-        </div>
-
-        <div class="spacer"></div>
-        <label>Effect Mode</label>
-        <select id="edLight1EffectMode" aria-label="Light 1 effect mode">
-          <option value="1">Static</option>
-          <option value="2">Strobe</option>
-          <option value="3">Pulsing</option>
-        </select>
-
-        <div class="spacer"></div>
-        <div id="edLight1EffectSpeedBlock">
-          <label>Effect Speed (0–10)</label>
-          <div class="row">
-            <input id="edLight1EffectSpeedRange" type="range" min="0" max="10" value="0" />
-            <input id="edLight1EffectSpeed" type="number" min="0" max="10" value="0" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Torso Light Group -->
-      <div class="light-group" style="flex:1; margin-top:0">
-        <h3 id="editLight0Label">Torso Light</h3>
-        
-        <label>Brightness (0–255)</label>
-        <div class="row">
-          <input id="edLight0BrightnessRange" type="range" min="0" max="255" value="200" />
-          <input id="edLight0Brightness" type="number" min="0" max="255" value="200" />
-        </div>
-
-        <div class="spacer"></div>
-        <label>Color</label>
-        <div class="row">
-          <input id="edLight0ColorPick" type="color" value="#0000ff" />
-          <input id="edLight0R" type="number" min="0" max="255" value="0" />
-          <input id="edLight0G" type="number" min="0" max="255" value="0" />
-          <input id="edLight0B" type="number" min="0" max="255" value="255" />
-          <button type="button" class="iconToggle" id="edLight0ColorCycle" title="Cycle all colors">
-            <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:24px;height:24px" />
-          </button>
-        </div>
-
-        <div class="spacer"></div>
-        <label>Effect Mode</label>
-        <select id="edLight0EffectMode" aria-label="Light 0 effect mode">
-          <option value="1">Static</option>
-          <option value="2">Strobe</option>
-          <option value="3">Pulsing</option>
-        </select>
-
-        <div class="spacer"></div>
-        <div id="edLight0EffectSpeedBlock">
-          <label>Effect Speed (0–10)</label>
-          <div class="row">
-            <input id="edLight0EffectSpeedRange" type="range" min="0" max="10" value="0" />
-            <input id="edLight0EffectSpeed" type="number" min="0" max="10" value="0" />
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- One group per light of the device profile (EditModalManager.buildLights) -->
+    <div id="edLights" class="row"></div>
 
       <div class="spacer"></div>
       <div class="actions">
@@ -1020,9 +941,8 @@
               <th>#</th>
               <th>Enabled</th>
               <th>Name</th>
-              <th id="filesLight1Col">Head Light</th>
-              <th id="filesLight0Col">Torso Light</th>
-              <th>Movement</th>
+              <!-- One column per light of the device profile (applyDeviceProfile) -->
+              <th id="filesMovementCol">Movement</th>
               <th id="filesEyeCol">Eye</th>
               <th class="detail-column">Serial</th>
               <th class="detail-column">DB Slot</th>
