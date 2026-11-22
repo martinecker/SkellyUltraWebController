@@ -81,6 +81,7 @@ def main():
         ('js/elevenlabs.js', 'ElevenLabs TTS Client'),
         ('js/connect-dialog.js', 'Connect Dialog'),
         ('js/live-controls.js', 'Live Controls'),
+        ('js/file-table.js', 'File Table'),
         ('app-modular.js', 'Main Application'),
     ]
     
