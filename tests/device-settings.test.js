@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { DEVICE_TYPES, LIGHT_SCENES } from "../js/constants.js";
 import {
 	applyFileSettings,
-	buildSetAllLightsCommand,
+	buildSetAllLights,
 	currentLightScene,
 	isScenePreset,
 	sceneLightColor,
@@ -43,20 +43,14 @@ function unframe(frame) {
 }
 
 test("F1 for the live lights: audio mode 0, scene, 6 channels", () => {
-	const payload = unframe(
-		buildSetAllLightsCommand([RED, BLUE, RED, BLUE, RED, BLUE]),
-	);
+	const payload = unframe(buildSetAllLights([RED, BLUE, RED, BLUE, RED, BLUE]));
 	// cluster 0, audio mode 0, scene 0, then the channels
 	assert.equal(payload, `000000000000${`${RED_HEX}${BLUE_HEX}`.repeat(3)}`);
 });
 
 test("F1 for a file comes with audio mode 1, like in the phone app", () => {
 	const payload = unframe(
-		buildSetAllLightsCommand(
-			Array(6).fill(RED),
-			0x12345678,
-			LIGHT_SCENES.HALLOWEEN,
-		),
+		buildSetAllLights(Array(6).fill(RED), 0x12345678, LIGHT_SCENES.HALLOWEEN),
 	);
 	assert.equal(payload.slice(0, 12), "123456780101");
 	assert.equal(payload.slice(12), RED_HEX.repeat(6));
@@ -75,7 +69,7 @@ test("F1 fills missing channels like the app: the given ones in turn", () => {
 		],
 	];
 	for (const [given, sent] of cases) {
-		const payload = unframe(buildSetAllLightsCommand(given));
+		const payload = unframe(buildSetAllLights(given));
 		assert.equal(payload.slice(12), sent.join(""));
 	}
 });
@@ -91,7 +85,7 @@ test("F1 refuses bad values", () => {
 		[[RED], 0, 256], // scene
 	];
 	for (const args of bad) {
-		assert.throws(() => buildSetAllLightsCommand(...args), RangeError);
+		assert.throws(() => buildSetAllLights(...args), RangeError);
 	}
 });
 

@@ -34,7 +34,12 @@ function targetPayload(cluster, fileName, dataHex) {
  * Send movement animation (CA).
  * @param {number} actionBits - Bitfield (0x01 head, 0x02 arm, 0x04 torso, 0xFF all)
  */
-export function sendSetMovement(connection, cluster, fileName, actionBits) {
+export function sendSetMovementAction(
+	connection,
+	cluster,
+	fileName,
+	actionBits,
+) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_MOVEMENT_ACTION,
@@ -48,7 +53,7 @@ export function sendSetMovement(connection, cluster, fileName, actionBits) {
  * Send eye icon (F9). Only meaningful on devices with an eye image (e.g.
  * Skelly, not Lily) — callers should gate on DEVICE_PROFILES[...].hasEyeImage.
  */
-export function sendSetEye(connection, cluster, fileName, eyeIcon) {
+export function sendSetEyeIcon(connection, cluster, fileName, eyeIcon) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_EYE_ICON,
@@ -169,7 +174,7 @@ const ALL_LIGHT_CHANNELS = 6;
  * @param {number} [scene] - LIGHT_SCENES value
  * @returns {Uint8Array} The command frame
  */
-export function buildSetAllLightsCommand(
+export function buildSetAllLights(
 	lights,
 	cluster = 0,
 	scene = LIGHT_SCENES.CUSTOM,
@@ -323,12 +328,12 @@ export async function applyFileSettings(
 	};
 
 	await step(`Movement (CA) action=${settings.action}`, () =>
-		sendSetMovement(connection, cluster, fileName, settings.action),
+		sendSetMovementAction(connection, cluster, fileName, settings.action),
 	);
 
 	if (hasEyeImage) {
 		await step(`Eye (F9) icon=${settings.eyeIcon}`, () =>
-			sendSetEye(connection, cluster, fileName, settings.eyeIcon),
+			sendSetEyeIcon(connection, cluster, fileName, settings.eyeIcon),
 		);
 	}
 
@@ -339,7 +344,7 @@ export async function applyFileSettings(
 	if (scene != null && allChannelsComplete(lights)) {
 		// F1 has no file name: it addresses the file by cluster alone
 		await step(`All lights (F1) channels=${lights.length} scene=${scene}`, () =>
-			connection.send(buildSetAllLightsCommand(lights, cluster, scene)),
+			connection.send(buildSetAllLights(lights, cluster, scene)),
 		);
 		return;
 	}

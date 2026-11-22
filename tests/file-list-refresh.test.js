@@ -64,7 +64,7 @@ afterEach(() => mock.timers.reset());
 
 test("the play order ends the refresh", async () => {
 	const { state, connection, fileManager, parser, logs } = setup();
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	parser.parse(fileInfoHex(1, 2, "a.mp3"));
 	parser.parse(fileInfoHex(2, 2, "b.mp3"));
 	await settle();
@@ -87,7 +87,7 @@ test("the play order ends the refresh", async () => {
 
 test("without a play order the refresh ends after FILE_ORDER", async () => {
 	const { state, fileManager, parser } = setup();
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
 	await settle();
 	assert.equal(state.files.activeFetch, true);
@@ -103,7 +103,7 @@ test("a failed play order query ends the refresh right away", async () => {
 	const { state, fileManager, parser } = setup({
 		failTag: COMMANDS.QUERY_FILE_ORDER,
 	});
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
 	await settle();
 	assert.equal(state.files.activeFetch, false);
@@ -111,13 +111,13 @@ test("a failed play order query ends the refresh right away", async () => {
 
 test("a failed file list query ends the refresh and doesn't throw", async () => {
 	const { state, fileManager } = setup({ failTag: COMMANDS.QUERY_FILE_LIST });
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	assert.equal(state.files.activeFetch, false);
 });
 
 test("file infos after the list is complete don't ask for the order again", async () => {
 	const { connection, fileManager, parser } = setup();
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
 	await settle();
@@ -129,7 +129,7 @@ test("file infos after the list is complete don't ask for the order again", asyn
 
 test("waiting for a file ends as soon as its info arrives", async () => {
 	const { fileManager, parser } = setup();
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	const waiting = fileManager.waitForFileByName("b.mp3");
 	parser.parse(fileInfoHex(1, 2, "a.mp3"));
 	parser.parse(fileInfoHex(2, 2, "b.mp3"));
@@ -139,7 +139,7 @@ test("waiting for a file ends as soon as its info arrives", async () => {
 
 test("waiting for the refresh ends with the play order", async () => {
 	const { fileManager, parser } = setup();
-	await fileManager.startFetchFiles();
+	await fileManager.refreshFileList();
 	const waiting = fileManager.waitForFileListRefresh();
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
 	await settle();

@@ -17,15 +17,15 @@ import {
 	STORAGE_KEYS,
 } from "./js/constants.js";
 import {
-	buildSetAllLightsCommand,
+	buildSetAllLights,
 	isScenePreset,
 	sceneLightColor,
-	sendSetEye,
+	sendSetEyeIcon,
 	sendSetLightBrightness,
 	sendSetLightMode,
 	sendSetLightRgb,
 	sendSetLightSpeed,
-	sendSetMovement,
+	sendSetMovementAction,
 	supportsLightScenes,
 } from "./js/device-settings.js";
 import { $ } from "./js/dom.js";
@@ -462,7 +462,7 @@ class SkellyApp {
 		const sendMovementCommand = async () => {
 			if (!this.connection.isConnected()) return;
 			if (allBtn?.classList.contains("selected")) {
-				await sendSetMovement(this.connection, 0, "", 255);
+				await sendSetMovementAction(this.connection, 0, "", 255);
 				this.logger.log("Applied movement: all");
 				return;
 			}
@@ -471,7 +471,7 @@ class SkellyApp {
 				(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
 				0,
 			);
-			await sendSetMovement(this.connection, 0, "", bitfield);
+			await sendSetMovementAction(this.connection, 0, "", bitfield);
 			this.logger.log(
 				bitfield > 0
 					? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
@@ -1479,7 +1479,7 @@ class SkellyApp {
 	async sendLiveLights(scene) {
 		// F1 takes the lights in channel order from 0
 		const lights = this.liveChannels.map((ch) => this.readLiveLight(ch));
-		await this.connection.send(buildSetAllLightsCommand(lights, 0, scene));
+		await this.connection.send(buildSetAllLights(lights, 0, scene));
 		this.logger.log(
 			`Set all lights (F1) scene=${scene}: ${lights
 				.map(
@@ -1627,7 +1627,7 @@ class SkellyApp {
 					return;
 				}
 
-				await sendSetEye(this.connection, 0, "", this.selectedEye);
+				await sendSetEyeIcon(this.connection, 0, "", this.selectedEye);
 				this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
 			});
 		}
@@ -1647,7 +1647,7 @@ class SkellyApp {
 	 */
 	initializeFileListControls() {
 		$("#btnRefreshFiles")?.addEventListener("click", () => {
-			this.fileManager.startFetchFiles();
+			this.fileManager.refreshFileList();
 		});
 
 		$("#filesFilter")?.addEventListener("input", () => {
@@ -1942,7 +1942,7 @@ class SkellyApp {
 			`Reordered files: ${enabledSerials.length} files`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.updateFileOrder(enabledSerials);
+		await this.fileManager.setFileOrder(enabledSerials);
 	}
 
 	/**
@@ -1975,7 +1975,7 @@ class SkellyApp {
 			`Updating file order: ${enabledSerials.length} files enabled`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.updateFileOrder(enabledSerials);
+		await this.fileManager.setFileOrder(enabledSerials);
 	}
 
 	/**
@@ -2152,7 +2152,7 @@ class SkellyApp {
 
 			// Start file list fetch - this will query capacity and order after files are received
 			setTimeout(() => {
-				this.fileManager.startFetchFiles();
+				this.fileManager.refreshFileList();
 			}, 250);
 		} catch (error) {
 			console.error("Connection error:", error);

@@ -5,12 +5,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { COMMANDS } from "../js/constants.js";
 import {
-	sendSetEye,
+	sendSetEyeIcon,
 	sendSetLightBrightness,
 	sendSetLightMode,
 	sendSetLightRgb,
 	sendSetLightSpeed,
-	sendSetMovement,
+	sendSetMovementAction,
 } from "../js/device-settings.js";
 import { buildCommand, bytesToHex, rgbToHex } from "../js/protocol.js";
 
@@ -46,10 +46,10 @@ test("live light frames", async () => {
 
 test("live movement and eye frames", async () => {
 	const c = recorder();
-	await sendSetMovement(c, 0, "", 255);
-	await sendSetMovement(c, 0, "", 0x05);
-	await sendSetMovement(c, 0, "", 0);
-	await sendSetEye(c, 0, "", 12);
+	await sendSetMovementAction(c, 0, "", 255);
+	await sendSetMovementAction(c, 0, "", 0x05);
+	await sendSetMovementAction(c, 0, "", 0);
+	await sendSetEyeIcon(c, 0, "", 12);
 	assert.deepEqual(c.sent, [
 		old(COMMANDS.SET_MOVEMENT_ACTION, "FF00000000", 8),
 		old(COMMANDS.SET_MOVEMENT_ACTION, "0500000000", 8),

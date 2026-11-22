@@ -121,7 +121,7 @@ export class FileManager {
 	 * Start fetching file list from device
 	 * @returns {Promise<void>}
 	 */
-	async startFetchFiles() {
+	async refreshFileList() {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected — cannot refresh files.", LOG_CLASSES.WARNING);
 			return;
@@ -345,7 +345,7 @@ export class FileManager {
 	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
 	 * @returns {Promise<void>}
 	 */
-	async uploadFile(
+	async sendFile(
 		fileBytes,
 		fileName,
 		chunkSizeOverride = null,
@@ -428,7 +428,7 @@ export class FileManager {
 			}
 
 			// Refresh file list
-			this.startFetchFiles();
+			this.refreshFileList();
 
 			if (previousOrderNames) {
 				await this.putNewFileFirst(fileName, previousOrderNames);
@@ -718,12 +718,12 @@ export class FileManager {
 
 	/**
 	 * Wait until a file list refresh has finished, including the play order
-	 * that follows the list. Call right after startFetchFiles().
+	 * that follows the list. Call right after refreshFileList().
 	 * @param {number} timeoutMs
 	 * @returns {Promise<boolean>} true if the full list and order arrived
 	 */
 	async waitForFileListRefresh(timeoutMs = TIMEOUTS.FILE_LIST + 2000) {
-		// startFetchFiles() sets activeFetch before its first await, so a false
+		// refreshFileList() sets activeFetch before its first await, so a false
 		// here means it never started (not connected)
 		const ended = await this.state.waitForFiles(
 			() => !this.state.files.activeFetch,
@@ -776,7 +776,7 @@ export class FileManager {
 			LOG_CLASSES.INFO,
 		);
 		try {
-			await this.updateFileOrder(wanted);
+			await this.setFileOrder(wanted);
 		} catch (error) {
 			this.log(
 				`Failed to put the play order right: ${error.message}`,
@@ -920,7 +920,7 @@ export class FileManager {
 	 * Update file order on device by sending C9 commands for each enabled file
 	 * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
 	 */
-	async updateFileOrder(enabledSerials) {
+	async setFileOrder(enabledSerials) {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected", LOG_CLASSES.WARNING);
 			return;

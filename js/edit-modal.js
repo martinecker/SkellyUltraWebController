@@ -531,7 +531,7 @@ export class EditModalManager {
 					.filter(Boolean);
 
 				// Refresh file list (receives new serial assignments from device)
-				this.fileManager.startFetchFiles();
+				this.fileManager.refreshFileList();
 
 				if (orderedNames.length > 0) {
 					const allFound =
@@ -553,7 +553,7 @@ export class EditModalManager {
 								`Updating play order with renumbered serials: ${JSON.stringify(newOrder)}`,
 								LOG_CLASSES.INFO,
 							);
-							await this.fileManager.updateFileOrder(newOrder);
+							await this.fileManager.setFileOrder(newOrder);
 						}
 					}
 				}
@@ -652,7 +652,7 @@ export class EditModalManager {
 
 			// Refresh the file list to show updated data
 			this.log("Refreshing file list from device...");
-			await this.fileManager.startFetchFiles();
+			await this.fileManager.refreshFileList();
 
 			this.close();
 		});

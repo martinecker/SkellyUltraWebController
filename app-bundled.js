@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T22:10:04.817189
+ * Generated: 2026-11-22T22:24:35.368483
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -810,7 +810,12 @@ function targetPayload(cluster, fileName, dataHex) {
  * Send movement animation (CA).
  * @param {number} actionBits - Bitfield (0x01 head, 0x02 arm, 0x04 torso, 0xFF all)
  */
-function sendSetMovement(connection, cluster, fileName, actionBits) {
+function sendSetMovementAction(
+	connection,
+	cluster,
+	fileName,
+	actionBits,
+) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_MOVEMENT_ACTION,
@@ -824,7 +829,7 @@ function sendSetMovement(connection, cluster, fileName, actionBits) {
  * Send eye icon (F9). Only meaningful on devices with an eye image (e.g.
  * Skelly, not Lily) — callers should gate on DEVICE_PROFILES[...].hasEyeImage.
  */
-function sendSetEye(connection, cluster, fileName, eyeIcon) {
+function sendSetEyeIcon(connection, cluster, fileName, eyeIcon) {
 	return connection.send(
 		buildCommand(
 			COMMANDS.SET_EYE_ICON,
@@ -945,7 +950,7 @@ const ALL_LIGHT_CHANNELS = 6;
  * @param {number} [scene] - LIGHT_SCENES value
  * @returns {Uint8Array} The command frame
  */
-function buildSetAllLightsCommand(
+function buildSetAllLights(
 	lights,
 	cluster = 0,
 	scene = LIGHT_SCENES.CUSTOM,
@@ -1099,12 +1104,12 @@ async function applyFileSettings(
 	};
 
 	await step(`Movement (CA) action=${settings.action}`, () =>
-		sendSetMovement(connection, cluster, fileName, settings.action),
+		sendSetMovementAction(connection, cluster, fileName, settings.action),
 	);
 
 	if (hasEyeImage) {
 		await step(`Eye (F9) icon=${settings.eyeIcon}`, () =>
-			sendSetEye(connection, cluster, fileName, settings.eyeIcon),
+			sendSetEyeIcon(connection, cluster, fileName, settings.eyeIcon),
 		);
 	}
 
@@ -1115,7 +1120,7 @@ async function applyFileSettings(
 	if (scene != null && allChannelsComplete(lights)) {
 		// F1 has no file name: it addresses the file by cluster alone
 		await step(`All lights (F1) channels=${lights.length} scene=${scene}`, () =>
-			connection.send(buildSetAllLightsCommand(lights, cluster, scene)),
+			connection.send(buildSetAllLights(lights, cluster, scene)),
 		);
 		return;
 	}
@@ -2796,7 +2801,7 @@ class FileManager {
 	 * Start fetching file list from device
 	 * @returns {Promise<void>}
 	 */
-	async startFetchFiles() {
+	async refreshFileList() {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected — cannot refresh files.", LOG_CLASSES.WARNING);
 			return;
@@ -3020,7 +3025,7 @@ class FileManager {
 	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
 	 * @returns {Promise<void>}
 	 */
-	async uploadFile(
+	async sendFile(
 		fileBytes,
 		fileName,
 		chunkSizeOverride = null,
@@ -3103,7 +3108,7 @@ class FileManager {
 			}
 
 			// Refresh file list
-			this.startFetchFiles();
+			this.refreshFileList();
 
 			if (previousOrderNames) {
 				await this.putNewFileFirst(fileName, previousOrderNames);
@@ -3393,12 +3398,12 @@ class FileManager {
 
 	/**
 	 * Wait until a file list refresh has finished, including the play order
-	 * that follows the list. Call right after startFetchFiles().
+	 * that follows the list. Call right after refreshFileList().
 	 * @param {number} timeoutMs
 	 * @returns {Promise<boolean>} true if the full list and order arrived
 	 */
 	async waitForFileListRefresh(timeoutMs = TIMEOUTS.FILE_LIST + 2000) {
-		// startFetchFiles() sets activeFetch before its first await, so a false
+		// refreshFileList() sets activeFetch before its first await, so a false
 		// here means it never started (not connected)
 		const ended = await this.state.waitForFiles(
 			() => !this.state.files.activeFetch,
@@ -3451,7 +3456,7 @@ class FileManager {
 			LOG_CLASSES.INFO,
 		);
 		try {
-			await this.updateFileOrder(wanted);
+			await this.setFileOrder(wanted);
 		} catch (error) {
 			this.log(
 				`Failed to put the play order right: ${error.message}`,
@@ -3595,7 +3600,7 @@ class FileManager {
 	 * Update file order on device by sending C9 commands for each enabled file
 	 * @param {Array<number>} enabledSerials - Array of serial numbers in desired order
 	 */
-	async updateFileOrder(enabledSerials) {
+	async setFileOrder(enabledSerials) {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected", LOG_CLASSES.WARNING);
 			return;
@@ -4897,7 +4902,7 @@ class EditModalManager {
 					.filter(Boolean);
 
 				// Refresh file list (receives new serial assignments from device)
-				this.fileManager.startFetchFiles();
+				this.fileManager.refreshFileList();
 
 				if (orderedNames.length > 0) {
 					const allFound =
@@ -4919,7 +4924,7 @@ class EditModalManager {
 								`Updating play order with renumbered serials: ${JSON.stringify(newOrder)}`,
 								LOG_CLASSES.INFO,
 							);
-							await this.fileManager.updateFileOrder(newOrder);
+							await this.fileManager.setFileOrder(newOrder);
 						}
 					}
 				}
@@ -5018,7 +5023,7 @@ class EditModalManager {
 
 			// Refresh the file list to show updated data
 			this.log("Refreshing file list from device...");
-			await this.fileManager.startFetchFiles();
+			await this.fileManager.refreshFileList();
 
 			this.close();
 		});
@@ -5983,7 +5988,7 @@ class TransferModalManager {
 		}
 
 		try {
-			await this.fileManager.uploadFile(
+			await this.fileManager.sendFile(
 				fileBytes,
 				finalName,
 				chunkSizeOverride,
@@ -6557,7 +6562,7 @@ class SkellyApp {
 		const sendMovementCommand = async () => {
 			if (!this.connection.isConnected()) return;
 			if (allBtn?.classList.contains("selected")) {
-				await sendSetMovement(this.connection, 0, "", 255);
+				await sendSetMovementAction(this.connection, 0, "", 255);
 				this.logger.log("Applied movement: all");
 				return;
 			}
@@ -6566,7 +6571,7 @@ class SkellyApp {
 				(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
 				0,
 			);
-			await sendSetMovement(this.connection, 0, "", bitfield);
+			await sendSetMovementAction(this.connection, 0, "", bitfield);
 			this.logger.log(
 				bitfield > 0
 					? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
@@ -7574,7 +7579,7 @@ class SkellyApp {
 	async sendLiveLights(scene) {
 		// F1 takes the lights in channel order from 0
 		const lights = this.liveChannels.map((ch) => this.readLiveLight(ch));
-		await this.connection.send(buildSetAllLightsCommand(lights, 0, scene));
+		await this.connection.send(buildSetAllLights(lights, 0, scene));
 		this.logger.log(
 			`Set all lights (F1) scene=${scene}: ${lights
 				.map(
@@ -7722,7 +7727,7 @@ class SkellyApp {
 					return;
 				}
 
-				await sendSetEye(this.connection, 0, "", this.selectedEye);
+				await sendSetEyeIcon(this.connection, 0, "", this.selectedEye);
 				this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
 			});
 		}
@@ -7742,7 +7747,7 @@ class SkellyApp {
 	 */
 	initializeFileListControls() {
 		$("#btnRefreshFiles")?.addEventListener("click", () => {
-			this.fileManager.startFetchFiles();
+			this.fileManager.refreshFileList();
 		});
 
 		$("#filesFilter")?.addEventListener("input", () => {
@@ -8037,7 +8042,7 @@ class SkellyApp {
 			`Reordered files: ${enabledSerials.length} files`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.updateFileOrder(enabledSerials);
+		await this.fileManager.setFileOrder(enabledSerials);
 	}
 
 	/**
@@ -8070,7 +8075,7 @@ class SkellyApp {
 			`Updating file order: ${enabledSerials.length} files enabled`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.updateFileOrder(enabledSerials);
+		await this.fileManager.setFileOrder(enabledSerials);
 	}
 
 	/**
@@ -8247,7 +8252,7 @@ class SkellyApp {
 
 			// Start file list fetch - this will query capacity and order after files are received
 			setTimeout(() => {
-				this.fileManager.startFetchFiles();
+				this.fileManager.refreshFileList();
 			}, 250);
 		} catch (error) {
 			console.error("Connection error:", error);

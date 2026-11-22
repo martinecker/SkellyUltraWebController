@@ -884,7 +884,7 @@ export class TransferModalManager {
 		}
 
 		try {
-			await this.fileManager.uploadFile(
+			await this.fileManager.sendFile(
 				fileBytes,
 				finalName,
 				chunkSizeOverride,
