@@ -80,6 +80,7 @@ def main():
         ('js/transfer-modal.js', 'Transfer Modal Manager'),
         ('js/elevenlabs.js', 'ElevenLabs TTS Client'),
         ('js/connect-dialog.js', 'Connect Dialog'),
+        ('js/live-controls.js', 'Live Controls'),
         ('app-modular.js', 'Main Application'),
     ]
     
