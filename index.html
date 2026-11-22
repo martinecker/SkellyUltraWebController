@@ -323,7 +323,6 @@
 
     /* Fix checkbox baseline weirdness inside “Advanced” and others */
     .dropdown input[type="checkbox"],
-    #slowModal input[type="checkbox"],
     #riskModal input[type="checkbox"]{
       margin: 0; transform: translateY(0); /* prevents baseline misalignment */
     }
@@ -475,45 +474,6 @@
     <div class="modal-actions">
       <button type="button" id="deviceSelectCancel" class="btn">Cancel</button>
       <button type="button" id="deviceSelectRescan" class="btn">Rescan</button>
-    </div>
-  </div>
-</div>
-
-  <!-- Slow upload heads-up -->
-  <div id="slowModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="slowTitle">
-    <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;">
-      <h3 id="slowTitle">Heads up: File sending can be slow</h3>
-      <p>
-        Large transfers over Bluetooth can take a while. After the file finishes uploading,
-        the device may take a couple minutes before you see the final “complete” message. 
-        Converting the file can greatly speed up the process.
-      </p>
-      <p class="muted" style="margin-top:6px">
-        Keep this tab focused and avoid disconnecting power during the process.
-      </p>
-      <label class="small checkline mt-10">
-        <input id="slowDontShow" type="checkbox"> Don’t show this again
-      </label>
-      <div class="modal-actions">
-        <button type="button" id="slowCancel" class="btn">Cancel</button>
-        <button type="button" id="slowOk" class="btn primary">Continue</button>
-      </div>
-    </div>
-</div>
-
-<!-- Long track heads-up -->
-<div id="longModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="longTitle">
-  <div class="modal-panel" style="background:#101318;border-color:#273449;color:#e5e7eb;">
-    <h3 id="longTitle">Heads up: long audio</h3>
-    <p>
-      Uploading tracks longer than 30 seconds is experimental and may be unreliable.
-      You can still proceed, but results aren’t guaranteed.
-    </p>
-    <label class="small checkline" style="margin-top:10px">
-      <input id="longDontShow" type="checkbox"> Don’t show this again
-    </label>
-    <div class="modal-actions">
-      <button type="button" id="longOk" class="btn primary">OK</button>
     </div>
   </div>
 </div>
