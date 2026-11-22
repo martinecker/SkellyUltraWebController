@@ -122,7 +122,7 @@ export class EditModalManager {
 
 	/** Light channel numbers of the active profile */
 	get channels() {
-		return this.profile.lights.map((light) => parseInt(light.channel, 16));
+		return this.profile.lights.map((light) => light.channel);
 	}
 
 	/**
@@ -135,8 +135,7 @@ export class EditModalManager {
 		if (!container) return;
 		const modeOptions = profile.lightModes
 			.map(
-				({ value, label }) =>
-					`<option value="${value}">${escapeHtml(label)}</option>`,
+				(label, i) => `<option value="${i + 1}">${escapeHtml(label)}</option>`,
 			)
 			.join("");
 		const lights = displayedLights(profile);

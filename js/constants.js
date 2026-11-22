@@ -34,51 +34,46 @@ export const CAPABILITIES = {
 // nameMatches: lowercase parts of a name that identify the type (a device
 // whose name contains one is that type), the same as the HA integration's
 // ble_names, so e.g. "Ultra Skelly" without "v2" is a Skelly too.
-// Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
+// displayName, imageFolder, lights (label + channel number) and lightModes
+// (labels for modes 1, 2, 3) are named as in the HA integration's profiles.
+// Images are in images/<imageFolder>/: eye_icon_<1..eyeIconCount>.png and
+// movement_<part>.png.
 export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		// "Animated Skelly" is the older (v66) firmware's name
 		bleNames: ["Ultra Skelly v2", "Animated Skelly"],
 		nameMatches: ["animated skelly", "ultra skelly"],
-		uiName: "Ultra Skelly",
+		displayName: "Ultra Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 18,
-		eyeIconFolder: "images/skelly",
+		imageFolder: "skelly",
 		movements: [
 			{
 				part: "all",
 				label: "All",
-				icon: "images/skelly/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/skelly/movement_head.png",
 				bit: 0x01,
 			},
 			{
 				part: "arm",
 				label: "Arm",
-				icon: "images/skelly/movement_arm.png",
 				bit: 0x02,
 			},
 			{
 				part: "torso",
 				label: "Torso",
-				icon: "images/skelly/movement_torso.png",
 				bit: 0x04,
 			},
 		],
 		lights: [
-			{ label: "Torso Light", channel: "00" },
-			{ label: "Head Light", channel: "01" },
+			{ label: "Torso Light", channel: 0 },
+			{ label: "Head Light", channel: 1 },
 		],
-		lightModes: [
-			{ value: 1, label: "Static" },
-			{ value: 2, label: "Strobe" },
-			{ value: 3, label: "Pulsing" },
-		],
+		lightModes: ["Static", "Strobe", "Pulse"],
 		// Firmware versions tried with this app; others get a warning dialog
 		testedFirmware: [66, 68],
 		// Capability -> lowest firmware version that has it (0: any version).
@@ -92,24 +87,19 @@ export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY_12FT]: {
 		bleNames: ["12ft Skelly"],
 		nameMatches: ["12ft skelly"],
-		uiName: "12ft Skelly",
+		displayName: "12ft Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 20,
-		eyeIconFolder: "images/skelly12ft",
+		imageFolder: "skelly12ft",
 		movements: [
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/skelly12ft/movement_head.png",
 				bit: 0x02,
 			},
 		],
-		lights: [{ label: "Torso Light", channel: "00" }],
-		lightModes: [
-			{ value: 1, label: "Static" },
-			{ value: 2, label: "Strobe" },
-			{ value: 3, label: "Pulsing" },
-		],
+		lights: [{ label: "Torso Light", channel: 0 }],
+		lightModes: ["Static", "Strobe", "Pulse"],
 		testedFirmware: [14],
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 14,
@@ -120,46 +110,38 @@ export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.LILY]: {
 		bleNames: ["Lethal Lily"],
 		nameMatches: ["lethal lily"],
-		uiName: "Lethal Lily",
+		displayName: "Lethal Lily",
 		hasEyeImage: false,
+		imageFolder: "lily",
 		movements: [
 			{
 				part: "all",
 				label: "All",
-				icon: "images/lily/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "wrist",
 				label: "Wrist",
-				icon: "images/lily/movement_wrist.png",
 				bit: 0x01,
 			},
 			{
 				part: "elbow",
 				label: "Elbow",
-				icon: "images/lily/movement_elbow.png",
 				bit: 0x02,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/lily/movement_head.png",
 				bit: 0x10,
 			},
 			{
 				part: "eyes",
 				label: "Eyes",
-				icon: "images/lily/movement_eyes.png",
 				bit: 0x20,
 			},
 		],
-		lights: [{ label: "Lantern", channel: "00" }],
-		lightModes: [
-			{ value: 1, label: "Flickering" },
-			{ value: 2, label: "Pulsing" },
-			{ value: 3, label: "Chasing" },
-		],
+		lights: [{ label: "Lantern", channel: 0 }],
+		lightModes: ["Flickering", "Pulsing", "Chasing"],
 		testedFirmware: [24],
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 24,
@@ -170,46 +152,38 @@ export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SANTA]: {
 		bleNames: ["Ultra Santa", "Santa Claus"],
 		nameMatches: ["ultra santa", "santa claus"],
-		uiName: "Ultra Santa",
+		displayName: "Ultra Santa",
 		hasEyeImage: false,
+		imageFolder: "santa",
 		movements: [
 			{
 				part: "all",
 				label: "All",
-				icon: "images/santa/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "eyes",
 				label: "Eyes",
-				icon: "images/santa/movement_eyes.png",
 				bit: 0x01,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/santa/movement_head.png",
 				bit: 0x02,
 			},
 			{
 				part: "torso",
 				label: "Torso",
-				icon: "images/santa/movement_torso.png",
 				bit: 0x04,
 			},
 			{
 				part: "arm",
 				label: "Arm",
-				icon: "images/santa/movement_arm.png",
 				bit: 0x08,
 			},
 		],
-		lights: [{ label: "Lantern", channel: "00" }],
-		lightModes: [
-			{ value: 1, label: "Static" },
-			{ value: 2, label: "Sparkle" },
-			{ value: 3, label: "Pulsing" },
-		],
+		lights: [{ label: "Lantern", channel: 0 }],
+		lightModes: ["Static", "Sparkle", "Pulsing"],
 		// No Santa firmware has been tried yet, so every version gets the warning
 		testedFirmware: [],
 		// The app treats Santa as a scene model; no firmware version is known
@@ -282,20 +256,26 @@ export function deviceTypeFromName(deviceName) {
  */
 export function displayedLights(profile) {
 	return profile.lights
-		.map((light) => ({
-			label: light.label,
-			channel: parseInt(light.channel, 16),
-		}))
+		.map(({ label, channel }) => ({ label, channel }))
 		.reverse();
 }
 
 // Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
 export function getEyeIconPath(deviceType, eyeIdx) {
 	const profile = DEVICE_PROFILES[deviceType];
-	if (!profile?.eyeIconFolder || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
+	if (!profile?.eyeIconCount || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
 		return null;
 	}
-	return `${profile.eyeIconFolder}/eye_icon_${eyeIdx}.png`;
+	return `images/${profile.imageFolder}/eye_icon_${eyeIdx}.png`;
+}
+
+/**
+ * Image path for a movement part's icon
+ * @param {Object} profile - DEVICE_PROFILES entry
+ * @param {string} part - a movements[].part, e.g. "head" or "all"
+ */
+export function movementIconPath(profile, part) {
+	return `images/${profile.imageFolder}/movement_${part}.png`;
 }
 
 // LocalStorage Keys

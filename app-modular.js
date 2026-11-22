@@ -13,6 +13,7 @@ import {
 	getEyeIconPath,
 	isTestedFirmware,
 	LOG_CLASSES,
+	movementIconPath,
 	STORAGE_KEYS,
 } from "./js/constants.js";
 import {
@@ -328,8 +329,8 @@ class SkellyApp {
 				return;
 			}
 
-			const newName = DEVICE_PROFILES[newType]?.uiName ?? newType;
-			const oldName = DEVICE_PROFILES[oldType]?.uiName ?? oldType;
+			const newName = DEVICE_PROFILES[newType]?.displayName ?? newType;
+			const oldName = DEVICE_PROFILES[oldType]?.displayName ?? oldType;
 			const msg = $("#deviceTypeChangeMsgDetail");
 			if (msg) {
 				msg.textContent = `You are switching from "${oldName}" to "${newName}".`;
@@ -376,14 +377,14 @@ class SkellyApp {
 			const grid = $(`#${gridId}`);
 			if (!grid) continue;
 			grid.innerHTML = "";
-			profile.movements.forEach(({ part, label, icon, bit }) => {
+			profile.movements.forEach(({ part, label, bit }) => {
 				const btn = document.createElement("button");
 				btn.className = "iconToggle";
 				btn.dataset.part = part;
 				btn.dataset.bit = String(bit);
 				btn.title = label;
 				const img = document.createElement("img");
-				img.src = icon;
+				img.src = movementIconPath(profile, part);
 				img.alt = label;
 				img.style.width = "36px";
 				img.style.height = "36px";
@@ -562,7 +563,9 @@ class SkellyApp {
 						const option = document.createElement("option");
 						option.value = index === 0 ? type : `${type}:${index}`;
 						option.textContent =
-							name === profile.uiName ? name : `${name} (${profile.uiName})`;
+							name === profile.displayName
+								? name
+								: `${name} (${profile.displayName})`;
 						return option;
 					}),
 				),
@@ -1177,7 +1180,7 @@ class SkellyApp {
 
 	/** Light channel numbers of the active profile */
 	get liveChannels() {
-		return this.profile.lights.map((light) => parseInt(light.channel, 16));
+		return this.profile.lights.map((light) => light.channel);
 	}
 
 	/**
@@ -1191,8 +1194,7 @@ class SkellyApp {
 		this.liveColorCycle = {};
 		const modeOptions = profile.lightModes
 			.map(
-				({ value, label }) =>
-					`<option value="${value}">${escapeHtml(label)}</option>`,
+				(label, i) => `<option value="${i + 1}">${escapeHtml(label)}</option>`,
 			)
 			.join("");
 		const lights = displayedLights(profile).map(({ label, channel }) => ({
@@ -1319,9 +1321,7 @@ class SkellyApp {
 			el("EffectSpeedBlock")?.classList.toggle("hidden", mode === 1); // Static
 			if (!canSend()) return;
 			await sendSetLightMode(this.connection, 0, "", channel, mode);
-			const modeLabel = this.profile.lightModes.find(
-				(m) => m.value === mode,
-			)?.label;
+			const modeLabel = this.profile.lightModes[mode - 1];
 			this.logger.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
 		});
 
@@ -2119,7 +2119,7 @@ class SkellyApp {
 			const detectedType = deviceTypeFromName(connectedName);
 			if (detectedType && detectedType !== this.state.deviceType) {
 				this.logger.log(
-					`Auto-detected device type: ${DEVICE_PROFILES[detectedType].uiName} (from "${connectedName}")`,
+					`Auto-detected device type: ${DEVICE_PROFILES[detectedType].displayName} (from "${connectedName}")`,
 					LOG_CLASSES.WARNING,
 				);
 				localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, detectedType);
@@ -2464,14 +2464,14 @@ class SkellyApp {
 			if (actionBits === 255) {
 				const allMove = profile.movements.find((m) => m.part === "all");
 				if (allMove) {
-					movementIcons = `<img class="eye-thumb" src="${allMove.icon}" alt="All" title="All movements" />`;
+					movementIcons = `<img class="eye-thumb" src="${movementIconPath(profile, "all")}" alt="All" title="All movements" />`;
 				}
 			} else {
 				profile.movements
 					.filter((m) => m.part !== "all")
 					.forEach((m) => {
 						if (actionBits & m.bit) {
-							movementIcons += `<img class="eye-thumb" src="${m.icon}" alt="${m.label}" title="${m.label}" />`;
+							movementIcons += `<img class="eye-thumb" src="${movementIconPath(profile, m.part)}" alt="${m.label}" title="${m.label}" />`;
 						}
 					});
 			}

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T20:59:20.359741
+ * Generated: 2026-11-22T21:47:21.030369
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -67,51 +67,46 @@ const CAPABILITIES = {
 // nameMatches: lowercase parts of a name that identify the type (a device
 // whose name contains one is that type), the same as the HA integration's
 // ble_names, so e.g. "Ultra Skelly" without "v2" is a Skelly too.
-// Eye images are <eyeIconFolder>/eye_icon_<1..eyeIconCount>.png
+// displayName, imageFolder, lights (label + channel number) and lightModes
+// (labels for modes 1, 2, 3) are named as in the HA integration's profiles.
+// Images are in images/<imageFolder>/: eye_icon_<1..eyeIconCount>.png and
+// movement_<part>.png.
 const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
 		// "Animated Skelly" is the older (v66) firmware's name
 		bleNames: ["Ultra Skelly v2", "Animated Skelly"],
 		nameMatches: ["animated skelly", "ultra skelly"],
-		uiName: "Ultra Skelly",
+		displayName: "Ultra Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 18,
-		eyeIconFolder: "images/skelly",
+		imageFolder: "skelly",
 		movements: [
 			{
 				part: "all",
 				label: "All",
-				icon: "images/skelly/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/skelly/movement_head.png",
 				bit: 0x01,
 			},
 			{
 				part: "arm",
 				label: "Arm",
-				icon: "images/skelly/movement_arm.png",
 				bit: 0x02,
 			},
 			{
 				part: "torso",
 				label: "Torso",
-				icon: "images/skelly/movement_torso.png",
 				bit: 0x04,
 			},
 		],
 		lights: [
-			{ label: "Torso Light", channel: "00" },
-			{ label: "Head Light", channel: "01" },
+			{ label: "Torso Light", channel: 0 },
+			{ label: "Head Light", channel: 1 },
 		],
-		lightModes: [
-			{ value: 1, label: "Static" },
-			{ value: 2, label: "Strobe" },
-			{ value: 3, label: "Pulsing" },
-		],
+		lightModes: ["Static", "Strobe", "Pulse"],
 		// Firmware versions tried with this app; others get a warning dialog
 		testedFirmware: [66, 68],
 		// Capability -> lowest firmware version that has it (0: any version).
@@ -125,24 +120,19 @@ const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY_12FT]: {
 		bleNames: ["12ft Skelly"],
 		nameMatches: ["12ft skelly"],
-		uiName: "12ft Skelly",
+		displayName: "12ft Skelly",
 		hasEyeImage: true,
 		eyeIconCount: 20,
-		eyeIconFolder: "images/skelly12ft",
+		imageFolder: "skelly12ft",
 		movements: [
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/skelly12ft/movement_head.png",
 				bit: 0x02,
 			},
 		],
-		lights: [{ label: "Torso Light", channel: "00" }],
-		lightModes: [
-			{ value: 1, label: "Static" },
-			{ value: 2, label: "Strobe" },
-			{ value: 3, label: "Pulsing" },
-		],
+		lights: [{ label: "Torso Light", channel: 0 }],
+		lightModes: ["Static", "Strobe", "Pulse"],
 		testedFirmware: [14],
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 14,
@@ -153,46 +143,38 @@ const DEVICE_PROFILES = {
 	[DEVICE_TYPES.LILY]: {
 		bleNames: ["Lethal Lily"],
 		nameMatches: ["lethal lily"],
-		uiName: "Lethal Lily",
+		displayName: "Lethal Lily",
 		hasEyeImage: false,
+		imageFolder: "lily",
 		movements: [
 			{
 				part: "all",
 				label: "All",
-				icon: "images/lily/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "wrist",
 				label: "Wrist",
-				icon: "images/lily/movement_wrist.png",
 				bit: 0x01,
 			},
 			{
 				part: "elbow",
 				label: "Elbow",
-				icon: "images/lily/movement_elbow.png",
 				bit: 0x02,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/lily/movement_head.png",
 				bit: 0x10,
 			},
 			{
 				part: "eyes",
 				label: "Eyes",
-				icon: "images/lily/movement_eyes.png",
 				bit: 0x20,
 			},
 		],
-		lights: [{ label: "Lantern", channel: "00" }],
-		lightModes: [
-			{ value: 1, label: "Flickering" },
-			{ value: 2, label: "Pulsing" },
-			{ value: 3, label: "Chasing" },
-		],
+		lights: [{ label: "Lantern", channel: 0 }],
+		lightModes: ["Flickering", "Pulsing", "Chasing"],
 		testedFirmware: [24],
 		capabilities: {
 			[CAPABILITIES.LIGHT_SCENES]: 24,
@@ -203,46 +185,38 @@ const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SANTA]: {
 		bleNames: ["Ultra Santa", "Santa Claus"],
 		nameMatches: ["ultra santa", "santa claus"],
-		uiName: "Ultra Santa",
+		displayName: "Ultra Santa",
 		hasEyeImage: false,
+		imageFolder: "santa",
 		movements: [
 			{
 				part: "all",
 				label: "All",
-				icon: "images/santa/movement_all.png",
 				bit: 255,
 			},
 			{
 				part: "eyes",
 				label: "Eyes",
-				icon: "images/santa/movement_eyes.png",
 				bit: 0x01,
 			},
 			{
 				part: "head",
 				label: "Head",
-				icon: "images/santa/movement_head.png",
 				bit: 0x02,
 			},
 			{
 				part: "torso",
 				label: "Torso",
-				icon: "images/santa/movement_torso.png",
 				bit: 0x04,
 			},
 			{
 				part: "arm",
 				label: "Arm",
-				icon: "images/santa/movement_arm.png",
 				bit: 0x08,
 			},
 		],
-		lights: [{ label: "Lantern", channel: "00" }],
-		lightModes: [
-			{ value: 1, label: "Static" },
-			{ value: 2, label: "Sparkle" },
-			{ value: 3, label: "Pulsing" },
-		],
+		lights: [{ label: "Lantern", channel: 0 }],
+		lightModes: ["Static", "Sparkle", "Pulsing"],
 		// No Santa firmware has been tried yet, so every version gets the warning
 		testedFirmware: [],
 		// The app treats Santa as a scene model; no firmware version is known
@@ -315,20 +289,26 @@ function deviceTypeFromName(deviceName) {
  */
 function displayedLights(profile) {
 	return profile.lights
-		.map((light) => ({
-			label: light.label,
-			channel: parseInt(light.channel, 16),
-		}))
+		.map(({ label, channel }) => ({ label, channel }))
 		.reverse();
 }
 
 // Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
 function getEyeIconPath(deviceType, eyeIdx) {
 	const profile = DEVICE_PROFILES[deviceType];
-	if (!profile?.eyeIconFolder || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
+	if (!profile?.eyeIconCount || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
 		return null;
 	}
-	return `${profile.eyeIconFolder}/eye_icon_${eyeIdx}.png`;
+	return `images/${profile.imageFolder}/eye_icon_${eyeIdx}.png`;
+}
+
+/**
+ * Image path for a movement part's icon
+ * @param {Object} profile - DEVICE_PROFILES entry
+ * @param {string} part - a movements[].part, e.g. "head" or "all"
+ */
+function movementIconPath(profile, part) {
+	return `images/${profile.imageFolder}/movement_${part}.png`;
 }
 
 // LocalStorage Keys
@@ -4508,7 +4488,7 @@ class EditModalManager {
 
 	/** Light channel numbers of the active profile */
 	get channels() {
-		return this.profile.lights.map((light) => parseInt(light.channel, 16));
+		return this.profile.lights.map((light) => light.channel);
 	}
 
 	/**
@@ -4521,8 +4501,7 @@ class EditModalManager {
 		if (!container) return;
 		const modeOptions = profile.lightModes
 			.map(
-				({ value, label }) =>
-					`<option value="${value}">${escapeHtml(label)}</option>`,
+				(label, i) => `<option value="${i + 1}">${escapeHtml(label)}</option>`,
 			)
 			.join("");
 		const lights = displayedLights(profile);
@@ -6445,8 +6424,8 @@ class SkellyApp {
 				return;
 			}
 
-			const newName = DEVICE_PROFILES[newType]?.uiName ?? newType;
-			const oldName = DEVICE_PROFILES[oldType]?.uiName ?? oldType;
+			const newName = DEVICE_PROFILES[newType]?.displayName ?? newType;
+			const oldName = DEVICE_PROFILES[oldType]?.displayName ?? oldType;
 			const msg = $("#deviceTypeChangeMsgDetail");
 			if (msg) {
 				msg.textContent = `You are switching from "${oldName}" to "${newName}".`;
@@ -6493,14 +6472,14 @@ class SkellyApp {
 			const grid = $(`#${gridId}`);
 			if (!grid) continue;
 			grid.innerHTML = "";
-			profile.movements.forEach(({ part, label, icon, bit }) => {
+			profile.movements.forEach(({ part, label, bit }) => {
 				const btn = document.createElement("button");
 				btn.className = "iconToggle";
 				btn.dataset.part = part;
 				btn.dataset.bit = String(bit);
 				btn.title = label;
 				const img = document.createElement("img");
-				img.src = icon;
+				img.src = movementIconPath(profile, part);
 				img.alt = label;
 				img.style.width = "36px";
 				img.style.height = "36px";
@@ -6679,7 +6658,9 @@ class SkellyApp {
 						const option = document.createElement("option");
 						option.value = index === 0 ? type : `${type}:${index}`;
 						option.textContent =
-							name === profile.uiName ? name : `${name} (${profile.uiName})`;
+							name === profile.displayName
+								? name
+								: `${name} (${profile.displayName})`;
 						return option;
 					}),
 				),
@@ -7294,7 +7275,7 @@ class SkellyApp {
 
 	/** Light channel numbers of the active profile */
 	get liveChannels() {
-		return this.profile.lights.map((light) => parseInt(light.channel, 16));
+		return this.profile.lights.map((light) => light.channel);
 	}
 
 	/**
@@ -7308,8 +7289,7 @@ class SkellyApp {
 		this.liveColorCycle = {};
 		const modeOptions = profile.lightModes
 			.map(
-				({ value, label }) =>
-					`<option value="${value}">${escapeHtml(label)}</option>`,
+				(label, i) => `<option value="${i + 1}">${escapeHtml(label)}</option>`,
 			)
 			.join("");
 		const lights = displayedLights(profile).map(({ label, channel }) => ({
@@ -7436,9 +7416,7 @@ class SkellyApp {
 			el("EffectSpeedBlock")?.classList.toggle("hidden", mode === 1); // Static
 			if (!canSend()) return;
 			await sendSetLightMode(this.connection, 0, "", channel, mode);
-			const modeLabel = this.profile.lightModes.find(
-				(m) => m.value === mode,
-			)?.label;
+			const modeLabel = this.profile.lightModes[mode - 1];
 			this.logger.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
 		});
 
@@ -8236,7 +8214,7 @@ class SkellyApp {
 			const detectedType = deviceTypeFromName(connectedName);
 			if (detectedType && detectedType !== this.state.deviceType) {
 				this.logger.log(
-					`Auto-detected device type: ${DEVICE_PROFILES[detectedType].uiName} (from "${connectedName}")`,
+					`Auto-detected device type: ${DEVICE_PROFILES[detectedType].displayName} (from "${connectedName}")`,
 					LOG_CLASSES.WARNING,
 				);
 				localStorage.setItem(STORAGE_KEYS.DEVICE_TYPE, detectedType);
@@ -8581,14 +8559,14 @@ class SkellyApp {
 			if (actionBits === 255) {
 				const allMove = profile.movements.find((m) => m.part === "all");
 				if (allMove) {
-					movementIcons = `<img class="eye-thumb" src="${allMove.icon}" alt="All" title="All movements" />`;
+					movementIcons = `<img class="eye-thumb" src="${movementIconPath(profile, "all")}" alt="All" title="All movements" />`;
 				}
 			} else {
 				profile.movements
 					.filter((m) => m.part !== "all")
 					.forEach((m) => {
 						if (actionBits & m.bit) {
-							movementIcons += `<img class="eye-thumb" src="${m.icon}" alt="${m.label}" title="${m.label}" />`;
+							movementIcons += `<img class="eye-thumb" src="${movementIconPath(profile, m.part)}" alt="${m.label}" title="${m.label}" />`;
 						}
 					});
 			}

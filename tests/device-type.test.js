@@ -1,6 +1,7 @@
 // Device type from the BLE name, matched like the HA integration. Run with `npm test`.
 
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { test } from "node:test";
 import {
 	CAPABILITIES,
@@ -8,8 +9,10 @@ import {
 	DEVICE_TYPES,
 	deviceTypeFromName,
 	displayedLights,
+	getEyeIconPath,
 	hasCapability,
 	isTestedFirmware,
+	movementIconPath,
 } from "../js/constants.js";
 
 test("each profile's own BLE names are detected as that type", () => {
@@ -80,4 +83,18 @@ test("no capability without a firmware version or for unknown names", () => {
 	);
 	assert.equal(hasCapability("nope", "v68", CAPABILITIES.LIGHT_SCENES), false);
 	assert.equal(hasCapability(DEVICE_TYPES.SKELLY, "v68", "nope"), false);
+});
+
+test("every profile's eye and movement images exist", () => {
+	for (const [type, profile] of Object.entries(DEVICE_PROFILES)) {
+		for (const { part } of profile.movements) {
+			const path = movementIconPath(profile, part);
+			assert.ok(existsSync(path), `${type}: ${path}`);
+		}
+		for (let eye = 1; eye <= (profile.eyeIconCount ?? 0); eye++) {
+			const path = getEyeIconPath(type, eye);
+			assert.ok(existsSync(path), `${type}: ${path}`);
+		}
+	}
+	assert.equal(getEyeIconPath(DEVICE_TYPES.LILY, 1), null);
 });
