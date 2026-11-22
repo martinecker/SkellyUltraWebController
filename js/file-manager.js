@@ -68,7 +68,7 @@ class TransferReports {
 }
 
 /** The device's loss reports (BBC1 lost = 1) during one upload attempt */
-class LossTracker {
+export class LossTracker {
 	constructor() {
 		this.count = 0; // loss reports, repeats not counted
 		this.pending = null; // resend from here, not yet done
@@ -232,7 +232,7 @@ export class FileManager {
 		if (
 			override !== null &&
 			typeof override === "number" &&
-			override >= 50 &&
+			override >= TRANSFER_CONFIG.MIN_CHUNK_SIZE &&
 			override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE
 		) {
 			this.log(

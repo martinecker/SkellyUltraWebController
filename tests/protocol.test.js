@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
 	deviceSpeedToUI,
+	escapeHtml,
 	MAX_UI_EFFECT_SPEED,
 	uiSpeedToDevice,
 } from "../js/protocol.js";
@@ -28,4 +29,11 @@ test("device speeds map back to the UI scale", () => {
 	for (let ui = 0; ui <= MAX_UI_EFFECT_SPEED; ui++) {
 		assert.equal(deviceSpeedToUI(uiSpeedToDevice(ui)), ui);
 	}
+});
+
+test("escapeHtml escapes both quote kinds", () => {
+	assert.equal(
+		escapeHtml(`<a href="x" title='y'>&</a>`),
+		"&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;&amp;&lt;/a&gt;",
+	);
 });

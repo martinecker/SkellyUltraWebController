@@ -3,10 +3,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+	CAPABILITIES,
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
 	deviceTypeFromName,
 	displayedLights,
+	hasCapability,
 	isTestedFirmware,
 } from "../js/constants.js";
 
@@ -57,4 +59,25 @@ test("lights are shown highest channel first", () => {
 	assert.deepEqual(displayedLights(DEVICE_PROFILES[DEVICE_TYPES.LILY]), [
 		{ label: "Lantern", channel: 0 },
 	]);
+});
+
+test("capabilities start at the profile's firmware version", () => {
+	const { SKELLY, SKELLY_12FT, SANTA } = DEVICE_TYPES;
+	const scenes = CAPABILITIES.LIGHT_SCENES;
+	assert.equal(hasCapability(SKELLY, "v66", scenes), false);
+	assert.equal(hasCapability(SKELLY, "v68", scenes), true);
+	assert.equal(hasCapability(SKELLY, 70, scenes), true); // newer, untested
+	assert.equal(hasCapability(SKELLY_12FT, "v14", CAPABILITIES.JAW_DATA), true);
+	assert.equal(hasCapability(SKELLY_12FT, "v13", CAPABILITIES.JAW_DATA), false);
+	// Santa: any known version
+	assert.equal(hasCapability(SANTA, "v1", CAPABILITIES.SET_ALL_LIGHTS), true);
+});
+
+test("no capability without a firmware version or for unknown names", () => {
+	assert.equal(
+		hasCapability(DEVICE_TYPES.SANTA, null, CAPABILITIES.LIGHT_SCENES),
+		false,
+	);
+	assert.equal(hasCapability("nope", "v68", CAPABILITIES.LIGHT_SCENES), false);
+	assert.equal(hasCapability(DEVICE_TYPES.SKELLY, "v68", "nope"), false);
 });

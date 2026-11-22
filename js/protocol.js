@@ -218,13 +218,14 @@ export function sleep(ms) {
  */
 export function escapeHtml(s) {
 	return s.replace(
-		/[&<>"]/g,
+		/[&<>"']/g,
 		(c) =>
 			({
 				"&": "&amp;",
 				"<": "&lt;",
 				">": "&gt;",
 				'"': "&quot;",
+				"'": "&#39;",
 			})[c],
 	);
 }

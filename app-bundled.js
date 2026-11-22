@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T20:49:25.085665
+ * Generated: 2026-11-22T20:52:34.858504
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -744,13 +744,14 @@ function sleep(ms) {
  */
 function escapeHtml(s) {
 	return s.replace(
-		/[&<>"]/g,
+		/[&<>"']/g,
 		(c) =>
 			({
 				"&": "&amp;",
 				"<": "&lt;",
 				">": "&gt;",
 				'"': "&quot;",
+				"'": "&#39;",
 			})[c],
 	);
 }
@@ -2926,7 +2927,7 @@ class FileManager {
 		if (
 			override !== null &&
 			typeof override === "number" &&
-			override >= 50 &&
+			override >= TRANSFER_CONFIG.MIN_CHUNK_SIZE &&
 			override <= TRANSFER_CONFIG.MAX_CHUNK_SIZE
 		) {
 			this.log(
@@ -5625,9 +5626,12 @@ class TransferModalManager {
 
 		// Initialize slider with saved or auto-determined chunk size
 		if (chunkSizeSlider && chunkSizeValue) {
+			chunkSizeSlider.min = TRANSFER_CONFIG.MIN_CHUNK_SIZE;
+			chunkSizeSlider.max = TRANSFER_CONFIG.MAX_CHUNK_SIZE;
 			const autoChunkSize = this.fileManager.getChunkSize();
 			const initialSize =
-				savedChunkSize >= 50 && savedChunkSize <= 500
+				savedChunkSize >= TRANSFER_CONFIG.MIN_CHUNK_SIZE &&
+				savedChunkSize <= TRANSFER_CONFIG.MAX_CHUNK_SIZE
 					? savedChunkSize
 					: autoChunkSize;
 			chunkSizeSlider.value = initialSize;
@@ -5672,6 +5676,17 @@ class TransferModalManager {
 			}
 			localStorage.setItem(STORAGE_KEYS.CHUNK_SIZE, e.target.value);
 		});
+	}
+
+	/**
+	 * The MP3 bitrate to convert to: the override if it is on, else the default
+	 * @returns {number} kbps
+	 */
+	mp3Kbps() {
+		const override = $("#chkBitrateOverride")?.checked
+			? parseInt($("#mp3Kbps")?.value, 10)
+			: NaN;
+		return Number.isNaN(override) ? AUDIO_CONFIG.DEFAULT_MP3_KBPS : override;
 	}
 
 	/**
@@ -5868,9 +5883,7 @@ class TransferModalManager {
 			const rawName = ttsFileName(text);
 
 			if ($("#chkConvert")?.checked) {
-				const kbps = $("#chkBitrateOverride")?.checked
-					? parseInt($("#mp3Kbps")?.value || "32", 10)
-					: 32;
+				const kbps = this.mp3Kbps();
 				this.log(`Converting ElevenLabs audio to MP3 mono (${kbps} kbps)…`);
 				const file = new File([rawMp3], rawName, { type: "audio/mpeg" });
 				const result = await this.audioConverter.convertToDeviceMp3(file, kbps);
@@ -5904,9 +5917,7 @@ class TransferModalManager {
 			// If user toggled "Convert" AFTER selecting the file, convert now
 			try {
 				if ($("#chkConvert")?.checked && pickerData.file) {
-					const kbps = $("#chkBitrateOverride")?.checked
-						? parseInt($("#mp3Kbps")?.value || "32", 10)
-						: 32;
+					const kbps = this.mp3Kbps();
 					this.log(`Converting to MP3 mono (${kbps} kbps) before send…`);
 					const result = await this.audioConverter.convertToDeviceMp3(
 						pickerData.file,
