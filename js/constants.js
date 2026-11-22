@@ -231,6 +231,18 @@ function firmwareNumber(version) {
 }
 
 /**
+ * A device type read back from storage, or Ultra Skelly if it isn't one
+ * (missing, stale or edited by hand), so the page always has a profile.
+ * @param {string|null} value
+ * @returns {string} a DEVICE_TYPES value
+ */
+export function knownDeviceType(value) {
+	return Object.hasOwn(DEVICE_PROFILES, value ?? "")
+		? value
+		: DEVICE_TYPES.SKELLY;
+}
+
+/**
  * The device type a BLE name belongs to (a DEVICE_TYPES value), or null: the
  * first profile with one of its nameMatches in the name, ignoring case.
  * @param {string} deviceName

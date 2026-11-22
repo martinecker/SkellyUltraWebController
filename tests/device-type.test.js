@@ -12,6 +12,7 @@ import {
 	getEyeIconPath,
 	hasCapability,
 	isTestedFirmware,
+	knownDeviceType,
 	movementIconPath,
 } from "../js/constants.js";
 
@@ -97,4 +98,11 @@ test("every profile's eye and movement images exist", () => {
 		}
 	}
 	assert.equal(getEyeIconPath(DEVICE_TYPES.LILY, 1), null);
+});
+
+test("a saved device type that isn't known falls back to Ultra Skelly", () => {
+	assert.equal(knownDeviceType(DEVICE_TYPES.LILY), DEVICE_TYPES.LILY);
+	assert.equal(knownDeviceType(null), DEVICE_TYPES.SKELLY);
+	assert.equal(knownDeviceType("ultra_skelly"), DEVICE_TYPES.SKELLY);
+	assert.equal(knownDeviceType("toString"), DEVICE_TYPES.SKELLY);
 });

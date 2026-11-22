@@ -12,6 +12,7 @@ import {
 	displayedLights,
 	getEyeIconPath,
 	isTestedFirmware,
+	knownDeviceType,
 	LOG_CLASSES,
 	movementIconPath,
 	STORAGE_KEYS,
@@ -294,10 +295,14 @@ class SkellyApp {
 		}
 
 		// Apply persisted device profile on startup
-		const startupDeviceType =
-			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+		const startupDeviceType = this.savedDeviceType();
 		this.state.setDeviceType(startupDeviceType);
 		this.applyDeviceProfile(startupDeviceType);
+	}
+
+	/** The persisted device type; Ultra Skelly if none or not a known one */
+	savedDeviceType() {
+		return knownDeviceType(localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE));
 	}
 
 	/**
@@ -308,8 +313,7 @@ class SkellyApp {
 		if (!deviceTypeSelect) return;
 
 		// Sync with persisted value
-		const saved =
-			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+		const saved = this.savedDeviceType();
 		deviceTypeSelect.value = saved;
 
 		deviceTypeSelect.addEventListener("change", () => {
@@ -551,8 +555,7 @@ class SkellyApp {
 			localStorage.getItem(STORAGE_KEYS.CONNECTION_TYPE) || "direct";
 		const savedRestUrl =
 			localStorage.getItem(STORAGE_KEYS.REST_URL) || "http://localhost:8765";
-		const savedDeviceType =
-			localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+		const savedDeviceType = this.savedDeviceType();
 
 		// One name filter option per profile BLE name: "<type>" for the
 		// default name, "<type>:<index>" for the others
@@ -650,8 +653,7 @@ class SkellyApp {
 			// Determine filter value and device type
 			let nameFilter = "";
 			// The type persisted now; it may have changed since the page loaded
-			let deviceType =
-				localStorage.getItem(STORAGE_KEYS.DEVICE_TYPE) || DEVICE_TYPES.SKELLY;
+			let deviceType = this.savedDeviceType();
 
 			if (connectFilterDefault?.checked) {
 				// Default name filter — device type comes directly from the dropdown
