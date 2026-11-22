@@ -82,3 +82,21 @@ test("a failed connect leaves no active connection", async () => {
 	assert.equal(cm.connectionType, null);
 	assert.equal(cm.isConnected(), false);
 });
+
+test("pause holds back the next write, not the caller", async () => {
+	const connection = slowConnection();
+	const times = [];
+	const send = connection.send.bind(connection);
+	connection.send = async (bytes) => {
+		await send(bytes);
+		times.push(performance.now());
+	};
+	const cm = manager(connection);
+	const started = performance.now();
+	await cm.send(Uint8Array.of(1));
+	cm.pause(40);
+	assert.ok(performance.now() - started < 30, "pause doesn't wait itself");
+	await cm.send(Uint8Array.of(2));
+	assert.deepEqual(connection.sent, [1, 2]);
+	assert.ok(times[1] - times[0] >= 40, `gap ${times[1] - times[0]} ms`);
+});

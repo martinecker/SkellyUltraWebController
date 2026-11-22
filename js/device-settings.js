@@ -19,7 +19,6 @@ import {
 	buildFilenamePayload,
 	byteHex,
 	intToHex,
-	sleep,
 } from "./protocol.js";
 
 function targetPayload(cluster, fileName, dataHex) {
@@ -297,7 +296,7 @@ function allChannelsComplete(lights) {
  * between each (write-without-response commands can be dropped if sent
  * back-to-back).
  *
- * @param {Object} connection - BLE connection manager (has .send)
+ * @param {Object} connection - ConnectionManager (.send, and .pause for delayMs)
  * @param {number} cluster - Device-assigned cluster for the file
  * @param {string} fileName - Filename to address
  * @param {Object} settings
@@ -308,7 +307,7 @@ function allChannelsComplete(lights) {
  *   use 1 or 2). Each entry: {brightness, effectMode, effectSpeed, r, g, b, colorCycle}
  * @param {Object} [options]
  * @param {boolean} [options.hasEyeImage] - Whether to send the eye command
- * @param {number} [options.delayMs] - Delay between commands
+ * @param {number} [options.delayMs] - Pause after each command (connection.pause)
  * @param {(label: string) => void} [options.onStep] - Called after each command sends
  * @param {number|null} [options.scene] - From currentLightScene: when set, all
  *   lights go in one F1 with this scene instead of F2/F3/F4/F6 per channel
@@ -324,7 +323,7 @@ export async function applyFileSettings(
 	const step = async (label, send) => {
 		await send();
 		onStep?.(label);
-		if (delayMs) await sleep(delayMs);
+		if (delayMs) connection.pause(delayMs);
 	};
 
 	await step(`Movement (CA) action=${settings.action}`, () =>

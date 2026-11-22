@@ -4,6 +4,7 @@
  */
 
 import { BLEManager } from "./ble-manager.js";
+import { sleep } from "./protocol.js";
 import { RestProxy } from "./rest-proxy.js";
 
 /**
@@ -140,6 +141,16 @@ export class ConnectionManager {
 		const write = this.writeQueue.then(() => connection.send(commandBytes));
 		this.writeQueue = write.catch(() => {});
 		return write;
+	}
+
+	/**
+	 * Hold back the next write until ms after the writes queued so far have
+	 * gone out, to give the device time between commands. Doesn't wait
+	 * itself; every later send (whoever makes it) waits.
+	 * @param {number} ms
+	 */
+	pause(ms) {
+		this.writeQueue = this.writeQueue.then(() => sleep(ms));
 	}
 
 	/**

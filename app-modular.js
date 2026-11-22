@@ -991,8 +991,8 @@ class SkellyApp {
 
 			for (const tag of queries) {
 				await this.connection.send(buildCommand(tag, "", 8));
-				// Small delay between queries to avoid overwhelming the device
-				await new Promise((resolve) => setTimeout(resolve, 100));
+				// Give the device a moment between queries
+				this.connection.pause(100);
 			}
 
 			this.logger.log("All queries completed", LOG_CLASSES.SUCCESS);
@@ -2129,33 +2129,22 @@ class SkellyApp {
 				this.applyDeviceProfile(detectedType);
 			}
 
-			// Query device state in sequence: live mode, params, volume, BT name, version
-			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_MODE, "", 8));
-			setTimeout(
-				() =>
-					this.connection.send(
-						buildCommand(COMMANDS.QUERY_DEVICE_PARAMS, "", 8),
-					),
-				50,
-			);
-			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_VOLUME, "", 8)),
-				100,
-			);
-			setTimeout(
-				() =>
-					this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8)),
-				150,
-			);
-			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_VERSION, "", 8)),
-				200,
-			);
+			// Query device state in sequence, 50 ms apart: live mode, params,
+			// volume, BT name, version
+			for (const tag of [
+				COMMANDS.QUERY_LIVE_MODE,
+				COMMANDS.QUERY_DEVICE_PARAMS,
+				COMMANDS.QUERY_VOLUME,
+				COMMANDS.QUERY_LIVE_NAME,
+				COMMANDS.QUERY_VERSION,
+			]) {
+				await this.connection.send(buildCommand(tag, "", 8));
+				this.connection.pause(50);
+			}
 
-			// Start file list fetch - this will query capacity and order after files are received
-			setTimeout(() => {
-				this.fileManager.refreshFileList();
-			}, 250);
+			// Start the file list fetch; it queries capacity and order once the
+			// files are in
+			this.fileManager.refreshFileList();
 		} catch (error) {
 			console.error("Connection error:", error);
 			this.logger.log(

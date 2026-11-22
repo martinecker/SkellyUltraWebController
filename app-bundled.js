@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T22:40:18.525808
+ * Generated: 2026-11-22T22:44:42.278620
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1085,7 +1085,7 @@ function allChannelsComplete(lights) {
  * between each (write-without-response commands can be dropped if sent
  * back-to-back).
  *
- * @param {Object} connection - BLE connection manager (has .send)
+ * @param {Object} connection - ConnectionManager (.send, and .pause for delayMs)
  * @param {number} cluster - Device-assigned cluster for the file
  * @param {string} fileName - Filename to address
  * @param {Object} settings
@@ -1096,7 +1096,7 @@ function allChannelsComplete(lights) {
  *   use 1 or 2). Each entry: {brightness, effectMode, effectSpeed, r, g, b, colorCycle}
  * @param {Object} [options]
  * @param {boolean} [options.hasEyeImage] - Whether to send the eye command
- * @param {number} [options.delayMs] - Delay between commands
+ * @param {number} [options.delayMs] - Pause after each command (connection.pause)
  * @param {(label: string) => void} [options.onStep] - Called after each command sends
  * @param {number|null} [options.scene] - From currentLightScene: when set, all
  *   lights go in one F1 with this scene instead of F2/F3/F4/F6 per channel
@@ -1112,7 +1112,7 @@ async function applyFileSettings(
 	const step = async (label, send) => {
 		await send();
 		onStep?.(label);
-		if (delayMs) await sleep(delayMs);
+		if (delayMs) connection.pause(delayMs);
 	};
 
 	await step(`Movement (CA) action=${settings.action}`, () =>
@@ -2636,6 +2636,16 @@ class ConnectionManager {
 	}
 
 	/**
+	 * Hold back the next write until ms after the writes queued so far have
+	 * gone out, to give the device time between commands. Doesn't wait
+	 * itself; every later send (whoever makes it) waits.
+	 * @param {number} ms
+	 */
+	pause(ms) {
+		this.writeQueue = this.writeQueue.then(() => sleep(ms));
+	}
+
+	/**
 	 * Register a notification handler
 	 * @param {Function} handler - Handler function (hex, bytes) => void
 	 * @returns {Function} - Unsubscribe function
@@ -3669,8 +3679,8 @@ class FileManager {
 				LOG_CLASSES.INFO,
 			);
 
-			// Small delay between commands
-			await sleep(50);
+			// Give the device a moment between commands
+			this.connection.pause(50);
 		}
 
 		// Query the new order from device
@@ -7102,8 +7112,8 @@ class SkellyApp {
 
 			for (const tag of queries) {
 				await this.connection.send(buildCommand(tag, "", 8));
-				// Small delay between queries to avoid overwhelming the device
-				await new Promise((resolve) => setTimeout(resolve, 100));
+				// Give the device a moment between queries
+				this.connection.pause(100);
 			}
 
 			this.logger.log("All queries completed", LOG_CLASSES.SUCCESS);
@@ -8240,33 +8250,22 @@ class SkellyApp {
 				this.applyDeviceProfile(detectedType);
 			}
 
-			// Query device state in sequence: live mode, params, volume, BT name, version
-			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_MODE, "", 8));
-			setTimeout(
-				() =>
-					this.connection.send(
-						buildCommand(COMMANDS.QUERY_DEVICE_PARAMS, "", 8),
-					),
-				50,
-			);
-			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_VOLUME, "", 8)),
-				100,
-			);
-			setTimeout(
-				() =>
-					this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8)),
-				150,
-			);
-			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_VERSION, "", 8)),
-				200,
-			);
+			// Query device state in sequence, 50 ms apart: live mode, params,
+			// volume, BT name, version
+			for (const tag of [
+				COMMANDS.QUERY_LIVE_MODE,
+				COMMANDS.QUERY_DEVICE_PARAMS,
+				COMMANDS.QUERY_VOLUME,
+				COMMANDS.QUERY_LIVE_NAME,
+				COMMANDS.QUERY_VERSION,
+			]) {
+				await this.connection.send(buildCommand(tag, "", 8));
+				this.connection.pause(50);
+			}
 
-			// Start file list fetch - this will query capacity and order after files are received
-			setTimeout(() => {
-				this.fileManager.refreshFileList();
-			}, 250);
+			// Start the file list fetch; it queries capacity and order once the
+			// files are in
+			this.fileManager.refreshFileList();
 		} catch (error) {
 			console.error("Connection error:", error);
 			this.logger.log(

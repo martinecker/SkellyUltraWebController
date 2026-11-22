@@ -977,8 +977,8 @@ export class FileManager {
 				LOG_CLASSES.INFO,
 			);
 
-			// Small delay between commands
-			await sleep(50);
+			// Give the device a moment between commands
+			this.connection.pause(50);
 		}
 
 		// Query the new order from device
