@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T19:50:47.319772
+ * Generated: 2026-11-22T20:15:47.946087
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1269,6 +1269,36 @@ class StateManager {
 	}
 
 	/**
+	 * Wait until check() returns something truthy, checking now and after
+	 * each change to the file list (including files arriving mid-refresh)
+	 * @param {Function} check - Returns a truthy value once the wait is over
+	 * @param {number} timeoutMs
+	 * @returns {Promise<*>} check()'s truthy value, or null on timeout
+	 */
+	waitForFiles(check, timeoutMs) {
+		return new Promise((resolve) => {
+			const now = check();
+			if (now) {
+				resolve(now);
+				return;
+			}
+			const finish = (value) => {
+				clearTimeout(timer);
+				stopFiles();
+				stopArrived();
+				resolve(value);
+			};
+			const recheck = () => {
+				const value = check();
+				if (value) finish(value);
+			};
+			const stopFiles = this.subscribe("files", recheck);
+			const stopArrived = this.subscribe("fileArrived", recheck);
+			const timer = setTimeout(() => finish(null), timeoutMs);
+		});
+	}
+
+	/**
 	 * Notify observers of state changes
 	 * @param {string} key - State key that changed
 	 */
@@ -1347,10 +1377,9 @@ class StateManager {
 	 */
 	setFile(serial, fileData) {
 		this.files.items.set(serial, fileData);
-		// Never notify during active fetch - wait until order arrives
-		if (!this.files.activeFetch) {
-			this.notify("files");
-		}
+		// The file table hears of files only when the refresh is done (the
+		// order arrived); waitForFiles() sees each file as it arrives
+		this.notify(this.files.activeFetch ? "fileArrived" : "files");
 	}
 
 	/**
@@ -2714,6 +2743,11 @@ class TransferReports {
 	takeEnd() {
 		return this.ends.length > 0 ? this.ends.shift() : null;
 	}
+
+	/** Drop all buffered BBC2s */
+	clearEnds() {
+		this.ends.length = 0;
+	}
 }
 
 /** The device's loss reports (BBC1 lost = 1) during one upload attempt */
@@ -3182,7 +3216,7 @@ class FileManager {
 				}
 				// A BBC2 still buffered now answers an earlier C2 (e.g. one that
 				// crossed an early failed BBC2); don't take it for this round's
-				reports.ends.length = 0;
+				reports.clearEnds();
 			}
 		} finally {
 			reports.stop();
@@ -3336,7 +3370,7 @@ class FileManager {
 	}
 
 	/**
-	 * Poll until ALL named files appear in the file list state, or timeout.
+	 * Wait until ALL named files appear in the file list state, or timeout.
 	 * Used after delete to confirm the refreshed list has arrived before
 	 * remapping names to their new (renumbered) serials.
 	 * @param {string[]} names
@@ -3344,12 +3378,11 @@ class FileManager {
 	 * @returns {Promise<boolean>} true if all found before timeout
 	 */
 	async waitForFilesByName(names, timeoutMs = TIMEOUTS.FILE_LIST) {
-		const deadline = Date.now() + timeoutMs;
-		while (Date.now() < deadline) {
-			if (names.every((name) => this.state.hasFileName(name))) return true;
-			await sleep(100);
-		}
-		return false;
+		const found = await this.state.waitForFiles(
+			() => names.every((name) => this.state.hasFileName(name)),
+			timeoutMs,
+		);
+		return found !== null;
 	}
 
 	/**
@@ -3365,19 +3398,19 @@ class FileManager {
 	}
 
 	/**
-	 * Poll until a file list refresh has finished, including the play order
+	 * Wait until a file list refresh has finished, including the play order
 	 * that follows the list. Call right after startFetchFiles().
 	 * @param {number} timeoutMs
 	 * @returns {Promise<boolean>} true if the full list and order arrived
 	 */
 	async waitForFileListRefresh(timeoutMs = TIMEOUTS.FILE_LIST + 2000) {
-		const deadline = Date.now() + timeoutMs;
 		// startFetchFiles() sets activeFetch before its first await, so a false
 		// here means it never started (not connected)
-		while (this.state.files.activeFetch && Date.now() < deadline) {
-			await sleep(100);
-		}
-		return !this.state.files.activeFetch && this.state.isFileListComplete();
+		const ended = await this.state.waitForFiles(
+			() => !this.state.files.activeFetch,
+			timeoutMs,
+		);
+		return ended !== null && this.state.isFileListComplete();
 	}
 
 	/**
@@ -3434,20 +3467,17 @@ class FileManager {
 	}
 
 	/**
-	 * Poll until the named file appears in the file list state, or timeout.
+	 * Wait until the named file appears in the file list state, or timeout.
 	 * Used after upload to obtain the device-assigned cluster for the file.
 	 * @param {string} fileName
 	 * @param {number} timeoutMs
 	 * @returns {Promise<Object|null>} File object or null on timeout
 	 */
 	async waitForFileByName(fileName, timeoutMs = TIMEOUTS.FILE_LIST) {
-		const deadline = Date.now() + timeoutMs;
-		while (Date.now() < deadline) {
-			const file = this.state.hasFileName(fileName);
-			if (file) return file;
-			await sleep(100);
-		}
-		return null;
+		return this.state.waitForFiles(
+			() => this.state.hasFileName(fileName),
+			timeoutMs,
+		);
 	}
 
 	/**
@@ -3895,6 +3925,31 @@ class AudioConverter {
  */
 
 /**
+ * Parse the light block of BBE1 and BBD0: 6 channels of 7 bytes (mode,
+ * brightness, r, g, b, color cycle, speed). A cut-off channel is skipped.
+ * @param {string} lightHex - 84 hex chars
+ * @returns {Object[]} One light object per complete channel
+ */
+function parseLights(lightHex) {
+	const lights = [];
+	for (let i = 0; i < 6; i++) {
+		const ch = lightHex.slice(i * 14, (i + 1) * 14);
+		if (ch.length < 14) continue;
+		const byte = (at) => parseInt(ch.slice(at * 2, at * 2 + 2), 16);
+		lights.push({
+			effectMode: byte(0),
+			brightness: byte(1),
+			r: byte(2),
+			g: byte(3),
+			b: byte(4),
+			colorCycle: byte(5),
+			effectSpeed: byte(6),
+		});
+	}
+	return lights;
+}
+
+/**
  * Protocol Response Parser
  */
 class ProtocolParser {
@@ -4052,24 +4107,7 @@ class ProtocolParser {
 	 */
 	parseLiveStatus(hex) {
 		const action = parseInt(hex.slice(4, 6), 16);
-		const lightData = hex.slice(6, 90);
-		const lights = [];
-
-		for (let i = 0; i < 6; i++) {
-			const ch = lightData.slice(i * 14, (i + 1) * 14);
-			if (ch.length < 14) continue;
-
-			const light = {
-				effectMode: parseInt(ch.slice(0, 2), 16),
-				brightness: parseInt(ch.slice(2, 4), 16),
-				r: parseInt(ch.slice(4, 6), 16),
-				g: parseInt(ch.slice(6, 8), 16),
-				b: parseInt(ch.slice(8, 10), 16),
-				colorCycle: parseInt(ch.slice(10, 12), 16),
-				effectSpeed: parseInt(ch.slice(12, 14), 16),
-			};
-			lights.push(light);
-		}
+		const lights = parseLights(hex.slice(6, 90));
 
 		const eyeIcon = parseInt(hex.slice(90, 92), 16);
 		// Scene firmware adds the live LIGHT_SCENES value after the eye icon; null: no scenes.
@@ -4171,24 +4209,7 @@ class ProtocolParser {
 		// hex.slice(20, 24) is skipped: observed as always 0 on real devices.
 		const action = parseInt(hex.slice(24, 26), 16);
 
-		// Parse light data (6 channels, 7 bytes each = 84 hex chars)
-		const lightData = hex.slice(26, 110);
-		const lights = [];
-		for (let i = 0; i < 6; i++) {
-			const ch = lightData.slice(i * 14, (i + 1) * 14);
-			if (ch.length < 14) continue;
-
-			const light = {
-				effectMode: parseInt(ch.slice(0, 2), 16),
-				brightness: parseInt(ch.slice(2, 4), 16),
-				r: parseInt(ch.slice(4, 6), 16),
-				g: parseInt(ch.slice(6, 8), 16),
-				b: parseInt(ch.slice(8, 10), 16),
-				colorCycle: parseInt(ch.slice(10, 12), 16),
-				effectSpeed: parseInt(ch.slice(12, 14), 16),
-			};
-			lights.push(light);
-		}
+		const lights = parseLights(hex.slice(26, 110));
 
 		const eyeIcon = parseInt(hex.slice(110, 112), 16);
 

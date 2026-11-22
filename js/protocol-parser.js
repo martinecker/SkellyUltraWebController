@@ -7,6 +7,31 @@ import { LOG_CLASSES, PROTOCOL_MARKERS, RESPONSES } from "./constants.js";
 import { decodeUtf16le, getAsciiFromHex, hexToBytes } from "./protocol.js";
 
 /**
+ * Parse the light block of BBE1 and BBD0: 6 channels of 7 bytes (mode,
+ * brightness, r, g, b, color cycle, speed). A cut-off channel is skipped.
+ * @param {string} lightHex - 84 hex chars
+ * @returns {Object[]} One light object per complete channel
+ */
+export function parseLights(lightHex) {
+	const lights = [];
+	for (let i = 0; i < 6; i++) {
+		const ch = lightHex.slice(i * 14, (i + 1) * 14);
+		if (ch.length < 14) continue;
+		const byte = (at) => parseInt(ch.slice(at * 2, at * 2 + 2), 16);
+		lights.push({
+			effectMode: byte(0),
+			brightness: byte(1),
+			r: byte(2),
+			g: byte(3),
+			b: byte(4),
+			colorCycle: byte(5),
+			effectSpeed: byte(6),
+		});
+	}
+	return lights;
+}
+
+/**
  * Protocol Response Parser
  */
 export class ProtocolParser {
@@ -164,24 +189,7 @@ export class ProtocolParser {
 	 */
 	parseLiveStatus(hex) {
 		const action = parseInt(hex.slice(4, 6), 16);
-		const lightData = hex.slice(6, 90);
-		const lights = [];
-
-		for (let i = 0; i < 6; i++) {
-			const ch = lightData.slice(i * 14, (i + 1) * 14);
-			if (ch.length < 14) continue;
-
-			const light = {
-				effectMode: parseInt(ch.slice(0, 2), 16),
-				brightness: parseInt(ch.slice(2, 4), 16),
-				r: parseInt(ch.slice(4, 6), 16),
-				g: parseInt(ch.slice(6, 8), 16),
-				b: parseInt(ch.slice(8, 10), 16),
-				colorCycle: parseInt(ch.slice(10, 12), 16),
-				effectSpeed: parseInt(ch.slice(12, 14), 16),
-			};
-			lights.push(light);
-		}
+		const lights = parseLights(hex.slice(6, 90));
 
 		const eyeIcon = parseInt(hex.slice(90, 92), 16);
 		// Scene firmware adds the live LIGHT_SCENES value after the eye icon; null: no scenes.
@@ -283,24 +291,7 @@ export class ProtocolParser {
 		// hex.slice(20, 24) is skipped: observed as always 0 on real devices.
 		const action = parseInt(hex.slice(24, 26), 16);
 
-		// Parse light data (6 channels, 7 bytes each = 84 hex chars)
-		const lightData = hex.slice(26, 110);
-		const lights = [];
-		for (let i = 0; i < 6; i++) {
-			const ch = lightData.slice(i * 14, (i + 1) * 14);
-			if (ch.length < 14) continue;
-
-			const light = {
-				effectMode: parseInt(ch.slice(0, 2), 16),
-				brightness: parseInt(ch.slice(2, 4), 16),
-				r: parseInt(ch.slice(4, 6), 16),
-				g: parseInt(ch.slice(6, 8), 16),
-				b: parseInt(ch.slice(8, 10), 16),
-				colorCycle: parseInt(ch.slice(10, 12), 16),
-				effectSpeed: parseInt(ch.slice(12, 14), 16),
-			};
-			lights.push(light);
-		}
+		const lights = parseLights(hex.slice(26, 110));
 
 		const eyeIcon = parseInt(hex.slice(110, 112), 16);
 

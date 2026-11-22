@@ -60,6 +60,11 @@ class TransferReports {
 	takeEnd() {
 		return this.ends.length > 0 ? this.ends.shift() : null;
 	}
+
+	/** Drop all buffered BBC2s */
+	clearEnds() {
+		this.ends.length = 0;
+	}
 }
 
 /** The device's loss reports (BBC1 lost = 1) during one upload attempt */
@@ -528,7 +533,7 @@ export class FileManager {
 				}
 				// A BBC2 still buffered now answers an earlier C2 (e.g. one that
 				// crossed an early failed BBC2); don't take it for this round's
-				reports.ends.length = 0;
+				reports.clearEnds();
 			}
 		} finally {
 			reports.stop();
@@ -682,7 +687,7 @@ export class FileManager {
 	}
 
 	/**
-	 * Poll until ALL named files appear in the file list state, or timeout.
+	 * Wait until ALL named files appear in the file list state, or timeout.
 	 * Used after delete to confirm the refreshed list has arrived before
 	 * remapping names to their new (renumbered) serials.
 	 * @param {string[]} names
@@ -690,12 +695,11 @@ export class FileManager {
 	 * @returns {Promise<boolean>} true if all found before timeout
 	 */
 	async waitForFilesByName(names, timeoutMs = TIMEOUTS.FILE_LIST) {
-		const deadline = Date.now() + timeoutMs;
-		while (Date.now() < deadline) {
-			if (names.every((name) => this.state.hasFileName(name))) return true;
-			await sleep(100);
-		}
-		return false;
+		const found = await this.state.waitForFiles(
+			() => names.every((name) => this.state.hasFileName(name)),
+			timeoutMs,
+		);
+		return found !== null;
 	}
 
 	/**
@@ -711,19 +715,19 @@ export class FileManager {
 	}
 
 	/**
-	 * Poll until a file list refresh has finished, including the play order
+	 * Wait until a file list refresh has finished, including the play order
 	 * that follows the list. Call right after startFetchFiles().
 	 * @param {number} timeoutMs
 	 * @returns {Promise<boolean>} true if the full list and order arrived
 	 */
 	async waitForFileListRefresh(timeoutMs = TIMEOUTS.FILE_LIST + 2000) {
-		const deadline = Date.now() + timeoutMs;
 		// startFetchFiles() sets activeFetch before its first await, so a false
 		// here means it never started (not connected)
-		while (this.state.files.activeFetch && Date.now() < deadline) {
-			await sleep(100);
-		}
-		return !this.state.files.activeFetch && this.state.isFileListComplete();
+		const ended = await this.state.waitForFiles(
+			() => !this.state.files.activeFetch,
+			timeoutMs,
+		);
+		return ended !== null && this.state.isFileListComplete();
 	}
 
 	/**
@@ -780,20 +784,17 @@ export class FileManager {
 	}
 
 	/**
-	 * Poll until the named file appears in the file list state, or timeout.
+	 * Wait until the named file appears in the file list state, or timeout.
 	 * Used after upload to obtain the device-assigned cluster for the file.
 	 * @param {string} fileName
 	 * @param {number} timeoutMs
 	 * @returns {Promise<Object|null>} File object or null on timeout
 	 */
 	async waitForFileByName(fileName, timeoutMs = TIMEOUTS.FILE_LIST) {
-		const deadline = Date.now() + timeoutMs;
-		while (Date.now() < deadline) {
-			const file = this.state.hasFileName(fileName);
-			if (file) return file;
-			await sleep(100);
-		}
-		return null;
+		return this.state.waitForFiles(
+			() => this.state.hasFileName(fileName),
+			timeoutMs,
+		);
 	}
 
 	/**

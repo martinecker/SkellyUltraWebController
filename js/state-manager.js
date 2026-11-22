@@ -80,6 +80,36 @@ export class StateManager {
 	}
 
 	/**
+	 * Wait until check() returns something truthy, checking now and after
+	 * each change to the file list (including files arriving mid-refresh)
+	 * @param {Function} check - Returns a truthy value once the wait is over
+	 * @param {number} timeoutMs
+	 * @returns {Promise<*>} check()'s truthy value, or null on timeout
+	 */
+	waitForFiles(check, timeoutMs) {
+		return new Promise((resolve) => {
+			const now = check();
+			if (now) {
+				resolve(now);
+				return;
+			}
+			const finish = (value) => {
+				clearTimeout(timer);
+				stopFiles();
+				stopArrived();
+				resolve(value);
+			};
+			const recheck = () => {
+				const value = check();
+				if (value) finish(value);
+			};
+			const stopFiles = this.subscribe("files", recheck);
+			const stopArrived = this.subscribe("fileArrived", recheck);
+			const timer = setTimeout(() => finish(null), timeoutMs);
+		});
+	}
+
+	/**
 	 * Notify observers of state changes
 	 * @param {string} key - State key that changed
 	 */
@@ -158,10 +188,9 @@ export class StateManager {
 	 */
 	setFile(serial, fileData) {
 		this.files.items.set(serial, fileData);
-		// Never notify during active fetch - wait until order arrives
-		if (!this.files.activeFetch) {
-			this.notify("files");
-		}
+		// The file table hears of files only when the refresh is done (the
+		// order arrived); waitForFiles() sees each file as it arrives
+		this.notify(this.files.activeFetch ? "fileArrived" : "files");
 	}
 
 	/**

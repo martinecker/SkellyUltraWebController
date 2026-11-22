@@ -126,3 +126,33 @@ test("file infos after the list is complete don't ask for the order again", asyn
 		1,
 	);
 });
+
+test("waiting for a file ends as soon as its info arrives", async () => {
+	const { fileManager, parser } = setup();
+	await fileManager.startFetchFiles();
+	const waiting = fileManager.waitForFileByName("b.mp3");
+	parser.parse(fileInfoHex(1, 2, "a.mp3"));
+	parser.parse(fileInfoHex(2, 2, "b.mp3"));
+	const file = await waiting;
+	assert.equal(file?.serial, 2);
+});
+
+test("waiting for the refresh ends with the play order", async () => {
+	const { fileManager, parser } = setup();
+	await fileManager.startFetchFiles();
+	const waiting = fileManager.waitForFileListRefresh();
+	parser.parse(fileInfoHex(1, 1, "a.mp3"));
+	await settle();
+	parser.parse("BBD101000100");
+	assert.equal(await waiting, true);
+});
+
+test("waiting for files that never come times out", async () => {
+	const { state, fileManager } = setup();
+	const waiting = fileManager.waitForFilesByName(["missing.mp3"], 1000);
+	mock.timers.tick(1000);
+	assert.equal(await waiting, false);
+	// The waiter is gone: no observers left behind
+	assert.equal(state.observers.get("files")?.size ?? 0, 0);
+	assert.equal(state.observers.get("fileArrived")?.size ?? 0, 0);
+});
