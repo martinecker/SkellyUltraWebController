@@ -69,9 +69,9 @@ test("the play order ends the refresh", async () => {
 	parser.parse(fileInfoHex(2, 2, "b.mp3"));
 	await settle();
 	assert.deepEqual(connection.sent, [
-		COMMANDS.QUERY_FILES,
+		COMMANDS.QUERY_FILE_LIST,
 		COMMANDS.QUERY_CAPACITY,
-		COMMANDS.QUERY_ORDER,
+		COMMANDS.QUERY_FILE_ORDER,
 	]);
 	assert.equal(state.files.activeFetch, true);
 
@@ -101,7 +101,7 @@ test("without a play order the refresh ends after FILE_ORDER", async () => {
 
 test("a failed play order query ends the refresh right away", async () => {
 	const { state, fileManager, parser } = setup({
-		failTag: COMMANDS.QUERY_ORDER,
+		failTag: COMMANDS.QUERY_FILE_ORDER,
 	});
 	await fileManager.startFetchFiles();
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
@@ -110,7 +110,7 @@ test("a failed play order query ends the refresh right away", async () => {
 });
 
 test("a failed file list query ends the refresh and doesn't throw", async () => {
-	const { state, fileManager } = setup({ failTag: COMMANDS.QUERY_FILES });
+	const { state, fileManager } = setup({ failTag: COMMANDS.QUERY_FILE_LIST });
 	await fileManager.startFetchFiles();
 	assert.equal(state.files.activeFetch, false);
 });
@@ -122,7 +122,7 @@ test("file infos after the list is complete don't ask for the order again", asyn
 	parser.parse(fileInfoHex(1, 1, "a.mp3"));
 	await settle();
 	assert.equal(
-		connection.sent.filter((tag) => tag === COMMANDS.QUERY_ORDER).length,
+		connection.sent.filter((tag) => tag === COMMANDS.QUERY_FILE_ORDER).length,
 		1,
 	);
 });

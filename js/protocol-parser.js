@@ -49,7 +49,7 @@ export class ProtocolParser {
 	 */
 	parse(hex, _bytes) {
 		// Keepalive (FEDC)
-		if (hex.startsWith(RESPONSES.KEEPALIVE)) {
+		if (hex.startsWith(RESPONSES.KEEP_ALIVE)) {
 			// Optionally log if advanced option is enabled
 			const advFEDC = document.querySelector("#advFEDC");
 			if (advFEDC?.checked) {
@@ -65,7 +65,7 @@ export class ProtocolParser {
 		}
 
 		// Live status (BBE1)
-		if (hex.startsWith(RESPONSES.LIVE_STATUS)) {
+		if (hex.startsWith(RESPONSES.LIVE_MODE)) {
 			this.parseLiveStatus(hex);
 			return;
 		}
@@ -77,7 +77,7 @@ export class ProtocolParser {
 		}
 
 		// BT name (BBE6)
-		if (hex.startsWith(RESPONSES.BT_NAME)) {
+		if (hex.startsWith(RESPONSES.LIVE_NAME)) {
 			this.parseBTName(hex);
 			return;
 		}
@@ -95,7 +95,7 @@ export class ProtocolParser {
 		}
 
 		// Play order (BBD1)
-		if (hex.startsWith(RESPONSES.ORDER)) {
+		if (hex.startsWith(RESPONSES.FILE_ORDER)) {
 			this.parseOrder(hex);
 			return;
 		}
@@ -113,7 +113,7 @@ export class ProtocolParser {
 		}
 
 		// Transfer responses
-		if (hex.startsWith(RESPONSES.TRANSFER_START)) {
+		if (hex.startsWith(RESPONSES.START_TRANSFER)) {
 			this.parseTransferStart(hex);
 			return;
 		}
@@ -128,32 +128,32 @@ export class ProtocolParser {
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.CONFIRM_TRANSFER_ACK)) {
+		if (hex.startsWith(RESPONSES.TRANSFER_CONFIRM)) {
 			this.parseConfirmTransferAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.CANCEL_ACK)) {
+		if (hex.startsWith(RESPONSES.TRANSFER_CANCEL)) {
 			this.parseCancelAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.RESUME_ACK)) {
+		if (hex.startsWith(RESPONSES.RESUME_WRITE)) {
 			this.parseResumeAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.PLAY_ACK)) {
+		if (hex.startsWith(RESPONSES.PLAYBACK)) {
 			this.parsePlayAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.DELETE_ACK)) {
+		if (hex.startsWith(RESPONSES.DELETE_FILE)) {
 			this.parseDeleteAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.FORMAT_ACK)) {
+		if (hex.startsWith(RESPONSES.FORMAT)) {
 			this.parseFormatAck(hex);
 			return;
 		}

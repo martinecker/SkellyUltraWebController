@@ -36,11 +36,11 @@ test("live light frames", async () => {
 	await sendSetLightRgb(c, 0, "", 0, 255, 16, 1, 1);
 	await sendSetLightRgb(c, 0, "", 1, 0, 0, 255, 0);
 	assert.deepEqual(c.sent, [
-		old(COMMANDS.SET_BRIGHTNESS, "01C800000000", 8),
-		old(COMMANDS.SET_MODE, "00030000000000", 8),
-		old(COMMANDS.SET_SPEED, "010700000000", 8),
-		old(COMMANDS.SET_RGB, "00FF1001010000000000", 9),
-		old(COMMANDS.SET_RGB, "010000FF000000000000", 9),
+		old(COMMANDS.SET_LIGHT_BRIGHTNESS, "01C800000000", 8),
+		old(COMMANDS.SET_LIGHT_MODE, "00030000000000", 8),
+		old(COMMANDS.SET_LIGHT_SPEED, "010700000000", 8),
+		old(COMMANDS.SET_LIGHT_RGB, "00FF1001010000000000", 9),
+		old(COMMANDS.SET_LIGHT_RGB, "010000FF000000000000", 9),
 	]);
 });
 
@@ -51,10 +51,10 @@ test("live movement and eye frames", async () => {
 	await sendSetMovement(c, 0, "", 0);
 	await sendSetEye(c, 0, "", 12);
 	assert.deepEqual(c.sent, [
-		old(COMMANDS.SET_MOVEMENT, "FF00000000", 8),
-		old(COMMANDS.SET_MOVEMENT, "0500000000", 8),
-		old(COMMANDS.SET_MOVEMENT, "0000000000", 8),
-		old(COMMANDS.SET_EYE, "0C000000000000", 8),
+		old(COMMANDS.SET_MOVEMENT_ACTION, "FF00000000", 8),
+		old(COMMANDS.SET_MOVEMENT_ACTION, "0500000000", 8),
+		old(COMMANDS.SET_MOVEMENT_ACTION, "0000000000", 8),
+		old(COMMANDS.SET_EYE_ICON, "0C000000000000", 8),
 	]);
 });
 

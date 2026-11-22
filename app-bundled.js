@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T20:52:34.858504
+ * Generated: 2026-11-22T20:59:20.359741
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -423,45 +423,45 @@ const AUDIO_CONFIG = {
 // https://github.com/martinecker/SkellyUltra/blob/main/PROTOCOL.md
 const COMMANDS = {
 	// File Transfer
-	START_TRANSFER: "AAC0", // size u32, chunk count u16, bare name -> BBC0
-	CHUNK_DATA: "AAC1", // index u16, data (the app sends MTU - 8) -> BBC1
-	END_TRANSFER: "AAC2", // 00 -> BBC2
-	CONFIRM_TRANSFER: "AAC3", // bare name -> BBC3
-	CANCEL: "AAC4", // 00 -> BBC4
-	RESUME: "AAC5", // payload unknown; the app never sends it
-	PLAY_PAUSE: "AAC6", // serial u16, 01 play / 00 stop -> BBC6
-	DELETE: "AAC7", // serial u16, cluster u32 -> BBC7
-	FORMAT: "AAC8", // 00 -> BBC8; erases every file
-	SET_ORDER: "AAC9", // total, position (1-based), serial u16, name
+	START_SEND_DATA: "AAC0", // size u32, chunk count u16, bare name -> BBC0
+	SEND_DATA_CHUNK: "AAC1", // index u16, data (the app sends MTU - 8) -> BBC1
+	END_SEND_DATA: "AAC2", // 00 -> BBC2
+	CONFIRM_FILE: "AAC3", // bare name -> BBC3
+	CANCEL_SEND: "AAC4", // 00 -> BBC4
+	RESUME_SEND: "AAC5", // payload unknown; the app never sends it
+	PLAY_STOP_FILE: "AAC6", // serial u16, 01 play / 00 stop -> BBC6
+	DELETE_FILE: "AAC7", // serial u16, cluster u32 -> BBC7
+	FORMAT_DEVICE: "AAC8", // 00 -> BBC8; erases every file
+	SET_FILE_ORDER: "AAC9", // total, position (1-based), serial u16, name
 
 	// Device Queries (payload 00)
-	QUERY_PARAMS: "AAE0", // -> BBE0
-	QUERY_LIVE: "AAE1", // -> BBE1
+	QUERY_DEVICE_PARAMS: "AAE0", // -> BBE0
+	QUERY_LIVE_MODE: "AAE1", // -> BBE1
 	QUERY_VOLUME: "AAE5", // -> BBE5
-	QUERY_BT_NAME: "AAE6", // -> BBE6
+	QUERY_LIVE_NAME: "AAE6", // -> BBE6
 	QUERY_VERSION: "AAEE", // -> BBEE
-	QUERY_FILES: "AAD0", // -> one BBD0 per file
-	QUERY_ORDER: "AAD1", // -> BBD1
+	QUERY_FILE_LIST: "AAD0", // -> one BBD0 per file
+	QUERY_FILE_ORDER: "AAD1", // -> BBD1
 	QUERY_CAPACITY: "AAD2", // -> BBD2
 
 	// Various Controls
 	SET_VOLUME: "AAFA", // volume (0-100)
 	SET_PIN_AND_NAME: "AAFB", // PIN 4 ASCII, password 8 ASCII, len, name ASCII
-	MEDIA_PLAY_PAUSE: "AAFC", // 01 play / 00 pause (not used here)
+	PLAY_PAUSE: "AAFC", // 01 play / 00 pause (not used here)
 	ENABLE_CLASSIC_BT: "AAFD", // 01 -> BBFD; live mode audio link
 	SET_MUSIC_MODE: "AAFE", // 00 device music, 01 classic BT (app no longer sends it)
 
 	// Lighting: ch is 0-5 or FF (all); cluster 0 + empty name = live settings
 	SET_ALL_LIGHTS: "AAF1", // cluster u32, audioMode, scene, 6 x 7 light bytes
-	SET_MODE: "AAF2", // ch, mode (1 static, 2 strobe, 3 pulsing), cluster u32, name
-	SET_BRIGHTNESS: "AAF3", // ch, brightness (0-255), cluster u32, name
-	SET_RGB: "AAF4", // ch, R, G, B, color cycle, cluster u32, name
+	SET_LIGHT_MODE: "AAF2", // ch, mode (1 static, 2 strobe, 3 pulsing), cluster u32, name
+	SET_LIGHT_BRIGHTNESS: "AAF3", // ch, brightness (0-255), cluster u32, name
+	SET_LIGHT_RGB: "AAF4", // ch, R, G, B, color cycle, cluster u32, name
 	SELECT_RGB_CHANNEL: "AAF5", // ch (the channel the app's picker edits)
-	SET_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest; 255 is also fastest; app uses 0-10), cluster u32, name
+	SET_LIGHT_SPEED: "AAF6", // ch, speed (0 fastest-254 slowest; 255 is also fastest; app uses 0-10), cluster u32, name
 
 	// Appearance: cluster 0 + empty name = live settings
-	SET_EYE: "AAF9", // icon (1-based), 00, cluster u32, name
-	SET_MOVEMENT: "AACA", // movement bits (per device), 00, cluster u32, name
+	SET_EYE_ICON: "AAF9", // icon (1-based), 00, cluster u32, name
+	SET_MOVEMENT_ACTION: "AACA", // movement bits (per device), 00, cluster u32, name
 	SET_JAW_DATA: "AACD", // cluster u32, byte count, bitmap (1 bit per 60 ms)
 
 	// Wi-Fi (no known product has it)
@@ -473,27 +473,27 @@ const COMMANDS = {
 // Frames: BB <tag> <payload> <crc8>. Byte layouts are in PROTOCOL.md (section 7).
 const RESPONSES = {
 	DEVICE_PARAMS: "BBE0", // channels, PIN, Wi-Fi password, show mode, name
-	LIVE_STATUS: "BBE1", // movement, 6 lights, eye icon, scene (scene firmware)
+	LIVE_MODE: "BBE1", // movement, 6 lights, eye icon, scene (scene firmware)
 	CAPACITY: "BBD2", // free KB u32, file count, mode
-	ORDER: "BBD1", // count, serials u16 in play order
+	FILE_ORDER: "BBD1", // count, serials u16 in play order
 	FILE_INFO: "BBD0", // one file: serial, cluster, total, settings, name
 	VOLUME: "BBE5", // volume
-	BT_NAME: "BBE6", // len, classic BT name ASCII
+	LIVE_NAME: "BBE6", // len, classic BT name ASCII
 	VERSION: "BBEE", // firmware version, e.g. 0x44 = v68
 	ENABLE_CLASSIC_BT: "BBFD", // classic BT on
 
-	TRANSFER_START: "BBC0", // failed, written u32
+	START_TRANSFER: "BBC0", // failed, written u32
 	CHUNK_DROPPED: "BBC1", // lost (0 = none, 1 = resend from index), index u16
 	TRANSFER_END: "BBC2", // failed, last chunk index u16
-	CONFIRM_TRANSFER_ACK: "BBC3", // failed
-	CANCEL_ACK: "BBC4", // failed
-	RESUME_ACK: "BBC5", // written u32 (the app never uses it)
-	PLAY_ACK: "BBC6", // serial u16, playing, duration u16 (s); also when a file ends
-	DELETE_ACK: "BBC7", // failed (0 = deleted)
-	FORMAT_ACK: "BBC8", // result (0 = done)
+	TRANSFER_CONFIRM: "BBC3", // failed
+	TRANSFER_CANCEL: "BBC4", // failed
+	RESUME_WRITE: "BBC5", // written u32 (the app never uses it)
+	PLAYBACK: "BBC6", // serial u16, playing, duration u16 (s); also when a file ends
+	DELETE_FILE: "BBC7", // failed (0 = deleted)
+	FORMAT: "BBC8", // result (0 = done)
 	WIFI_MAC: "BBCC", // Wi-Fi MAC, 6 bytes
 
-	KEEPALIVE: "FEDC", // FE DC <payload> EF, sent by the device on its own
+	KEEP_ALIVE: "FEDC", // FE DC <payload> EF, sent by the device on its own
 };
 
 // Log CSS Classes
@@ -833,7 +833,7 @@ function targetPayload(cluster, fileName, dataHex) {
 function sendSetMovement(connection, cluster, fileName, actionBits) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_MOVEMENT,
+			COMMANDS.SET_MOVEMENT_ACTION,
 			targetPayload(cluster, fileName, `${intToHex(actionBits, 1)}00`),
 			8,
 		),
@@ -847,7 +847,7 @@ function sendSetMovement(connection, cluster, fileName, actionBits) {
 function sendSetEye(connection, cluster, fileName, eyeIcon) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_EYE,
+			COMMANDS.SET_EYE_ICON,
 			targetPayload(cluster, fileName, `${intToHex(eyeIcon, 1)}00`),
 			8,
 		),
@@ -864,7 +864,7 @@ function sendSetLightBrightness(
 ) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_BRIGHTNESS,
+			COMMANDS.SET_LIGHT_BRIGHTNESS,
 			targetPayload(
 				cluster,
 				fileName,
@@ -885,7 +885,7 @@ function sendSetLightMode(
 ) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_MODE,
+			COMMANDS.SET_LIGHT_MODE,
 			targetPayload(
 				cluster,
 				fileName,
@@ -909,7 +909,7 @@ function sendSetLightSpeed(
 ) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_SPEED,
+			COMMANDS.SET_LIGHT_SPEED,
 			targetPayload(
 				cluster,
 				fileName,
@@ -934,7 +934,7 @@ function sendSetLightRgb(
 	const cycleHex = colorCycle ? "01" : "00";
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_RGB,
+			COMMANDS.SET_LIGHT_RGB,
 			targetPayload(
 				cluster,
 				fileName,
@@ -2848,7 +2848,7 @@ class FileManager {
 		this.state.updateFilesMetadata({ fetchTimer: timer });
 
 		try {
-			await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
+			await this.connection.send(buildCommand(COMMANDS.QUERY_FILE_LIST, "", 8));
 		} catch (error) {
 			this.log(
 				`Couldn't ask for the file list: ${error.message}`,
@@ -2907,7 +2907,9 @@ class FileManager {
 		// Send follow-up queries - order response will trigger UI update
 		try {
 			await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, "", 8));
-			await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+			await this.connection.send(
+				buildCommand(COMMANDS.QUERY_FILE_ORDER, "", 8),
+			);
 		} catch (error) {
 			this.log(
 				`Couldn't ask for the play order: ${error.message}`,
@@ -3078,7 +3080,7 @@ class FileManager {
 				}
 				if (attempt >= TRANSFER_CONFIG.MAX_ATTEMPTS) {
 					// Leave nothing open on the device
-					await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+					await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 					throw new Error(
 						`Transfer failed after ${attempt} attempts with smaller chunks`,
 					);
@@ -3091,7 +3093,7 @@ class FileManager {
 					`Transfer failed, starting over with ${chunkSize}-byte chunks (retry ${attempt}/${TRANSFER_CONFIG.MAX_ATTEMPTS - 1})`,
 					LOG_CLASSES.WARNING,
 				);
-				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+				await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 				await sleep(1000); // Give the device time to reset
 				this.checkTransferGoing();
 			}
@@ -3099,8 +3101,8 @@ class FileManager {
 			// === Phase 4: Confirm Transfer (C3) ===
 			const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
 			const c3Response = await this.sendAndWait(
-				buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8),
-				RESPONSES.CONFIRM_TRANSFER_ACK,
+				buildCommand(COMMANDS.CONFIRM_FILE, c3Payload, 8),
+				RESPONSES.TRANSFER_CONFIRM,
 				TIMEOUTS.ACK,
 			);
 			const c3Failed = parseInt(c3Response.slice(4, 6), 16);
@@ -3161,8 +3163,8 @@ class FileManager {
 		const c0Payload =
 			intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
 		const c0Response = await this.sendAndWait(
-			buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
-			RESPONSES.TRANSFER_START,
+			buildCommand(COMMANDS.START_SEND_DATA, c0Payload, 8),
+			RESPONSES.START_TRANSFER,
 			TIMEOUTS.ACK,
 		);
 		if (parseInt(c0Response.slice(4, 6), 16) !== 0) {
@@ -3201,7 +3203,7 @@ class FileManager {
 				let failed = reports.takeFailedEnd();
 				if (failed === null) {
 					await this.connection.send(
-						buildCommand(COMMANDS.END_TRANSFER, "", 8),
+						buildCommand(COMMANDS.END_SEND_DATA, "", 8),
 					);
 					failed = await this.waitForEnd(reports);
 				}
@@ -3269,7 +3271,7 @@ class FileManager {
 
 			const dataHex = chunkToHex(fileBytes, index * chunkSize, chunkSize);
 			await this.connection.send(
-				buildCommand(COMMANDS.CHUNK_DATA, intToHex(index, 2) + dataHex, 0),
+				buildCommand(COMMANDS.SEND_DATA_CHUNK, intToHex(index, 2) + dataHex, 0),
 			);
 			index += 1;
 
@@ -3374,7 +3376,7 @@ class FileManager {
 
 		if (this.connection.isConnected()) {
 			try {
-				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+				await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 			} catch (error) {
 				this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
 			}
@@ -3602,8 +3604,8 @@ class FileManager {
 			LOG_CLASSES.WARNING,
 		);
 		const reply = await this.sendAndWait(
-			buildCommand(COMMANDS.DELETE, payload, 8),
-			RESPONSES.DELETE_ACK,
+			buildCommand(COMMANDS.DELETE_FILE, payload, 8),
+			RESPONSES.DELETE_FILE,
 			TIMEOUTS.ACK,
 		);
 		return parseInt(reply.slice(4, 6), 16) === 0;
@@ -3662,7 +3664,9 @@ class FileManager {
 				intToHex(serial, 2) +
 				filenamePart;
 
-			await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_FILE_ORDER, payload, 8),
+			);
 			this.log(
 				`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`,
 				LOG_CLASSES.INFO,
@@ -3674,7 +3678,7 @@ class FileManager {
 
 		// Query the new order from device
 		this.log("Querying updated file order...", LOG_CLASSES.INFO);
-		await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+		await this.connection.send(buildCommand(COMMANDS.QUERY_FILE_ORDER, "", 8));
 	}
 
 	/**
@@ -3979,7 +3983,7 @@ class ProtocolParser {
 	 */
 	parse(hex, _bytes) {
 		// Keepalive (FEDC)
-		if (hex.startsWith(RESPONSES.KEEPALIVE)) {
+		if (hex.startsWith(RESPONSES.KEEP_ALIVE)) {
 			// Optionally log if advanced option is enabled
 			const advFEDC = document.querySelector("#advFEDC");
 			if (advFEDC?.checked) {
@@ -3995,7 +3999,7 @@ class ProtocolParser {
 		}
 
 		// Live status (BBE1)
-		if (hex.startsWith(RESPONSES.LIVE_STATUS)) {
+		if (hex.startsWith(RESPONSES.LIVE_MODE)) {
 			this.parseLiveStatus(hex);
 			return;
 		}
@@ -4007,7 +4011,7 @@ class ProtocolParser {
 		}
 
 		// BT name (BBE6)
-		if (hex.startsWith(RESPONSES.BT_NAME)) {
+		if (hex.startsWith(RESPONSES.LIVE_NAME)) {
 			this.parseBTName(hex);
 			return;
 		}
@@ -4025,7 +4029,7 @@ class ProtocolParser {
 		}
 
 		// Play order (BBD1)
-		if (hex.startsWith(RESPONSES.ORDER)) {
+		if (hex.startsWith(RESPONSES.FILE_ORDER)) {
 			this.parseOrder(hex);
 			return;
 		}
@@ -4043,7 +4047,7 @@ class ProtocolParser {
 		}
 
 		// Transfer responses
-		if (hex.startsWith(RESPONSES.TRANSFER_START)) {
+		if (hex.startsWith(RESPONSES.START_TRANSFER)) {
 			this.parseTransferStart(hex);
 			return;
 		}
@@ -4058,32 +4062,32 @@ class ProtocolParser {
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.CONFIRM_TRANSFER_ACK)) {
+		if (hex.startsWith(RESPONSES.TRANSFER_CONFIRM)) {
 			this.parseConfirmTransferAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.CANCEL_ACK)) {
+		if (hex.startsWith(RESPONSES.TRANSFER_CANCEL)) {
 			this.parseCancelAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.RESUME_ACK)) {
+		if (hex.startsWith(RESPONSES.RESUME_WRITE)) {
 			this.parseResumeAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.PLAY_ACK)) {
+		if (hex.startsWith(RESPONSES.PLAYBACK)) {
 			this.parsePlayAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.DELETE_ACK)) {
+		if (hex.startsWith(RESPONSES.DELETE_FILE)) {
 			this.parseDeleteAck(hex);
 			return;
 		}
 
-		if (hex.startsWith(RESPONSES.FORMAT_ACK)) {
+		if (hex.startsWith(RESPONSES.FORMAT)) {
 			this.parseFormatAck(hex);
 			return;
 		}
@@ -7088,13 +7092,13 @@ class SkellyApp {
 
 			this.logger.log("Executing all queries...", LOG_CLASSES.INFO);
 			const queries = [
-				COMMANDS.QUERY_PARAMS,
-				COMMANDS.QUERY_LIVE,
+				COMMANDS.QUERY_DEVICE_PARAMS,
+				COMMANDS.QUERY_LIVE_MODE,
 				COMMANDS.QUERY_VOLUME,
-				COMMANDS.QUERY_BT_NAME,
+				COMMANDS.QUERY_LIVE_NAME,
 				COMMANDS.QUERY_VERSION,
 				COMMANDS.QUERY_CAPACITY,
-				COMMANDS.QUERY_ORDER,
+				COMMANDS.QUERY_FILE_ORDER,
 			];
 
 			for (const tag of queries) {
@@ -7112,7 +7116,7 @@ class SkellyApp {
 				this.logger.log("Not connected", LOG_CLASSES.WARNING);
 				return;
 			}
-			const tag = $("#tag")?.value || COMMANDS.QUERY_PARAMS;
+			const tag = $("#tag")?.value || COMMANDS.QUERY_DEVICE_PARAMS;
 			const payload = $("#payload")?.value || "";
 			await this.connection.send(buildCommand(tag, payload, 8));
 			this.logger.log(
@@ -7237,8 +7241,10 @@ class SkellyApp {
 		this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
 
 		// Query device params to get the updated name and PIN back from the device
-		await this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8));
-		await this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8));
+		await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8));
+		await this.connection.send(
+			buildCommand(COMMANDS.QUERY_DEVICE_PARAMS, "", 8),
+		);
 	}
 
 	/**
@@ -7998,7 +8004,7 @@ class SkellyApp {
 		// Send '01' to play, '00' to stop
 		const playPauseByte = isPlaying ? "00" : "01";
 		await this.connection.send(
-			buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8),
+			buildCommand(COMMANDS.PLAY_STOP_FILE, serialHex + playPauseByte, 8),
 		);
 
 		if (isPlaying) {
@@ -8239,9 +8245,12 @@ class SkellyApp {
 			}
 
 			// Query device state in sequence: live mode, params, volume, BT name, version
-			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, "", 8));
+			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_MODE, "", 8));
 			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8)),
+				() =>
+					this.connection.send(
+						buildCommand(COMMANDS.QUERY_DEVICE_PARAMS, "", 8),
+					),
 				50,
 			);
 			setTimeout(
@@ -8249,7 +8258,8 @@ class SkellyApp {
 				100,
 			);
 			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8)),
+				() =>
+					this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8)),
 				150,
 			);
 			setTimeout(

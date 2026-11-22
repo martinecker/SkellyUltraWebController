@@ -153,7 +153,7 @@ export class FileManager {
 		this.state.updateFilesMetadata({ fetchTimer: timer });
 
 		try {
-			await this.connection.send(buildCommand(COMMANDS.QUERY_FILES, "", 8));
+			await this.connection.send(buildCommand(COMMANDS.QUERY_FILE_LIST, "", 8));
 		} catch (error) {
 			this.log(
 				`Couldn't ask for the file list: ${error.message}`,
@@ -212,7 +212,9 @@ export class FileManager {
 		// Send follow-up queries - order response will trigger UI update
 		try {
 			await this.connection.send(buildCommand(COMMANDS.QUERY_CAPACITY, "", 8));
-			await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+			await this.connection.send(
+				buildCommand(COMMANDS.QUERY_FILE_ORDER, "", 8),
+			);
 		} catch (error) {
 			this.log(
 				`Couldn't ask for the play order: ${error.message}`,
@@ -383,7 +385,7 @@ export class FileManager {
 				}
 				if (attempt >= TRANSFER_CONFIG.MAX_ATTEMPTS) {
 					// Leave nothing open on the device
-					await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+					await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 					throw new Error(
 						`Transfer failed after ${attempt} attempts with smaller chunks`,
 					);
@@ -396,7 +398,7 @@ export class FileManager {
 					`Transfer failed, starting over with ${chunkSize}-byte chunks (retry ${attempt}/${TRANSFER_CONFIG.MAX_ATTEMPTS - 1})`,
 					LOG_CLASSES.WARNING,
 				);
-				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+				await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 				await sleep(1000); // Give the device time to reset
 				this.checkTransferGoing();
 			}
@@ -404,8 +406,8 @@ export class FileManager {
 			// === Phase 4: Confirm Transfer (C3) ===
 			const { fullPayload: c3Payload } = buildFilenamePayload(fileName);
 			const c3Response = await this.sendAndWait(
-				buildCommand(COMMANDS.CONFIRM_TRANSFER, c3Payload, 8),
-				RESPONSES.CONFIRM_TRANSFER_ACK,
+				buildCommand(COMMANDS.CONFIRM_FILE, c3Payload, 8),
+				RESPONSES.TRANSFER_CONFIRM,
 				TIMEOUTS.ACK,
 			);
 			const c3Failed = parseInt(c3Response.slice(4, 6), 16);
@@ -466,8 +468,8 @@ export class FileManager {
 		const c0Payload =
 			intToHex(size, 4) + intToHex(maxPackets, 2) + filenamePart;
 		const c0Response = await this.sendAndWait(
-			buildCommand(COMMANDS.START_TRANSFER, c0Payload, 8),
-			RESPONSES.TRANSFER_START,
+			buildCommand(COMMANDS.START_SEND_DATA, c0Payload, 8),
+			RESPONSES.START_TRANSFER,
 			TIMEOUTS.ACK,
 		);
 		if (parseInt(c0Response.slice(4, 6), 16) !== 0) {
@@ -506,7 +508,7 @@ export class FileManager {
 				let failed = reports.takeFailedEnd();
 				if (failed === null) {
 					await this.connection.send(
-						buildCommand(COMMANDS.END_TRANSFER, "", 8),
+						buildCommand(COMMANDS.END_SEND_DATA, "", 8),
 					);
 					failed = await this.waitForEnd(reports);
 				}
@@ -574,7 +576,7 @@ export class FileManager {
 
 			const dataHex = chunkToHex(fileBytes, index * chunkSize, chunkSize);
 			await this.connection.send(
-				buildCommand(COMMANDS.CHUNK_DATA, intToHex(index, 2) + dataHex, 0),
+				buildCommand(COMMANDS.SEND_DATA_CHUNK, intToHex(index, 2) + dataHex, 0),
 			);
 			index += 1;
 
@@ -679,7 +681,7 @@ export class FileManager {
 
 		if (this.connection.isConnected()) {
 			try {
-				await this.connection.send(buildCommand(COMMANDS.CANCEL, "", 8));
+				await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 			} catch (error) {
 				this.log(`Cancel command error: ${error.message}`, LOG_CLASSES.WARNING);
 			}
@@ -907,8 +909,8 @@ export class FileManager {
 			LOG_CLASSES.WARNING,
 		);
 		const reply = await this.sendAndWait(
-			buildCommand(COMMANDS.DELETE, payload, 8),
-			RESPONSES.DELETE_ACK,
+			buildCommand(COMMANDS.DELETE_FILE, payload, 8),
+			RESPONSES.DELETE_FILE,
 			TIMEOUTS.ACK,
 		);
 		return parseInt(reply.slice(4, 6), 16) === 0;
@@ -967,7 +969,9 @@ export class FileManager {
 				intToHex(serial, 2) +
 				filenamePart;
 
-			await this.connection.send(buildCommand(COMMANDS.SET_ORDER, payload, 8));
+			await this.connection.send(
+				buildCommand(COMMANDS.SET_FILE_ORDER, payload, 8),
+			);
 			this.log(
 				`Set order: serial=${serial} position=${fileOrder}/${enabledCount}`,
 				LOG_CLASSES.INFO,
@@ -979,7 +983,7 @@ export class FileManager {
 
 		// Query the new order from device
 		this.log("Querying updated file order...", LOG_CLASSES.INFO);
-		await this.connection.send(buildCommand(COMMANDS.QUERY_ORDER, "", 8));
+		await this.connection.send(buildCommand(COMMANDS.QUERY_FILE_ORDER, "", 8));
 	}
 
 	/**

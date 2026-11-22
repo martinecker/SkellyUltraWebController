@@ -37,7 +37,7 @@ function targetPayload(cluster, fileName, dataHex) {
 export function sendSetMovement(connection, cluster, fileName, actionBits) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_MOVEMENT,
+			COMMANDS.SET_MOVEMENT_ACTION,
 			targetPayload(cluster, fileName, `${intToHex(actionBits, 1)}00`),
 			8,
 		),
@@ -51,7 +51,7 @@ export function sendSetMovement(connection, cluster, fileName, actionBits) {
 export function sendSetEye(connection, cluster, fileName, eyeIcon) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_EYE,
+			COMMANDS.SET_EYE_ICON,
 			targetPayload(cluster, fileName, `${intToHex(eyeIcon, 1)}00`),
 			8,
 		),
@@ -68,7 +68,7 @@ export function sendSetLightBrightness(
 ) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_BRIGHTNESS,
+			COMMANDS.SET_LIGHT_BRIGHTNESS,
 			targetPayload(
 				cluster,
 				fileName,
@@ -89,7 +89,7 @@ export function sendSetLightMode(
 ) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_MODE,
+			COMMANDS.SET_LIGHT_MODE,
 			targetPayload(
 				cluster,
 				fileName,
@@ -113,7 +113,7 @@ export function sendSetLightSpeed(
 ) {
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_SPEED,
+			COMMANDS.SET_LIGHT_SPEED,
 			targetPayload(
 				cluster,
 				fileName,
@@ -138,7 +138,7 @@ export function sendSetLightRgb(
 	const cycleHex = colorCycle ? "01" : "00";
 	return connection.send(
 		buildCommand(
-			COMMANDS.SET_RGB,
+			COMMANDS.SET_LIGHT_RGB,
 			targetPayload(
 				cluster,
 				fileName,

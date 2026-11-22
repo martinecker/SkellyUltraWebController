@@ -975,13 +975,13 @@ class SkellyApp {
 
 			this.logger.log("Executing all queries...", LOG_CLASSES.INFO);
 			const queries = [
-				COMMANDS.QUERY_PARAMS,
-				COMMANDS.QUERY_LIVE,
+				COMMANDS.QUERY_DEVICE_PARAMS,
+				COMMANDS.QUERY_LIVE_MODE,
 				COMMANDS.QUERY_VOLUME,
-				COMMANDS.QUERY_BT_NAME,
+				COMMANDS.QUERY_LIVE_NAME,
 				COMMANDS.QUERY_VERSION,
 				COMMANDS.QUERY_CAPACITY,
-				COMMANDS.QUERY_ORDER,
+				COMMANDS.QUERY_FILE_ORDER,
 			];
 
 			for (const tag of queries) {
@@ -999,7 +999,7 @@ class SkellyApp {
 				this.logger.log("Not connected", LOG_CLASSES.WARNING);
 				return;
 			}
-			const tag = $("#tag")?.value || COMMANDS.QUERY_PARAMS;
+			const tag = $("#tag")?.value || COMMANDS.QUERY_DEVICE_PARAMS;
 			const payload = $("#payload")?.value || "";
 			await this.connection.send(buildCommand(tag, payload, 8));
 			this.logger.log(
@@ -1124,8 +1124,10 @@ class SkellyApp {
 		this.logger.log(`Set PIN to ${pin} with BT name "${btName}"`);
 
 		// Query device params to get the updated name and PIN back from the device
-		await this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8));
-		await this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8));
+		await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8));
+		await this.connection.send(
+			buildCommand(COMMANDS.QUERY_DEVICE_PARAMS, "", 8),
+		);
 	}
 
 	/**
@@ -1885,7 +1887,7 @@ class SkellyApp {
 		// Send '01' to play, '00' to stop
 		const playPauseByte = isPlaying ? "00" : "01";
 		await this.connection.send(
-			buildCommand(COMMANDS.PLAY_PAUSE, serialHex + playPauseByte, 8),
+			buildCommand(COMMANDS.PLAY_STOP_FILE, serialHex + playPauseByte, 8),
 		);
 
 		if (isPlaying) {
@@ -2126,9 +2128,12 @@ class SkellyApp {
 			}
 
 			// Query device state in sequence: live mode, params, volume, BT name, version
-			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE, "", 8));
+			await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_MODE, "", 8));
 			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_PARAMS, "", 8)),
+				() =>
+					this.connection.send(
+						buildCommand(COMMANDS.QUERY_DEVICE_PARAMS, "", 8),
+					),
 				50,
 			);
 			setTimeout(
@@ -2136,7 +2141,8 @@ class SkellyApp {
 				100,
 			);
 			setTimeout(
-				() => this.connection.send(buildCommand(COMMANDS.QUERY_BT_NAME, "", 8)),
+				() =>
+					this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8)),
 				150,
 			);
 			setTimeout(
