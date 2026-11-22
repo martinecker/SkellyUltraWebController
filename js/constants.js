@@ -36,7 +36,7 @@ export const CAPABILITIES = {
 // ble_names, so e.g. "Ultra Skelly" without "v2" is a Skelly too.
 // displayName, imageFolder, lights (label + channel number) and lightModes
 // (labels for modes 1, 2, 3) are named as in the HA integration's profiles.
-// Images are in images/<imageFolder>/: eye_icon_<1..eyeIconCount>.png and
+// Images are in images/<imageFolder>/: eye_icon_<1..eyeIcons.length>.png and
 // movement_<part>.png.
 export const DEVICE_PROFILES = {
 	[DEVICE_TYPES.SKELLY]: {
@@ -45,7 +45,27 @@ export const DEVICE_PROFILES = {
 		nameMatches: ["animated skelly", "ultra skelly"],
 		displayName: "Ultra Skelly",
 		hasEyeImage: true,
-		eyeIconCount: 18,
+		// Eye icon names in device order (eye 1 first), as in the HA integration
+		eyeIcons: [
+			"Blue Eyeball",
+			"Yellow Eyeball",
+			"Green Eyeball",
+			"Orange Eyeball",
+			"Red Eyeball",
+			"Gray Eyeball",
+			"Yellow Dragon",
+			"Red Dragon",
+			"Color Spiral",
+			"Fire",
+			"Star",
+			"Crossbones",
+			"Fireworks",
+			"USA Flag",
+			"Heart",
+			"Shamrock",
+			"Snowflake",
+			"Confetti",
+		],
 		imageFolder: "skelly",
 		movements: [
 			{
@@ -89,7 +109,28 @@ export const DEVICE_PROFILES = {
 		nameMatches: ["12ft skelly"],
 		displayName: "12ft Skelly",
 		hasEyeImage: true,
-		eyeIconCount: 20,
+		eyeIcons: [
+			"USA Flag",
+			"Heart",
+			"Shamrock",
+			"Snowflake",
+			"Ice Blue Eyeball",
+			"Peppermint",
+			"Cyber Eye",
+			"Blue Eyeball",
+			"Yellow Eyeball",
+			"Green Eyeball",
+			"Orange Eyeball",
+			"Red Eyeball",
+			"Gray Eyeball",
+			"Yellow Dragon",
+			"Red Dragon",
+			"Color Spiral",
+			"Fire",
+			"Star",
+			"Crossbones",
+			"Fireworks",
+		],
 		imageFolder: "skelly12ft",
 		movements: [
 			{
@@ -112,6 +153,7 @@ export const DEVICE_PROFILES = {
 		nameMatches: ["lethal lily"],
 		displayName: "Lethal Lily",
 		hasEyeImage: false,
+		eyeIcons: [],
 		imageFolder: "lily",
 		movements: [
 			{
@@ -154,6 +196,7 @@ export const DEVICE_PROFILES = {
 		nameMatches: ["ultra santa", "santa claus"],
 		displayName: "Ultra Santa",
 		hasEyeImage: false,
+		eyeIcons: [],
 		imageFolder: "santa",
 		movements: [
 			{
@@ -275,10 +318,19 @@ export function displayedLights(profile) {
 // Image path for a 1-based eye icon index, or null if the device type has no eye image with that index.
 export function getEyeIconPath(deviceType, eyeIdx) {
 	const profile = DEVICE_PROFILES[deviceType];
-	if (!profile?.eyeIconCount || eyeIdx < 1 || eyeIdx > profile.eyeIconCount) {
+	if (!profile?.eyeIcons?.[eyeIdx - 1]) {
 		return null;
 	}
 	return `images/${profile.imageFolder}/eye_icon_${eyeIdx}.png`;
+}
+
+/**
+ * Label for a 1-based eye icon index: its number and name ("7 Yellow
+ * Dragon"), or "Eye 7" if the device type has no name for it
+ */
+export function eyeIconLabel(deviceType, eyeIdx) {
+	const name = DEVICE_PROFILES[deviceType]?.eyeIcons?.[eyeIdx - 1];
+	return name ? `${eyeIdx} ${name}` : `Eye ${eyeIdx}`;
 }
 
 /**

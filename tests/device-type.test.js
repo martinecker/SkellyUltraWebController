@@ -9,6 +9,7 @@ import {
 	DEVICE_TYPES,
 	deviceTypeFromName,
 	displayedLights,
+	eyeIconLabel,
 	getEyeIconPath,
 	hasCapability,
 	isTestedFirmware,
@@ -92,7 +93,7 @@ test("every profile's eye and movement images exist", () => {
 			const path = movementIconPath(profile, part);
 			assert.ok(existsSync(path), `${type}: ${path}`);
 		}
-		for (let eye = 1; eye <= (profile.eyeIconCount ?? 0); eye++) {
+		for (let eye = 1; eye <= profile.eyeIcons.length; eye++) {
 			const path = getEyeIconPath(type, eye);
 			assert.ok(existsSync(path), `${type}: ${path}`);
 		}
@@ -105,4 +106,16 @@ test("a saved device type that isn't known falls back to Ultra Skelly", () => {
 	assert.equal(knownDeviceType(null), DEVICE_TYPES.SKELLY);
 	assert.equal(knownDeviceType("ultra_skelly"), DEVICE_TYPES.SKELLY);
 	assert.equal(knownDeviceType("toString"), DEVICE_TYPES.SKELLY);
+});
+
+test("eye icons have names; the count comes from the list", () => {
+	assert.equal(DEVICE_PROFILES[DEVICE_TYPES.SKELLY].eyeIcons.length, 18);
+	assert.equal(DEVICE_PROFILES[DEVICE_TYPES.SKELLY_12FT].eyeIcons.length, 20);
+	assert.equal(eyeIconLabel(DEVICE_TYPES.SKELLY, 7), "7 Yellow Dragon");
+	assert.equal(eyeIconLabel(DEVICE_TYPES.SKELLY_12FT, 1), "1 USA Flag");
+	assert.equal(eyeIconLabel(DEVICE_TYPES.SKELLY, 19), "Eye 19");
+	assert.equal(getEyeIconPath(DEVICE_TYPES.SKELLY, 19), null);
+	for (const profile of Object.values(DEVICE_PROFILES)) {
+		assert.equal(profile.eyeIcons.length > 0, profile.hasEyeImage);
+	}
 });

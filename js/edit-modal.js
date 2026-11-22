@@ -8,6 +8,7 @@ import {
 	DEVICE_PROFILES,
 	DEVICE_TYPES,
 	displayedLights,
+	eyeIconLabel,
 	getEyeIconPath,
 	LOG_CLASSES,
 } from "./constants.js";
@@ -412,20 +413,21 @@ export class EditModalManager {
 
 		this.eyeGrid.innerHTML = "";
 
-		// Create eye options for images 1..eyeIconCount of the active profile
-		const eyeCount = DEVICE_PROFILES[this.state.deviceType]?.eyeIconCount || 0;
+		// Create eye options for the active profile's eye icons
+		const eyeCount =
+			DEVICE_PROFILES[this.state.deviceType]?.eyeIcons.length ?? 0;
 		for (let imgIdx = 1; imgIdx <= eyeCount; imgIdx++) {
 			const eyeNum = imgIdx;
 			const div = document.createElement("div");
 			div.className = "eye-opt";
 			div.dataset.eye = String(eyeNum);
-			div.title = `Eye ${eyeNum}`;
+			div.title = eyeIconLabel(this.state.deviceType, eyeNum);
 
 			// Create image element
 			const img = document.createElement("img");
 			img.className = "eye-thumb";
 			img.src = getEyeIconPath(this.state.deviceType, imgIdx);
-			img.alt = `eye ${eyeNum}`;
+			img.alt = div.title;
 
 			div.appendChild(img);
 			this.eyeGrid.appendChild(div);

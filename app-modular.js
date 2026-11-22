@@ -10,6 +10,7 @@ import {
 	DEVICE_TYPES,
 	deviceTypeFromName,
 	displayedLights,
+	eyeIconLabel,
 	getEyeIconPath,
 	isTestedFirmware,
 	knownDeviceType,
@@ -2170,20 +2171,21 @@ class SkellyApp {
 
 		grid.innerHTML = "";
 
-		// Create eye options for images 1..eyeIconCount of the active profile
-		const eyeCount = DEVICE_PROFILES[this.state.deviceType]?.eyeIconCount || 0;
+		// Create eye options for the active profile's eye icons
+		const eyeCount =
+			DEVICE_PROFILES[this.state.deviceType]?.eyeIcons.length ?? 0;
 		for (let imgIdx = 1; imgIdx <= eyeCount; imgIdx++) {
 			const eyeNum = imgIdx;
 			const div = document.createElement("div");
 			div.className = `eye-opt${eyeNum === this.selectedEye ? " selected" : ""}`;
 			div.dataset.eye = String(eyeNum);
-			div.title = `Eye ${eyeNum}`;
+			div.title = eyeIconLabel(this.state.deviceType, eyeNum);
 
 			// Create image element
 			const img = document.createElement("img");
 			img.className = "eye-thumb";
 			img.src = getEyeIconPath(this.state.deviceType, imgIdx);
-			img.alt = `eye ${eyeNum}`;
+			img.alt = div.title;
 
 			div.appendChild(img);
 			grid.appendChild(div);
@@ -2439,6 +2441,9 @@ class SkellyApp {
 			const tr = document.createElement("tr");
 			const eyeImgIdx = file.eyeIcon || 0;
 			const eyeImgPath = getEyeIconPath(this.state.deviceType, eyeImgIdx);
+			const eyeLabel = escapeHtml(
+				eyeIconLabel(this.state.deviceType, eyeImgIdx),
+			);
 
 			// One color dot (or the cycle icon) per light, as in the header
 			const lightCellsHtml = displayedLights(this.profile)
@@ -2495,7 +2500,7 @@ class SkellyApp {
         <td>${escapeHtml(file.name || "")}</td>
         ${lightCellsHtml}
         <td>${movementIcons}</td>
-        <td class="col-eye">${eyeImgIdx ? `${eyeImgPath ? `<img class="eye-thumb" src="${eyeImgPath}" alt="eye ${eyeImgIdx}" />` : ""}${eyeImgIdx}` : "—"}</td>
+        <td class="col-eye">${eyeImgIdx ? `${eyeImgPath ? `<img class="eye-thumb" src="${eyeImgPath}" alt="${eyeLabel}" title="${eyeLabel}" />` : ""}${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>
         <td class="detail-column">${file.dbPos}</td>
         <td class="detail-column">${file.cluster}</td>
