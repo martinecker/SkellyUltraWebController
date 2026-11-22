@@ -77,6 +77,8 @@ test("the play order ends the refresh", async () => {
 
 	parser.parse("BBD1020001000200");
 	assert.equal(state.files.activeFetch, false);
+	assert.deepEqual(state.device.order, [1, 2]);
+	assert.deepEqual(fileManager.orderedFileNames(), ["a.mp3", "b.mp3"]);
 
 	// No late timeout warning afterwards
 	mock.timers.tick(TIMEOUTS.FILE_ORDER + TIMEOUTS.FILE_LIST);

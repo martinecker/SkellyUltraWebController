@@ -1937,8 +1937,7 @@ class SkellyApp {
 		).map((row) => parseInt(row.dataset.serial, 10));
 
 		// Update state and device
-		const ordersAsString = JSON.stringify(enabledSerials);
-		this.state.updateDevice({ order: ordersAsString });
+		this.state.updateDevice({ order: enabledSerials });
 		this.state.notify("files"); // This will re-render the table with new numbers
 
 		this.logger.log(
@@ -1971,8 +1970,7 @@ class SkellyApp {
 		}
 
 		// Immediately update order in state to trigger UI resort
-		const ordersAsString = JSON.stringify(enabledSerials);
-		this.state.updateDevice({ order: ordersAsString });
+		this.state.updateDevice({ order: enabledSerials });
 		this.state.notify("files");
 
 		this.logger.log(
@@ -2303,7 +2301,9 @@ class SkellyApp {
 		}
 
 		if ($("#statOrder")) {
-			$("#statOrder").textContent = device.order || "—";
+			$("#statOrder").textContent = device.order
+				? JSON.stringify(device.order)
+				: "—";
 		}
 
 		if ($("#statPin")) {
@@ -2417,15 +2417,8 @@ class SkellyApp {
 
 		const query = ($("#filesFilter")?.value || "").toLowerCase().trim();
 
-		// Get file order from device state
-		let fileOrder = [];
-		try {
-			if (this.state.device.order) {
-				fileOrder = JSON.parse(this.state.device.order);
-			}
-		} catch (_e) {
-			// If parsing fails, use empty array
-		}
+		// Play order from device state (serials, first to last)
+		const fileOrder = this.state.device.order ?? [];
 
 		// Sort files: enabled (in order) first by order position, disabled (not in order) last by serial
 		const files = Array.from(this.state.files.items.values())

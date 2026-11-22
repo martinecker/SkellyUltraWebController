@@ -529,7 +529,7 @@ export class EditModalManager {
 				// one shift down by 1). Capture ordered names NOW before the refresh
 				// clears local state, then remap to new serials once the updated file
 				// list has arrived.
-				const currentOrder = JSON.parse(this.state.device?.order || "[]");
+				const currentOrder = this.state.device?.order ?? [];
 				const orderedNames = currentOrder
 					.filter((s) => s !== serial)
 					.map((s) => this.state.getFile(s)?.name)

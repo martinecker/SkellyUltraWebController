@@ -705,7 +705,7 @@ export class FileManager {
 	orderedFileNames() {
 		const order = this.state.device?.order;
 		if (!order) return null;
-		return JSON.parse(order)
+		return order
 			.map((serial) => this.state.getFile(serial)?.name)
 			.filter(Boolean);
 	}
@@ -757,7 +757,7 @@ export class FileManager {
 			.map((name) => this.state.hasFileName(name)?.serial)
 			.filter((serial) => serial != null);
 		const wanted = [...new Set([newFile.serial, ...previous])];
-		const current = JSON.parse(this.state.device?.order || "[]");
+		const current = this.state.device?.order ?? [];
 		const same = (a, b) =>
 			a.length === b.length && a.every((value, i) => value === b[i]);
 

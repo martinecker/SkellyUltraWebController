@@ -23,7 +23,7 @@ export class StateManager {
 			capacity: null,
 			filesReported: null, // Count reported by device in capacity query
 			filesReceived: null, // Count of files actually received in file list
-			order: null, // Music play order
+			order: null, // Play order: enabled file serials, first to last
 			pin: null, // Device PIN
 		};
 

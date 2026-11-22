@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T19:42:05.459504
+ * Generated: 2026-11-22T19:50:47.319772
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1212,7 +1212,7 @@ class StateManager {
 			capacity: null,
 			filesReported: null, // Count reported by device in capacity query
 			filesReceived: null, // Count of files actually received in file list
-			order: null, // Music play order
+			order: null, // Play order: enabled file serials, first to last
 			pin: null, // Device PIN
 		};
 
@@ -3359,7 +3359,7 @@ class FileManager {
 	orderedFileNames() {
 		const order = this.state.device?.order;
 		if (!order) return null;
-		return JSON.parse(order)
+		return order
 			.map((serial) => this.state.getFile(serial)?.name)
 			.filter(Boolean);
 	}
@@ -3411,7 +3411,7 @@ class FileManager {
 			.map((name) => this.state.hasFileName(name)?.serial)
 			.filter((serial) => serial != null);
 		const wanted = [...new Set([newFile.serial, ...previous])];
-		const current = JSON.parse(this.state.device?.order || "[]");
+		const current = this.state.device?.order ?? [];
 		const same = (a, b) =>
 			a.length === b.length && a.every((value, i) => value === b[i]);
 
@@ -4151,10 +4151,8 @@ class ProtocolParser {
 			parseInt(data.slice(i * 4, i * 4 + 4), 16),
 		);
 
-		const ordersAsString = JSON.stringify(orders);
-
-		this.state.updateDevice({ order: ordersAsString });
-		this.log(`File Order by Serial: ${ordersAsString}`);
+		this.state.updateDevice({ order: orders });
+		this.log(`File Order by Serial: ${JSON.stringify(orders)}`);
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
@@ -4881,7 +4879,7 @@ class EditModalManager {
 				// one shift down by 1). Capture ordered names NOW before the refresh
 				// clears local state, then remap to new serials once the updated file
 				// list has arrived.
-				const currentOrder = JSON.parse(this.state.device?.order || "[]");
+				const currentOrder = this.state.device?.order ?? [];
 				const orderedNames = currentOrder
 					.filter((s) => s !== serial)
 					.map((s) => this.state.getFile(s)?.name)
@@ -8014,8 +8012,7 @@ class SkellyApp {
 		).map((row) => parseInt(row.dataset.serial, 10));
 
 		// Update state and device
-		const ordersAsString = JSON.stringify(enabledSerials);
-		this.state.updateDevice({ order: ordersAsString });
+		this.state.updateDevice({ order: enabledSerials });
 		this.state.notify("files"); // This will re-render the table with new numbers
 
 		this.logger.log(
@@ -8048,8 +8045,7 @@ class SkellyApp {
 		}
 
 		// Immediately update order in state to trigger UI resort
-		const ordersAsString = JSON.stringify(enabledSerials);
-		this.state.updateDevice({ order: ordersAsString });
+		this.state.updateDevice({ order: enabledSerials });
 		this.state.notify("files");
 
 		this.logger.log(
@@ -8380,7 +8376,9 @@ class SkellyApp {
 		}
 
 		if ($("#statOrder")) {
-			$("#statOrder").textContent = device.order || "—";
+			$("#statOrder").textContent = device.order
+				? JSON.stringify(device.order)
+				: "—";
 		}
 
 		if ($("#statPin")) {
@@ -8494,15 +8492,8 @@ class SkellyApp {
 
 		const query = ($("#filesFilter")?.value || "").toLowerCase().trim();
 
-		// Get file order from device state
-		let fileOrder = [];
-		try {
-			if (this.state.device.order) {
-				fileOrder = JSON.parse(this.state.device.order);
-			}
-		} catch (_e) {
-			// If parsing fails, use empty array
-		}
+		// Play order from device state (serials, first to last)
+		const fileOrder = this.state.device.order ?? [];
 
 		// Sort files: enabled (in order) first by order position, disabled (not in order) last by serial
 		const files = Array.from(this.state.files.items.values())

@@ -263,10 +263,8 @@ export class ProtocolParser {
 			parseInt(data.slice(i * 4, i * 4 + 4), 16),
 		);
 
-		const ordersAsString = JSON.stringify(orders);
-
-		this.state.updateDevice({ order: ordersAsString });
-		this.log(`File Order by Serial: ${ordersAsString}`);
+		this.state.updateDevice({ order: orders });
+		this.log(`File Order by Serial: ${JSON.stringify(orders)}`);
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
