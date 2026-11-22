@@ -176,7 +176,7 @@ export class ProtocolParser {
 			channels,
 			showMode,
 			name: name || this.state.device.name,
-			pin,
+			pinCode: pin,
 		});
 
 		this.log(
@@ -197,7 +197,7 @@ export class ProtocolParser {
 
 		this.state.updateLive({
 			action,
-			eye: eyeIcon,
+			eyeIcon,
 			lights,
 			scene,
 		});
@@ -234,7 +234,7 @@ export class ProtocolParser {
 		const len = parseInt(hex.slice(4, 6), 16);
 		const nameHex = hex.slice(6, 6 + len * 2);
 		const btName = getAsciiFromHex(nameHex);
-		this.state.updateDevice({ btName });
+		this.state.updateDevice({ liveName: btName });
 		this.log(`Parsed Classic BT Name: ${btName}`);
 	}
 
@@ -248,12 +248,12 @@ export class ProtocolParser {
 		const mode = parseInt(hex.slice(14, 16), 16);
 
 		this.state.updateDevice({
-			capacity: capacityKB,
-			filesReported: count,
+			capacityKb: capacityKB,
+			fileCount: count,
 		});
 
 		this.log(
-			`Capacity ${capacityKB}KB remaining, filesReported=${count}, mode=${mode}`,
+			`Capacity ${capacityKB}KB remaining, fileCount=${count}, mode=${mode}`,
 		);
 	}
 
@@ -356,11 +356,11 @@ export class ProtocolParser {
 		this.state.setFile(serial, {
 			serial,
 			cluster,
-			total,
+			totalFiles: total,
 			action,
 			lights,
-			eye: eyeIcon,
-			db: dbPos,
+			eyeIcon,
+			dbPos,
 			scene,
 			name,
 		});

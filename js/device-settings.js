@@ -297,7 +297,7 @@ function allChannelsComplete(lights) {
  * @param {string} fileName - Filename to address
  * @param {Object} settings
  * @param {number} settings.action - Movement bitfield
- * @param {number} [settings.eye] - Eye icon (ignored unless hasEyeImage)
+ * @param {number} [settings.eyeIcon] - Eye icon (ignored unless hasEyeImage)
  * @param {Array<Object>} settings.lights - One entry per light channel, index
  *   = channel number (device supports up to 6, but most device types only
  *   use 1 or 2). Each entry: {brightness, effectMode, effectSpeed, r, g, b, colorCycle}
@@ -327,8 +327,8 @@ export async function applyFileSettings(
 	);
 
 	if (hasEyeImage) {
-		await step(`Eye (F9) icon=${settings.eye}`, () =>
-			sendSetEye(connection, cluster, fileName, settings.eye),
+		await step(`Eye (F9) icon=${settings.eyeIcon}`, () =>
+			sendSetEye(connection, cluster, fileName, settings.eyeIcon),
 		);
 	}
 

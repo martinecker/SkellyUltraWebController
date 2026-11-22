@@ -36,13 +36,13 @@ test("BBD0 with the scene byte (marker at byte 58)", () => {
 	parser.parse(withCrc(`${fileInfoHead}02075C55${utf16leHex("song.mp3")}`));
 	const file = state.getFile(2);
 	assert.equal(file.cluster, 1002);
-	assert.equal(file.total, 3);
+	assert.equal(file.totalFiles, 3);
 	assert.equal(file.action, 6);
 	assert.equal(file.lights.length, 6);
 	assert.deepEqual(file.lights[5], LIGHT_OBJECT);
-	assert.equal(file.eye, 5);
+	assert.equal(file.eyeIcon, 5);
 	assert.equal(file.scene, 2);
-	assert.equal(file.db, 7);
+	assert.equal(file.dbPos, 7);
 	assert.equal(file.name, "song.mp3");
 });
 
@@ -50,9 +50,9 @@ test("BBD0 without the scene byte (v66, marker at byte 57)", () => {
 	const { state, parser } = setup();
 	parser.parse(withCrc(`${fileInfoHead}075C55${utf16leHex("old.mp3")}`));
 	const file = state.getFile(2);
-	assert.equal(file.eye, 5);
+	assert.equal(file.eyeIcon, 5);
 	assert.equal(file.scene, null);
-	assert.equal(file.db, 7);
+	assert.equal(file.dbPos, 7);
 	assert.equal(file.name, "old.mp3");
 });
 
@@ -60,7 +60,7 @@ test("BBE1 with the scene byte", () => {
 	const { state, parser } = setup();
 	parser.parse(withCrc(`BBE106${LIGHT.repeat(6)}0401`));
 	assert.equal(state.live.action, 6);
-	assert.equal(state.live.eye, 4);
+	assert.equal(state.live.eyeIcon, 4);
 	assert.equal(state.live.scene, 1);
 	assert.deepEqual(state.live.lights[0], LIGHT_OBJECT);
 });
@@ -68,7 +68,7 @@ test("BBE1 with the scene byte", () => {
 test("BBE1 without the scene byte", () => {
 	const { state, parser } = setup();
 	parser.parse(withCrc(`BBE106${LIGHT.repeat(6)}04`));
-	assert.equal(state.live.eye, 4);
+	assert.equal(state.live.eyeIcon, 4);
 	assert.equal(state.live.scene, null);
 	assert.equal(state.live.lights.length, 6);
 });

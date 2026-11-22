@@ -60,7 +60,7 @@ export class EditModalManager {
 			serial: null,
 			cluster: 0,
 			name: "",
-			eye: 1,
+			eyeIcon: 1,
 			scene: null, // LIGHT_SCENES value from the file list; null: unknown
 		};
 		// Custom colors kept while a scene preset shows its own (showSceneColors)
@@ -396,7 +396,7 @@ export class EditModalManager {
 			const cell = e.target.closest(".eye-opt");
 			if (!cell) return;
 
-			this.currentFile.eye = parseInt(cell.dataset.eye, 10);
+			this.currentFile.eyeIcon = parseInt(cell.dataset.eye, 10);
 			this.eyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
 				el.classList.remove("selected");
 			});
@@ -630,7 +630,7 @@ export class EditModalManager {
 				name,
 				{
 					action: actionBits,
-					eye: this.currentFile.eye,
+					eyeIcon: this.currentFile.eyeIcon,
 					lights,
 				},
 				{
@@ -668,7 +668,7 @@ export class EditModalManager {
 		this.currentFile.serial = file.serial;
 		this.currentFile.cluster = file.cluster;
 		this.currentFile.name = file.name || "";
-		this.currentFile.eye = file.eye || 1;
+		this.currentFile.eyeIcon = file.eyeIcon || 1;
 		this.currentFile.scene = file.scene ?? null;
 
 		// Populate form fields
@@ -707,7 +707,7 @@ export class EditModalManager {
 		if (this.eyeGrid) {
 			this.eyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
 				const eyeNum = parseInt(el.dataset.eye, 10);
-				el.classList.toggle("selected", eyeNum === this.currentFile.eye);
+				el.classList.toggle("selected", eyeNum === this.currentFile.eyeIcon);
 			});
 		}
 

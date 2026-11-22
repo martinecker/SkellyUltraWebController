@@ -11,7 +11,7 @@ test("BBD2: free KB u32, file count, one mode byte", () => {
 	const parser = new ProtocolParser(state, null, (line) => logs.push(line));
 	// 1000 KB free, 5 files, mode 1, then padding the old code read as part of the mode
 	parser.parse("BBD2000003E80501FFFFFF00");
-	assert.equal(state.device.capacity, 1000);
-	assert.equal(state.device.filesReported, 5);
+	assert.equal(state.device.capacityKb, 1000);
+	assert.equal(state.device.fileCount, 5);
 	assert.match(logs[0], /mode=1$/);
 });

@@ -821,7 +821,7 @@ export class FileManager {
 			fileName,
 			{
 				action: savedFile.action,
-				eye: savedFile.eye ?? 1,
+				eyeIcon: savedFile.eyeIcon ?? 1,
 				lights: (savedFile.lights || []).slice(0, lightCount),
 			},
 			{
@@ -859,8 +859,8 @@ export class FileManager {
 		}
 
 		if (profile?.hasEyeImage) {
-			const expectedEye = expected.eye ?? 1;
-			const actualEye = actual.eye ?? 1;
+			const expectedEye = expected.eyeIcon ?? 1;
+			const actualEye = actual.eyeIcon ?? 1;
 			if (expectedEye !== actualEye) {
 				mismatches.push(`eye icon (expected ${expectedEye}, got ${actualEye})`);
 			}

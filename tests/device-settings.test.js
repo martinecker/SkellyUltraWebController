@@ -109,7 +109,7 @@ function recorder() {
 	};
 }
 
-const FILE_SETTINGS = { action: 255, eye: 3, lights: [RED, BLUE] };
+const FILE_SETTINGS = { action: 255, eyeIcon: 3, lights: [RED, BLUE] };
 
 test("file settings with an F1 scene: lights in one F1 with that scene", async () => {
 	const connection = recorder();

@@ -14,17 +14,17 @@ export class StateManager {
 		// Device state
 		this.device = {
 			name: "",
-			btName: "",
+			liveName: "", // Classic BT (live mode) name
 			connected: false,
 			showMode: null,
 			version: null,
 			channels: [],
 			volume: null,
-			capacity: null,
-			filesReported: null, // Count reported by device in capacity query
+			capacityKb: null, // Free space in KB
+			fileCount: null, // Count reported by device in capacity query
 			filesReceived: null, // Count of files actually received in file list
 			order: null, // Play order: enabled file serials, first to last
-			pin: null, // Device PIN
+			pinCode: null, // Device PIN
 		};
 
 		// Active device type (drives UI profile)
@@ -33,7 +33,7 @@ export class StateManager {
 		// Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes)
 		this.live = {
 			action: null,
-			eye: null,
+			eyeIcon: null,
 			lights: [],
 			scene: null,
 		};

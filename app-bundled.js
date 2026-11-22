@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T21:47:21.030369
+ * Generated: 2026-11-22T22:10:04.817189
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1073,7 +1073,7 @@ function allChannelsComplete(lights) {
  * @param {string} fileName - Filename to address
  * @param {Object} settings
  * @param {number} settings.action - Movement bitfield
- * @param {number} [settings.eye] - Eye icon (ignored unless hasEyeImage)
+ * @param {number} [settings.eyeIcon] - Eye icon (ignored unless hasEyeImage)
  * @param {Array<Object>} settings.lights - One entry per light channel, index
  *   = channel number (device supports up to 6, but most device types only
  *   use 1 or 2). Each entry: {brightness, effectMode, effectSpeed, r, g, b, colorCycle}
@@ -1103,8 +1103,8 @@ async function applyFileSettings(
 	);
 
 	if (hasEyeImage) {
-		await step(`Eye (F9) icon=${settings.eye}`, () =>
-			sendSetEye(connection, cluster, fileName, settings.eye),
+		await step(`Eye (F9) icon=${settings.eyeIcon}`, () =>
+			sendSetEye(connection, cluster, fileName, settings.eyeIcon),
 		);
 	}
 
@@ -1195,17 +1195,17 @@ class StateManager {
 		// Device state
 		this.device = {
 			name: "",
-			btName: "",
+			liveName: "", // Classic BT (live mode) name
 			connected: false,
 			showMode: null,
 			version: null,
 			channels: [],
 			volume: null,
-			capacity: null,
-			filesReported: null, // Count reported by device in capacity query
+			capacityKb: null, // Free space in KB
+			fileCount: null, // Count reported by device in capacity query
 			filesReceived: null, // Count of files actually received in file list
 			order: null, // Play order: enabled file serials, first to last
-			pin: null, // Device PIN
+			pinCode: null, // Device PIN
 		};
 
 		// Active device type (drives UI profile)
@@ -1214,7 +1214,7 @@ class StateManager {
 		// Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes)
 		this.live = {
 			action: null,
-			eye: null,
+			eyeIcon: null,
 			lights: [],
 			scene: null,
 		};
@@ -3496,7 +3496,7 @@ class FileManager {
 			fileName,
 			{
 				action: savedFile.action,
-				eye: savedFile.eye ?? 1,
+				eyeIcon: savedFile.eyeIcon ?? 1,
 				lights: (savedFile.lights || []).slice(0, lightCount),
 			},
 			{
@@ -3534,8 +3534,8 @@ class FileManager {
 		}
 
 		if (profile?.hasEyeImage) {
-			const expectedEye = expected.eye ?? 1;
-			const actualEye = actual.eye ?? 1;
+			const expectedEye = expected.eyeIcon ?? 1;
+			const actualEye = actual.eyeIcon ?? 1;
 			if (expectedEye !== actualEye) {
 				mismatches.push(`eye icon (expected ${expectedEye}, got ${actualEye})`);
 			}
@@ -4090,7 +4090,7 @@ class ProtocolParser {
 			channels,
 			showMode,
 			name: name || this.state.device.name,
-			pin,
+			pinCode: pin,
 		});
 
 		this.log(
@@ -4111,7 +4111,7 @@ class ProtocolParser {
 
 		this.state.updateLive({
 			action,
-			eye: eyeIcon,
+			eyeIcon,
 			lights,
 			scene,
 		});
@@ -4148,7 +4148,7 @@ class ProtocolParser {
 		const len = parseInt(hex.slice(4, 6), 16);
 		const nameHex = hex.slice(6, 6 + len * 2);
 		const btName = getAsciiFromHex(nameHex);
-		this.state.updateDevice({ btName });
+		this.state.updateDevice({ liveName: btName });
 		this.log(`Parsed Classic BT Name: ${btName}`);
 	}
 
@@ -4162,12 +4162,12 @@ class ProtocolParser {
 		const mode = parseInt(hex.slice(14, 16), 16);
 
 		this.state.updateDevice({
-			capacity: capacityKB,
-			filesReported: count,
+			capacityKb: capacityKB,
+			fileCount: count,
 		});
 
 		this.log(
-			`Capacity ${capacityKB}KB remaining, filesReported=${count}, mode=${mode}`,
+			`Capacity ${capacityKB}KB remaining, fileCount=${count}, mode=${mode}`,
 		);
 	}
 
@@ -4270,11 +4270,11 @@ class ProtocolParser {
 		this.state.setFile(serial, {
 			serial,
 			cluster,
-			total,
+			totalFiles: total,
 			action,
 			lights,
-			eye: eyeIcon,
-			db: dbPos,
+			eyeIcon,
+			dbPos,
 			scene,
 			name,
 		});
@@ -4426,7 +4426,7 @@ class EditModalManager {
 			serial: null,
 			cluster: 0,
 			name: "",
-			eye: 1,
+			eyeIcon: 1,
 			scene: null, // LIGHT_SCENES value from the file list; null: unknown
 		};
 		// Custom colors kept while a scene preset shows its own (showSceneColors)
@@ -4762,7 +4762,7 @@ class EditModalManager {
 			const cell = e.target.closest(".eye-opt");
 			if (!cell) return;
 
-			this.currentFile.eye = parseInt(cell.dataset.eye, 10);
+			this.currentFile.eyeIcon = parseInt(cell.dataset.eye, 10);
 			this.eyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
 				el.classList.remove("selected");
 			});
@@ -4996,7 +4996,7 @@ class EditModalManager {
 				name,
 				{
 					action: actionBits,
-					eye: this.currentFile.eye,
+					eyeIcon: this.currentFile.eyeIcon,
 					lights,
 				},
 				{
@@ -5034,7 +5034,7 @@ class EditModalManager {
 		this.currentFile.serial = file.serial;
 		this.currentFile.cluster = file.cluster;
 		this.currentFile.name = file.name || "";
-		this.currentFile.eye = file.eye || 1;
+		this.currentFile.eyeIcon = file.eyeIcon || 1;
 		this.currentFile.scene = file.scene ?? null;
 
 		// Populate form fields
@@ -5073,7 +5073,7 @@ class EditModalManager {
 		if (this.eyeGrid) {
 			this.eyeGrid.querySelectorAll(".eye-opt").forEach((el) => {
 				const eyeNum = parseInt(el.dataset.eye, 10);
-				el.classList.toggle("selected", eyeNum === this.currentFile.eye);
+				el.classList.toggle("selected", eyeNum === this.currentFile.eyeIcon);
 			});
 		}
 
@@ -7129,7 +7129,7 @@ class SkellyApp {
 				return;
 			}
 
-			const pin = this.state.device.pin || "0000";
+			const pin = this.state.device.pinCode || "0000";
 			await this.setPinAndName(pin, deviceName);
 		});
 
@@ -7153,7 +7153,7 @@ class SkellyApp {
 			const deviceName = deviceNameInput?.value || "";
 
 			// Use current device name if available, otherwise use entered name or default to btName
-			const btName = deviceName || this.state.device.btName || "";
+			const btName = deviceName || this.state.device.liveName || "";
 			if (!btName) {
 				this.logger.log(
 					"Device name not available. Enter a device name first.",
@@ -8302,7 +8302,7 @@ class SkellyApp {
 		if (!device.connected) {
 			this.liveCustomColors = null;
 			this.shownPin = null;
-			this.shownBtName = null;
+			this.shownLiveName = null;
 		} else {
 			this.showReportedSceneColors();
 		}
@@ -8353,7 +8353,7 @@ class SkellyApp {
 				? device.channels.join(", ")
 				: "—";
 		}
-		if ($("#statBtName")) $("#statBtName").textContent = device.btName || "—";
+		if ($("#statBtName")) $("#statBtName").textContent = device.liveName || "—";
 
 		// Show warning if the detected firmware version hasn't been tested with this app
 		if (device.version && device.version !== this._warnedFwVersion) {
@@ -8373,16 +8373,16 @@ class SkellyApp {
 
 		if ($("#statCapacity")) {
 			$("#statCapacity").textContent =
-				device.capacity != null ? `${device.capacity} KB remaining` : "—";
+				device.capacityKb != null ? `${device.capacityKb} KB remaining` : "—";
 		}
 
 		if ($("#statFileCount")) {
-			const reported = device.filesReported ?? "—";
+			const reported = device.fileCount ?? "—";
 			const received = device.filesReceived ?? "—";
 			const mismatch =
-				device.filesReported != null &&
+				device.fileCount != null &&
 				device.filesReceived != null &&
-				device.filesReported !== device.filesReceived;
+				device.fileCount !== device.filesReceived;
 
 			$("#statFileCount").textContent = `${received} / ${reported}`;
 
@@ -8404,25 +8404,25 @@ class SkellyApp {
 		}
 
 		if ($("#statPin")) {
-			$("#statPin").textContent = device.pin || "—";
+			$("#statPin").textContent = device.pinCode || "—";
 		}
 
 		// Fill the PIN and name inputs only when the device reports a new
 		// value, so other device updates don't overwrite what is being typed
-		if ($("#pinInput") && device.pin && device.pin !== this.shownPin) {
-			$("#pinInput").value = device.pin;
-			this.shownPin = device.pin;
+		if ($("#pinInput") && device.pinCode && device.pinCode !== this.shownPin) {
+			$("#pinInput").value = device.pinCode;
+			this.shownPin = device.pinCode;
 		}
 
 		// Device name without the "(Live)" suffix
 		if (
 			$("#deviceNameInput") &&
-			device.btName &&
-			device.btName !== this.shownBtName
+			device.liveName &&
+			device.liveName !== this.shownLiveName
 		) {
-			const displayName = device.btName.replace(/\s*\(Live\)\s*$/i, "");
+			const displayName = device.liveName.replace(/\s*\(Live\)\s*$/i, "");
 			$("#deviceNameInput").value = displayName;
-			this.shownBtName = device.btName;
+			this.shownLiveName = device.liveName;
 		}
 	}
 
@@ -8456,8 +8456,8 @@ class SkellyApp {
 		}
 
 		// Update eye icon selection
-		if (live.eye != null) {
-			this.selectedEye = live.eye;
+		if (live.eyeIcon != null) {
+			this.selectedEye = live.eyeIcon;
 			const apEyeGrid = $("#apEyeGrid");
 			if (apEyeGrid) {
 				// Clear all selections
@@ -8465,7 +8465,7 @@ class SkellyApp {
 					el.classList.remove("selected");
 				});
 				// Select the current eye
-				const eyeOpt = apEyeGrid.querySelector(`[data-eye="${live.eye}"]`);
+				const eyeOpt = apEyeGrid.querySelector(`[data-eye="${live.eyeIcon}"]`);
 				if (eyeOpt) eyeOpt.classList.add("selected");
 			}
 		}
@@ -8541,7 +8541,7 @@ class SkellyApp {
 		let rowIndex = 1;
 		for (const file of files) {
 			const tr = document.createElement("tr");
-			const eyeImgIdx = file.eye || 0;
+			const eyeImgIdx = file.eyeIcon || 0;
 			const eyeImgPath = getEyeIconPath(this.state.deviceType, eyeImgIdx);
 
 			// One color dot (or the cycle icon) per light, as in the header
@@ -8601,7 +8601,7 @@ class SkellyApp {
         <td>${movementIcons}</td>
         <td class="col-eye">${eyeImgIdx ? `${eyeImgPath ? `<img class="eye-thumb" src="${eyeImgPath}" alt="eye ${eyeImgIdx}" />` : ""}${eyeImgIdx}` : "—"}</td>
         <td class="detail-column">${file.serial}</td>
-        <td class="detail-column">${file.db}</td>
+        <td class="detail-column">${file.dbPos}</td>
         <td class="detail-column">${file.cluster}</td>
         <td>
           ${playButtonHtml}
