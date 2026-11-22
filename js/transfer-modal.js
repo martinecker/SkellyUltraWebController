@@ -4,12 +4,8 @@
  */
 
 import { LOG_CLASSES, STORAGE_KEYS, TRANSFER_CONFIG } from "./constants.js";
+import { $ } from "./dom.js";
 import { ElevenLabsClient } from "./elevenlabs.js";
-
-/**
- * Simple UI Helper
- */
-const $ = (selector) => document.querySelector(selector);
 
 /**
  * Truncate a filename to fit the device's length limit, preserving the

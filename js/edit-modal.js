@@ -18,6 +18,7 @@ import {
 	sceneLightColor,
 	supportsLightScenes,
 } from "./device-settings.js";
+import { $ } from "./dom.js";
 import {
 	clamp,
 	deviceSpeedToUI,
@@ -26,11 +27,6 @@ import {
 	rgbToHex,
 	uiSpeedToDevice,
 } from "./protocol.js";
-
-/**
- * Simple UI Helper
- */
-const $ = (selector) => document.querySelector(selector);
 
 // A light's settings when the file list gave none: torso (channel 0) blue,
 // the others red, as the dialog always started

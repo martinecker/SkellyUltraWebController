@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T20:15:47.946087
+ * Generated: 2026-11-22T20:49:25.085665
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -11,6 +11,7 @@
  * Source modules:
  *   - js/constants.js
  *   - js/protocol.js
+ *   - js/dom.js
  *   - js/device-settings.js
  *   - js/state-manager.js
  *   - js/ble-manager.js
@@ -793,6 +794,16 @@ function uiSpeedToDevice(uiSpeed) {
 	const speed = clamp(uiSpeed, 0, MAX_UI_EFFECT_SPEED);
 	return MAX_UI_EFFECT_SPEED - speed;
 }
+
+  // ============================================================
+  // DOM Helpers (js/dom.js)
+  // ============================================================
+/**
+ * DOM helpers shared by the UI modules
+ */
+
+/** The first element matching a CSS selector, or null */
+const $ = (selector) => document.querySelector(selector);
 
   // ============================================================
   // Device Settings Commands (js/device-settings.js)
@@ -4398,11 +4409,6 @@ class ProtocolParser {
  * Handles the per-file edit modal functionality
  */
 
-/**
- * Simple UI Helper
- */
-const $ = (selector) => document.querySelector(selector);
-
 // A light's settings when the file list gave none: torso (channel 0) blue,
 // the others red, as the dialog always started
 const DEFAULT_LIGHT = {
@@ -5120,8 +5126,6 @@ class EditModalManager {
  * Transfer Modal Manager
  * Handles the file transfer modal functionality
  */
-
-// $ helper already defined above
 
 /**
  * Truncate a filename to fit the device's length limit, preserving the
@@ -6176,8 +6180,6 @@ class Logger {
 		}
 	}
 }
-
-// $ helper already defined above
 
 /**
  * A file's light in the files table: its color as a dot, or the cycle icon

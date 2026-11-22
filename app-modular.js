@@ -27,6 +27,7 @@ import {
 	sendSetMovement,
 	supportsLightScenes,
 } from "./js/device-settings.js";
+import { $ } from "./js/dom.js";
 import { EditModalManager } from "./js/edit-modal.js";
 import { AudioConverter, FileManager } from "./js/file-manager.js";
 import {
@@ -77,11 +78,6 @@ class Logger {
 		}
 	}
 }
-
-/**
- * Simple UI Helper
- */
-const $ = (selector) => document.querySelector(selector);
 
 /**
  * A file's light in the files table: its color as a dot, or the cycle icon

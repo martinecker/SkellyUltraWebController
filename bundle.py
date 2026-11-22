@@ -9,7 +9,30 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-def strip_module_syntax(code, is_first_module=False):
+# A top-level declaration: function, class, const, let or var at column 0
+TOP_LEVEL_NAME = re.compile(
+    r'^(?:export\s+)?(?:async\s+)?(?:function\*?|class|const|let|var)\s+([A-Za-z_$][\w$]*)',
+    re.MULTILINE,
+)
+
+def top_level_names(code):
+    """Names a module declares at top level (exported or not)"""
+    return TOP_LEVEL_NAME.findall(code)
+
+def find_duplicate_names(sources):
+    """Top-level names declared by more than one module.
+
+    The bundle puts all modules in one scope, so two modules declaring the
+    same name (even a private helper) would break it at runtime.
+    Returns {name: [filepath, ...]} for every clash.
+    """
+    declared_in = {}
+    for filepath, code in sources:
+        for name in set(top_level_names(code)):
+            declared_in.setdefault(name, []).append(filepath)
+    return {name: files for name, files in declared_in.items() if len(files) > 1}
+
+def strip_module_syntax(code):
     """Remove ES6 import/export statements"""
     # Remove export statements (export, export const, export class, export function, etc.)
     code = re.sub(r'^export\s+', '', code, flags=re.MULTILINE)
@@ -20,16 +43,6 @@ def strip_module_syntax(code, is_first_module=False):
     
     # Also remove simple imports like: import './file.js';
     code = re.sub(r'^import\s+[\'"].*?[\'"];?', '', code, flags=re.MULTILINE)
-    
-    # Remove duplicate $ helper function declarations (except in first module that defines it)
-    if not is_first_module:
-        # Remove the $ helper comment and declaration
-        code = re.sub(
-            r'/\*\*\s*\n\s*\*\s*Simple UI Helper\s*\n\s*\*/\s*\nconst \$ = \(selector\) => document\.querySelector\(selector\);',
-            '// $ helper already defined above',
-            code,
-            flags=re.MULTILINE | re.DOTALL
-        )
     
     # Remove empty lines that were left behind
     code = re.sub(r'\n\s*\n\s*\n', '\n\n', code)
@@ -54,6 +67,7 @@ def main():
     modules = [
         ('js/constants.js', 'Constants and Configuration'),
         ('js/protocol.js', 'Protocol Utilities'),
+        ('js/dom.js', 'DOM Helpers'),
         ('js/device-settings.js', 'Device Settings Commands'),
         ('js/state-manager.js', 'State Manager'),
         ('js/ble-manager.js', 'BLE Manager'),
@@ -67,34 +81,36 @@ def main():
         ('app-modular.js', 'Main Application'),
     ]
     
-    # Read and process each module
-    bundled_code = []
-    found_dollar_helper = False
-    for filepath, description in modules:
-        print(f'  📦 Processing {filepath}...')
+    # Read each module
+    sources = []
+    for filepath, _ in modules:
         try:
-            code = read_file(filepath)
-            
-            # Check if this module has the $ helper
-            has_dollar_helper = 'const $ = (selector) => document.querySelector(selector);' in code
-            
-            # Only keep the first occurrence of $ helper
-            is_first_dollar = has_dollar_helper and not found_dollar_helper
-            if has_dollar_helper:
-                found_dollar_helper = True
-            
-            stripped_code = strip_module_syntax(code, is_first_module=is_first_dollar)
-            
-            bundled_code.append(f'''
+            sources.append((filepath, read_file(filepath)))
+        except FileNotFoundError:
+            print(f'  ❌ Error: {filepath} not found!')
+            return 1
+
+    # All modules share one scope in the bundle, so names must be unique
+    duplicates = find_duplicate_names(sources)
+    if duplicates:
+        print('\n❌ Modules declare the same top-level name; the bundle would break:')
+        for name, files in sorted(duplicates.items()):
+            print(f'   {name}: {", ".join(files)}')
+        print('   Rename the private ones, or export one and import it elsewhere.')
+        return 1
+
+    # Process each module
+    bundled_code = []
+    for (filepath, description), (_, code) in zip(modules, sources):
+        print(f'  📦 Processing {filepath}...')
+        stripped_code = strip_module_syntax(code)
+        bundled_code.append(f'''
   // {'=' * 60}
   // {description} ({filepath})
   // {'=' * 60}
 {stripped_code}
 ''')
-        except FileNotFoundError:
-            print(f'  ❌ Error: {filepath} not found!')
-            return 1
-    
+
     # Create the bundle with IIFE wrapper
     timestamp = datetime.now().isoformat()
     bundle = f'''/**
