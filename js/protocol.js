@@ -197,6 +197,17 @@ export function clamp(n, min, max) {
 }
 
 /**
+ * A color as a color input's value ("#rrggbb")
+ * @param {number} r - Red 0-255
+ * @param {number} g - Green 0-255
+ * @param {number} b - Blue 0-255
+ * @returns {string}
+ */
+export function rgbToHex(r, g, b) {
+	return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
  * Sleep for specified milliseconds
  * @param {number} ms - Milliseconds to sleep
  * @returns {Promise<void>}

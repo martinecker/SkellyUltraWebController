@@ -18,6 +18,12 @@ import {
 	buildSetAllLightsCommand,
 	isScenePreset,
 	sceneLightColor,
+	sendSetEye,
+	sendSetLightBrightness,
+	sendSetLightMode,
+	sendSetLightRgb,
+	sendSetLightSpeed,
+	sendSetMovement,
 	supportsLightScenes,
 } from "./js/device-settings.js";
 import { EditModalManager } from "./js/edit-modal.js";
@@ -29,6 +35,7 @@ import {
 	deviceSpeedToUI,
 	escapeHtml,
 	MAX_UI_EFFECT_SPEED,
+	rgbToHex,
 	uiSpeedToDevice,
 } from "./js/protocol.js";
 import { ProtocolParser } from "./js/protocol-parser.js";
@@ -389,28 +396,23 @@ class SkellyApp {
 			if (el) el.style.display = hasEyeImage ? "" : "none";
 		}
 
-		// Show/hide Light 1 group
+		// Live light controls, one group per light
+		this.buildLiveLights(profile);
+
+		// Show/hide the edit dialog's Light 1 group
 		const hasLight1 = profile.lights.length > 1;
-		for (const id of ["liveLight1Group", "editLight1Group"]) {
-			const el = $(`#${id}`);
-			if (el) el.style.display = hasLight1 ? "" : "none";
-		}
+		const editLight1Group = $("#editLight1Group");
+		if (editLight1Group)
+			editLight1Group.style.display = hasLight1 ? "" : "none";
 
 		// Update Light 0 label
 		const light0 = profile.lights[0];
 		const light0Label = light0 ? light0.label : "Light";
-		for (const id of ["liveLight0Label", "editLight0Label"]) {
-			const el = $(`#${id}`);
-			if (el) el.textContent = light0Label;
-		}
+		const editLight0Label = $("#editLight0Label");
+		if (editLight0Label) editLight0Label.textContent = light0Label;
 
-		// Repopulate effect mode selects
-		const modeSelects = [
-			"light1EffectMode",
-			"light0EffectMode",
-			"edLight1EffectMode",
-			"edLight0EffectMode",
-		];
+		// Repopulate the edit dialog's effect mode selects
+		const modeSelects = ["edLight1EffectMode", "edLight0EffectMode"];
 		for (const selectId of modeSelects) {
 			const sel = $(`#${selectId}`);
 			if (!sel) continue;
@@ -475,36 +477,21 @@ class SkellyApp {
 		const sendMovementCommand = async () => {
 			if (!this.connection.isConnected()) return;
 			if (allBtn?.classList.contains("selected")) {
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_MOVEMENT, "FF00000000", 8),
-				);
+				await sendSetMovement(this.connection, 0, "", 255);
 				this.logger.log("Applied movement: all");
-			} else {
-				let bitfield = 0;
-				partBtns.forEach((btn) => {
-					if (btn.classList.contains("selected")) {
-						bitfield |= parseInt(btn.dataset.bit || "0", 10);
-					}
-				});
-				if (bitfield > 0) {
-					const bitfieldHex = bitfield
-						.toString(16)
-						.padStart(2, "0")
-						.toUpperCase();
-					await this.connection.send(
-						buildCommand(COMMANDS.SET_MOVEMENT, `${bitfieldHex}00000000`, 8),
-					);
-					const parts = partBtns
-						.filter((b) => b.classList.contains("selected"))
-						.map((b) => b.dataset.part);
-					this.logger.log(`Applied movement: ${parts.join(", ")}`);
-				} else {
-					await this.connection.send(
-						buildCommand(COMMANDS.SET_MOVEMENT, "0000000000", 8),
-					);
-					this.logger.log("Disabled movement");
-				}
+				return;
 			}
+			const selected = partBtns.filter((b) => b.classList.contains("selected"));
+			const bitfield = selected.reduce(
+				(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
+				0,
+			);
+			await sendSetMovement(this.connection, 0, "", bitfield);
+			this.logger.log(
+				bitfield > 0
+					? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
+					: "Disabled movement",
+			);
 		};
 
 		allBtn?.addEventListener("click", () => {
@@ -1201,9 +1188,211 @@ class SkellyApp {
 		);
 	}
 
+	/** The active device profile */
+	get profile() {
+		return (
+			DEVICE_PROFILES[this.state.deviceType] ||
+			DEVICE_PROFILES[DEVICE_TYPES.SKELLY]
+		);
+	}
+
+	/** Light channel numbers of the active profile */
+	get liveChannels() {
+		return this.profile.lights.map((light) => parseInt(light.channel, 16));
+	}
+
+	/**
+	 * Build the live light controls, one group per light of the profile
+	 * (head light above torso light, as before), and bind them.
+	 * @param {Object} profile - DEVICE_PROFILES entry
+	 */
+	buildLiveLights(profile) {
+		const container = $("#liveLights");
+		if (!container) return;
+		this.liveColorCycle = {};
+		const modeOptions = profile.lightModes
+			.map(
+				({ value, label }) =>
+					`<option value="${value}">${escapeHtml(label)}</option>`,
+			)
+			.join("");
+		const lights = profile.lights
+			.map((light) => ({ ...light, ch: parseInt(light.channel, 16) }))
+			.reverse();
+		container.innerHTML = lights
+			.map(
+				({ label, ch }) => `
+        <div class="light-group">
+          <h3>${escapeHtml(label)}</h3>
+          <div class="compact-row">
+            <label>Brightness</label>
+            <input id="light${ch}BrightnessRange" type="range" min="0" max="255" value="200" />
+            <input id="light${ch}Brightness" type="number" min="0" max="255" value="200" />
+          </div>
+          <div class="compact-row">
+            <label>Color</label>
+            <input id="light${ch}ColorPick" type="color" value="#ff0000" />
+            <input id="light${ch}R" type="number" min="0" max="255" value="255" />
+            <input id="light${ch}G" type="number" min="0" max="255" value="0" />
+            <input id="light${ch}B" type="number" min="0" max="255" value="0" />
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+            <button type="button" class="iconToggle" id="btnLight${ch}ColorCycle" title="Cycle all colors" style="padding:4px;">
+              <img src="images/icon_light_cycle_no.png" alt="Cycle colors" style="width:28px;height:28px" />
+            </button>
+            <span class="small muted">Cycle</span>
+          </div>
+          <div class="compact-row">
+            <label>Effect</label>
+            <select id="light${ch}EffectMode" aria-label="${escapeHtml(label)} effect mode">${modeOptions}</select>
+          </div>
+          <div id="light${ch}EffectSpeedBlock" class="compact-row hidden">
+            <label>Speed</label>
+            <input id="light${ch}EffectSpeedRange" type="range" min="0" max="10" value="0" />
+            <input id="light${ch}EffectSpeed" type="number" min="0" max="10" value="0" />
+          </div>
+        </div>`,
+			)
+			.join("");
+		for (const { label, ch } of lights) this.bindLiveLight(ch, label);
+		// Show what the device last reported, if anything
+		for (const { ch } of lights) {
+			const reported = this.state.live.lights?.[ch];
+			if (reported) this.showLiveLight(ch, reported);
+		}
+	}
+
+	/**
+	 * Bind one live light group's controls: each change goes to the device
+	 * at once (cluster 0, no file name = live).
+	 * @param {number} channel - Light channel
+	 * @param {string} label - Light name for the log
+	 */
+	bindLiveLight(channel, label) {
+		const el = (field) => $(`#light${channel}${field}`);
+		const canSend = () =>
+			this.connection.isConnected() && !this.sendLiveLightsInScene();
+
+		const sendBrightness = async (brightness) => {
+			if (!canSend()) return;
+			await sendSetLightBrightness(this.connection, 0, "", channel, brightness);
+			this.logger.log(`Set ${label} brightness to ${brightness}`);
+		};
+		const sendSpeed = async (uiSpeed) => {
+			if (!canSend()) return;
+			const deviceSpeed = uiSpeedToDevice(uiSpeed);
+			await sendSetLightSpeed(this.connection, 0, "", channel, deviceSpeed);
+			this.logger.log(
+				`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`,
+			);
+		};
+		// A color the user sets turns color cycle off; the cycle button doesn't
+		const sendColor = async (stopCycle) => {
+			if (!this.connection.isConnected()) return;
+			if (stopCycle) this.setLiveColorCycle(channel, false);
+			const { r, g, b, colorCycle } = this.readLiveColor(channel);
+			await sendSetLightRgb(
+				this.connection,
+				0,
+				"",
+				channel,
+				r,
+				g,
+				b,
+				colorCycle,
+			);
+			this.logger.log(
+				`Set ${label} color to RGB(${r}, ${g}, ${b}) with cycle ${colorCycle ? "ON" : "OFF"}`,
+			);
+		};
+
+		this.bindRangeAndNumber(
+			el("BrightnessRange"),
+			el("Brightness"),
+			255,
+			sendBrightness,
+		);
+		this.bindRangeAndNumber(
+			el("EffectSpeedRange"),
+			el("EffectSpeed"),
+			MAX_UI_EFFECT_SPEED,
+			sendSpeed,
+		);
+
+		el("ColorPick")?.addEventListener("input", (e) => {
+			const hex = e.target.value;
+			el("R").value = parseInt(hex.substring(1, 3), 16);
+			el("G").value = parseInt(hex.substring(3, 5), 16);
+			el("B").value = parseInt(hex.substring(5, 7), 16);
+			sendColor(true);
+		});
+		for (const field of ["R", "G", "B"]) {
+			el(field)?.addEventListener("input", () => {
+				const { r, g, b } = this.readLiveColor(channel);
+				el("ColorPick").value = rgbToHex(r, g, b);
+				sendColor(true);
+			});
+		}
+
+		el("EffectMode")?.addEventListener("change", async () => {
+			const mode = parseInt(el("EffectMode").value, 10);
+			el("EffectSpeedBlock")?.classList.toggle("hidden", mode === 1); // Static
+			if (!canSend()) return;
+			await sendSetLightMode(this.connection, 0, "", channel, mode);
+			const modeLabel = this.profile.lightModes.find(
+				(m) => m.value === mode,
+			)?.label;
+			this.logger.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
+		});
+
+		$(`#btnLight${channel}ColorCycle`)?.addEventListener("click", async () => {
+			if (!this.connection.isConnected()) {
+				this.logger.log("Not connected", LOG_CLASSES.WARNING);
+				return;
+			}
+			this.setLiveColorCycle(channel, !this.liveColorCycle[channel]);
+			await sendColor(false);
+		});
+	}
+
+	/**
+	 * A slider and its number box: each follows the other, and every change
+	 * is sent (the number box clamped to 0..max).
+	 */
+	bindRangeAndNumber(range, number, max, send) {
+		if (!range || !number) return;
+		range.addEventListener("input", (e) => {
+			number.value = e.target.value;
+			send(parseInt(e.target.value, 10));
+		});
+		number.addEventListener("input", (e) => {
+			const clamped = clamp(e.target.value, 0, max);
+			range.value = clamped;
+			send(clamped);
+		});
+	}
+
+	/** Set a live light's color cycle flag and its button */
+	setLiveColorCycle(channel, on) {
+		this.liveColorCycle[channel] = on;
+		$(`#btnLight${channel}ColorCycle`)?.classList.toggle("selected", on);
+	}
+
+	/** A live light's color and color cycle as its controls show them */
+	readLiveColor(channel) {
+		const value = (field) =>
+			Math.round(clamp($(`#light${channel}${field}`)?.value, 0, 255));
+		return {
+			r: value("R"),
+			g: value("G"),
+			b: value("B"),
+			colorCycle: this.liveColorCycle[channel] ? 1 : 0,
+		};
+	}
+
 	/**
 	 * A live light channel as its controls show it, in device units for F1.
-	 * @param {number} channel - 0 or 1
+	 * @param {number} channel - Light channel
 	 */
 	readLiveLight(channel) {
 		const value = (field, max) =>
@@ -1211,26 +1400,16 @@ class SkellyApp {
 		return {
 			effectMode: parseInt($(`#light${channel}EffectMode`)?.value || "1", 10),
 			brightness: value("Brightness", 255),
-			r: value("R", 255),
-			g: value("G", 255),
-			b: value("B", 255),
-			colorCycle: this[`light${channel}ColorCycleEnabled`] ? 1 : 0,
+			...this.readLiveColor(channel),
 			effectSpeed: uiSpeedToDevice(value("EffectSpeed", MAX_UI_EFFECT_SPEED)),
 		};
 	}
 
-	/** Color and color cycle of the live light controls, channels 0 and 1 */
+	/** Color and color cycle of the live lights, indexed by channel */
 	readLiveColors() {
-		return [0, 1].map((ch) => {
-			const value = (field) =>
-				Math.round(clamp($(`#light${ch}${field}`)?.value, 0, 255));
-			return {
-				r: value("R"),
-				g: value("G"),
-				b: value("B"),
-				colorCycle: this[`light${ch}ColorCycleEnabled`] ? 1 : 0,
-			};
-		});
+		const colors = [];
+		for (const ch of this.liveChannels) colors[ch] = this.readLiveColor(ch);
+		return colors;
 	}
 
 	/** Show colors (from readLiveColors or sceneLightColor) in the live controls */
@@ -1240,17 +1419,35 @@ class SkellyApp {
 			if ($(`#light${ch}R`)) $(`#light${ch}R`).value = color.r;
 			if ($(`#light${ch}G`)) $(`#light${ch}G`).value = color.g;
 			if ($(`#light${ch}B`)) $(`#light${ch}B`).value = color.b;
-			const hex = [color.r, color.g, color.b]
-				.map((c) => c.toString(16).padStart(2, "0"))
-				.join("");
 			if ($(`#light${ch}ColorPick`))
-				$(`#light${ch}ColorPick`).value = `#${hex}`;
-			this[`light${ch}ColorCycleEnabled`] = color.colorCycle === 1;
-			$(`#btnLight${ch}ColorCycle`)?.classList.toggle(
-				"selected",
-				color.colorCycle === 1,
-			);
+				$(`#light${ch}ColorPick`).value = rgbToHex(color.r, color.g, color.b);
+			this.setLiveColorCycle(ch, color.colorCycle === 1);
 		});
+	}
+
+	/**
+	 * Show a live light the device reported (BBE1) in its controls.
+	 * @param {number} channel - Light channel
+	 * @param {Object} light - Parsed light (device units)
+	 */
+	showLiveLight(channel, light) {
+		const set = (field, value) => {
+			const input = $(`#light${channel}${field}`);
+			if (input) input.value = value;
+		};
+		set("Brightness", light.brightness);
+		set("BrightnessRange", light.brightness);
+		const colors = [];
+		colors[channel] = light;
+		this.showLiveColors(colors);
+		set("EffectMode", light.effectMode);
+		$(`#light${channel}EffectSpeedBlock`)?.classList.toggle(
+			"hidden",
+			light.effectMode === 1,
+		);
+		const uiSpeed = deviceSpeedToUI(light.effectSpeed);
+		set("EffectSpeed", uiSpeed);
+		set("EffectSpeedRange", uiSpeed);
 	}
 
 	/**
@@ -1263,11 +1460,18 @@ class SkellyApp {
 			if (!isScenePreset(from) || !this.liveCustomColors) {
 				this.liveCustomColors = this.readLiveColors();
 			}
-			this.showLiveColors([0, 1].map((ch) => sceneLightColor(to, ch)));
+			this.showLiveColors(this.sceneColors(to));
 		} else if (this.liveCustomColors) {
 			this.showLiveColors(this.liveCustomColors);
 			this.liveCustomColors = null;
 		}
+	}
+
+	/** A scene preset's colors for the live lights, indexed by channel */
+	sceneColors(scene) {
+		const colors = [];
+		for (const ch of this.liveChannels) colors[ch] = sceneLightColor(scene, ch);
+		return colors;
 	}
 
 	/**
@@ -1282,7 +1486,7 @@ class SkellyApp {
 			supportsLightScenes(this.state.deviceType, this.state.device?.version)
 		) {
 			if (!this.liveCustomColors) this.liveCustomColors = this.readLiveColors();
-			this.showLiveColors([0, 1].map((ch) => sceneLightColor(scene, ch)));
+			this.showLiveColors(this.sceneColors(scene));
 		} else if (Number.isInteger(scene)) {
 			this.liveCustomColors = null; // Custom: the controls show its colors
 		}
@@ -1293,13 +1497,8 @@ class SkellyApp {
 	 * @param {number} scene - LIGHT_SCENES value
 	 */
 	async sendLiveLights(scene) {
-		const profile =
-			DEVICE_PROFILES[this.state.deviceType] ||
-			DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
-		const lights = [];
-		for (let ch = 0; ch < Math.min(profile.lights.length || 1, 2); ch++) {
-			lights.push(this.readLiveLight(ch));
-		}
+		// F1 takes the lights in channel order from 0
+		const lights = this.liveChannels.map((ch) => this.readLiveLight(ch));
 		await this.connection.send(buildSetAllLightsCommand(lights, 0, scene));
 		this.logger.log(
 			`Set all lights (F1) scene=${scene}: ${lights
@@ -1355,7 +1554,7 @@ class SkellyApp {
 			}
 			picker.value = String(scene);
 		}
-		for (const ch of [0, 1]) {
+		for (const ch of this.liveChannels) {
 			for (const id of [
 				`light${ch}ColorPick`,
 				`light${ch}R`,
@@ -1373,14 +1572,6 @@ class SkellyApp {
 						: "";
 			}
 		}
-	}
-
-	/** Returns the display label for the primary (light0) zone of the active profile. */
-	get light0Label() {
-		const profile =
-			DEVICE_PROFILES[this.state.deviceType] ||
-			DEVICE_PROFILES[DEVICE_TYPES.SKELLY];
-		return profile.lights[0]?.label ?? "Light";
 	}
 
 	/**
@@ -1401,341 +1592,11 @@ class SkellyApp {
 		this.selectedEye = 1; // Default eye selection
 		this.buildLiveEyeGrid();
 
-		// Track color cycle state for each light
-		this.light1ColorCycleEnabled = false;
-		this.light0ColorCycleEnabled = false;
+		// Light controls are built per profile light (buildLiveLights, from
+		// applyDeviceProfile); color cycle state per channel
+		this.liveColorCycle = this.liveColorCycle ?? {};
 		// Custom colors kept while a scene preset shows its own (showSceneColors)
 		this.liveCustomColors = null;
-
-		// Light 1 - Brightness control (immediate)
-		const light1BriRange = $("#light1BrightnessRange");
-		const light1BriNum = $("#light1Brightness");
-
-		const sendLight1Brightness = async (value) => {
-			if (!this.connection.isConnected()) return;
-			if (this.sendLiveLightsInScene()) return;
-			const ch = "01"; // Light 1 is channel 1
-			const brightness = parseInt(value, 10);
-			const brightnessHex = brightness
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const cluster = "00000000";
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
-			);
-			this.logger.log(`Set Light 1 brightness to ${brightness}`);
-		};
-
-		if (light1BriRange && light1BriNum) {
-			light1BriRange.addEventListener("input", (e) => {
-				light1BriNum.value = e.target.value;
-				sendLight1Brightness(e.target.value);
-			});
-			light1BriNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 255);
-				light1BriRange.value = clamped;
-				sendLight1Brightness(clamped);
-			});
-		}
-
-		// Light 0 - Brightness control (immediate)
-		const light0BriRange = $("#light0BrightnessRange");
-		const light0BriNum = $("#light0Brightness");
-
-		const sendLight0Brightness = async (value) => {
-			if (!this.connection.isConnected()) return;
-			if (this.sendLiveLightsInScene()) return;
-			const ch = "00"; // Light 0 is channel 0
-			const brightness = parseInt(value, 10);
-			const brightnessHex = brightness
-				.toString(16)
-				.padStart(2, "0")
-				.toUpperCase();
-			const cluster = "00000000";
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_BRIGHTNESS, ch + brightnessHex + cluster, 8),
-			);
-			this.logger.log(`Set ${this.light0Label} brightness to ${brightness}`);
-		};
-
-		if (light0BriRange && light0BriNum) {
-			light0BriRange.addEventListener("input", (e) => {
-				light0BriNum.value = e.target.value;
-				sendLight0Brightness(e.target.value);
-			});
-			light0BriNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 255);
-				light0BriRange.value = clamped;
-				sendLight0Brightness(clamped);
-			});
-		}
-
-		// Light 1 - Color/RGB control (immediate)
-		const light1ColorPick = $("#light1ColorPick");
-		const light1RInput = $("#light1R");
-		const light1GInput = $("#light1G");
-		const light1BInput = $("#light1B");
-
-		const sendLight1Color = async (disableCycle = false) => {
-			if (!this.connection.isConnected()) return;
-
-			// If user is setting a new color (not from cycle button), disable cycle
-			if (disableCycle && this.light1ColorCycleEnabled) {
-				this.light1ColorCycleEnabled = false;
-				const btnLight1ColorCycle = $("#btnLight1ColorCycle");
-				if (btnLight1ColorCycle) {
-					btnLight1ColorCycle.classList.remove("selected");
-				}
-			}
-
-			const ch = "01"; // Light 1 is channel 1
-			const r = parseInt(light1RInput?.value || "255", 10);
-			const g = parseInt(light1GInput?.value || "0", 10);
-			const b = parseInt(light1BInput?.value || "0", 10);
-			const cycle = this.light1ColorCycleEnabled ? "01" : "00";
-			const rHex = r.toString(16).padStart(2, "0").toUpperCase();
-			const gHex = g.toString(16).padStart(2, "0").toUpperCase();
-			const bHex = b.toString(16).padStart(2, "0").toUpperCase();
-			const cluster = "00000000";
-			await this.connection.send(
-				buildCommand(
-					COMMANDS.SET_RGB,
-					`${ch + rHex + gHex + bHex + cycle + cluster}00`,
-					9,
-				),
-			);
-			this.logger.log(
-				`Set Light 1 color to RGB(${r}, ${g}, ${b}) with cycle ${this.light1ColorCycleEnabled ? "ON" : "OFF"}`,
-			);
-		};
-
-		// Sync color picker with RGB inputs and send immediately
-		if (light1ColorPick && light1RInput && light1GInput && light1BInput) {
-			light1ColorPick.addEventListener("input", (e) => {
-				const hex = e.target.value;
-				light1RInput.value = parseInt(hex.substring(1, 3), 16);
-				light1GInput.value = parseInt(hex.substring(3, 5), 16);
-				light1BInput.value = parseInt(hex.substring(5, 7), 16);
-				sendLight1Color(true); // Disable cycle when user picks a color
-			});
-
-			[light1RInput, light1GInput, light1BInput].forEach((inp) => {
-				inp?.addEventListener("input", () => {
-					const r = clamp(light1RInput.value, 0, 255);
-					const g = clamp(light1GInput.value, 0, 255);
-					const b = clamp(light1BInput.value, 0, 255);
-					light1ColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-					sendLight1Color(true); // Disable cycle when user changes RGB values
-				});
-			});
-		}
-
-		// Light 0 - Color/RGB control (immediate)
-		const light0ColorPick = $("#light0ColorPick");
-		const light0RInput = $("#light0R");
-		const light0GInput = $("#light0G");
-		const light0BInput = $("#light0B");
-
-		const sendLight0Color = async (disableCycle = false) => {
-			if (!this.connection.isConnected()) return;
-
-			// If user is setting a new color (not from cycle button), disable cycle
-			if (disableCycle && this.light0ColorCycleEnabled) {
-				this.light0ColorCycleEnabled = false;
-				const btnLight0ColorCycle = $("#btnLight0ColorCycle");
-				if (btnLight0ColorCycle) {
-					btnLight0ColorCycle.classList.remove("selected");
-				}
-			}
-
-			const ch = "00"; // Light 0 is channel 0
-			const r = parseInt(light0RInput?.value || "255", 10);
-			const g = parseInt(light0GInput?.value || "0", 10);
-			const b = parseInt(light0BInput?.value || "0", 10);
-			const cycle = this.light0ColorCycleEnabled ? "01" : "00";
-			const rHex = r.toString(16).padStart(2, "0").toUpperCase();
-			const gHex = g.toString(16).padStart(2, "0").toUpperCase();
-			const bHex = b.toString(16).padStart(2, "0").toUpperCase();
-			const cluster = "00000000";
-			await this.connection.send(
-				buildCommand(
-					COMMANDS.SET_RGB,
-					`${ch + rHex + gHex + bHex + cycle + cluster}00`,
-					9,
-				),
-			);
-			this.logger.log(
-				`Set ${this.light0Label} color to RGB(${r}, ${g}, ${b}) with cycle ${this.light0ColorCycleEnabled ? "ON" : "OFF"}`,
-			);
-		};
-
-		// Sync color picker with RGB inputs and send immediately
-		if (light0ColorPick && light0RInput && light0GInput && light0BInput) {
-			light0ColorPick.addEventListener("input", (e) => {
-				const hex = e.target.value;
-				light0RInput.value = parseInt(hex.substring(1, 3), 16);
-				light0GInput.value = parseInt(hex.substring(3, 5), 16);
-				light0BInput.value = parseInt(hex.substring(5, 7), 16);
-				sendLight0Color(true); // Disable cycle when user picks a color
-			});
-
-			[light0RInput, light0GInput, light0BInput].forEach((inp) => {
-				inp?.addEventListener("input", () => {
-					const r = clamp(light0RInput.value, 0, 255);
-					const g = clamp(light0GInput.value, 0, 255);
-					const b = clamp(light0BInput.value, 0, 255);
-					light0ColorPick.value = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-					sendLight0Color(true); // Disable cycle when user changes RGB values
-				});
-			});
-		}
-
-		// Light 1 - Effect mode (immediate)
-		const light1EffectMode = $("#light1EffectMode");
-		const light1EffectSpeedBlock = $("#light1EffectSpeedBlock");
-
-		if (light1EffectMode && light1EffectSpeedBlock) {
-			light1EffectMode.addEventListener("change", async () => {
-				const v = parseInt(light1EffectMode.value, 10);
-				light1EffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
-
-				if (!this.connection.isConnected()) return;
-				if (this.sendLiveLightsInScene()) return;
-				const ch = "01"; // Light 1 is channel 1
-				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
-				const cluster = "00000000";
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
-				);
-				this.logger.log(
-					`Set Light 1 mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
-				);
-			});
-		}
-
-		// Light 0 - Effect mode (immediate)
-		const light0EffectMode = $("#light0EffectMode");
-		const light0EffectSpeedBlock = $("#light0EffectSpeedBlock");
-
-		if (light0EffectMode && light0EffectSpeedBlock) {
-			light0EffectMode.addEventListener("change", async () => {
-				const v = parseInt(light0EffectMode.value, 10);
-				light0EffectSpeedBlock.classList.toggle("hidden", v === 1); // hide for Static
-
-				if (!this.connection.isConnected()) return;
-				if (this.sendLiveLightsInScene()) return;
-				const ch = "00"; // Light 0 is channel 0
-				const modeHex = v.toString(16).padStart(2, "0").toUpperCase();
-				const cluster = "00000000";
-				await this.connection.send(
-					buildCommand(COMMANDS.SET_MODE, `${ch + modeHex + cluster}00`, 8),
-				);
-				this.logger.log(
-					`Set ${this.light0Label} mode to ${v} (1=Static, 2=Strobe, 3=Pulsing)`,
-				);
-			});
-		}
-
-		// Light 1 - Effect speed control (immediate)
-		const light1EffectSpeedRange = $("#light1EffectSpeedRange");
-		const light1EffectSpeedNum = $("#light1EffectSpeed");
-
-		const sendLight1Speed = async (value) => {
-			if (!this.connection.isConnected()) return;
-			if (this.sendLiveLightsInScene()) return;
-			const ch = "01"; // Light 1 is channel 1
-			const uiSpeed = parseInt(value, 10);
-			const deviceSpeed = uiSpeedToDevice(uiSpeed);
-			const speedHex = deviceSpeed.toString(16).padStart(2, "0").toUpperCase();
-			const cluster = "00000000";
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
-			);
-			this.logger.log(
-				`Set Light 1 speed to ${uiSpeed} (device: ${deviceSpeed})`,
-			);
-		};
-
-		if (light1EffectSpeedRange && light1EffectSpeedNum) {
-			light1EffectSpeedRange.addEventListener("input", (e) => {
-				light1EffectSpeedNum.value = e.target.value;
-				sendLight1Speed(e.target.value);
-			});
-			light1EffectSpeedNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, MAX_UI_EFFECT_SPEED);
-				light1EffectSpeedRange.value = clamped;
-				sendLight1Speed(clamped);
-			});
-		}
-
-		// Light 0 - Effect speed control (immediate)
-		const light0EffectSpeedRange = $("#light0EffectSpeedRange");
-		const light0EffectSpeedNum = $("#light0EffectSpeed");
-
-		const sendLight0Speed = async (value) => {
-			if (!this.connection.isConnected()) return;
-			if (this.sendLiveLightsInScene()) return;
-			const ch = "00"; // Light 0 is channel 0
-			const uiSpeed = parseInt(value, 10);
-			const deviceSpeed = uiSpeedToDevice(uiSpeed);
-			const speedHex = deviceSpeed.toString(16).padStart(2, "0").toUpperCase();
-			const cluster = "00000000";
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_SPEED, ch + speedHex + cluster, 8),
-			);
-			this.logger.log(
-				`Set ${this.light0Label} speed to ${uiSpeed} (device: ${deviceSpeed})`,
-			);
-		};
-
-		if (light0EffectSpeedRange && light0EffectSpeedNum) {
-			light0EffectSpeedRange.addEventListener("input", (e) => {
-				light0EffectSpeedNum.value = e.target.value;
-				sendLight0Speed(e.target.value);
-			});
-			light0EffectSpeedNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, MAX_UI_EFFECT_SPEED);
-				light0EffectSpeedRange.value = clamped;
-				sendLight0Speed(clamped);
-			});
-		}
-
-		// Movement controls — handled by bindMovementGrid (called from applyDeviceProfile)
-
-		// Light 1 - Color cycle button (toggles cycle state)
-		const btnLight1ColorCycle = $("#btnLight1ColorCycle");
-		if (btnLight1ColorCycle) {
-			btnLight1ColorCycle.addEventListener("click", async () => {
-				if (!this.connection.isConnected()) {
-					this.logger.log("Not connected", LOG_CLASSES.WARNING);
-					return;
-				}
-				this.light1ColorCycleEnabled = !this.light1ColorCycleEnabled;
-				btnLight1ColorCycle.classList.toggle(
-					"selected",
-					this.light1ColorCycleEnabled,
-				);
-				await sendLight1Color();
-			});
-		}
-
-		// Light 0 - Color cycle button (toggles cycle state)
-		const btnLight0ColorCycle = $("#btnLight0ColorCycle");
-		if (btnLight0ColorCycle) {
-			btnLight0ColorCycle.addEventListener("click", async () => {
-				if (!this.connection.isConnected()) {
-					this.logger.log("Not connected", LOG_CLASSES.WARNING);
-					return;
-				}
-				this.light0ColorCycleEnabled = !this.light0ColorCycleEnabled;
-				btnLight0ColorCycle.classList.toggle(
-					"selected",
-					this.light0ColorCycleEnabled,
-				);
-				await sendLight0Color();
-			});
-		}
 
 		// Light scene picker (scene firmware only, see updateScenePicker)
 		$("#liveScene")?.addEventListener("change", async (e) => {
@@ -1786,16 +1647,7 @@ class SkellyApp {
 					return;
 				}
 
-				const eyeHex = this.selectedEye
-					.toString(16)
-					.padStart(2, "0")
-					.toUpperCase();
-				const clusterHex = "00000000"; // Always cluster 0 for live mode
-
-				// Build payload: eye + 00 + cluster + 00 (no name)
-				const payload = `${eyeHex}00${clusterHex}00`;
-
-				await this.connection.send(buildCommand(COMMANDS.SET_EYE, payload, 8));
+				await sendSetEye(this.connection, 0, "", this.selectedEye);
 				this.logger.log(`Set eye to ${this.selectedEye} (live mode)`);
 			});
 		}
@@ -2539,100 +2391,10 @@ class SkellyApp {
 			}
 		}
 
-		// Update light settings from live.lights array
-		if (live.lights && Array.isArray(live.lights)) {
-			// Light 1 (index 1)
-			if (live.lights[1]) {
-				const light1 = live.lights[1];
-
-				// Brightness
-				if ($("#light1Brightness"))
-					$("#light1Brightness").value = light1.brightness;
-				if ($("#light1BrightnessRange"))
-					$("#light1BrightnessRange").value = light1.brightness;
-
-				// Color (RGB)
-				if ($("#light1R")) $("#light1R").value = light1.r;
-				if ($("#light1G")) $("#light1G").value = light1.g;
-				if ($("#light1B")) $("#light1B").value = light1.b;
-				const light1Hex = `#${light1.r.toString(16).padStart(2, "0")}${light1.g.toString(16).padStart(2, "0")}${light1.b.toString(16).padStart(2, "0")}`;
-				if ($("#light1ColorPick")) $("#light1ColorPick").value = light1Hex;
-
-				// Color cycle state
-				this.light1ColorCycleEnabled = light1.colorCycle === 1;
-				const light1CycleBtn = $("#btnLight1ColorCycle");
-				if (light1CycleBtn) {
-					if (this.light1ColorCycleEnabled) {
-						light1CycleBtn.classList.add("selected");
-					} else {
-						light1CycleBtn.classList.remove("selected");
-					}
-				}
-
-				// Effect mode
-				if ($("#light1EffectMode"))
-					$("#light1EffectMode").value = light1.effectMode;
-
-				// Effect speed (show/hide speed block based on mode)
-				const light1EffectSpeedBlock = $("#light1EffectSpeedBlock");
-				if (light1EffectSpeedBlock) {
-					light1EffectSpeedBlock.classList.toggle(
-						"hidden",
-						light1.effectMode === 1,
-					);
-				}
-				const light1UISpeed = deviceSpeedToUI(light1.effectSpeed);
-				if ($("#light1EffectSpeed"))
-					$("#light1EffectSpeed").value = light1UISpeed;
-				if ($("#light1EffectSpeedRange"))
-					$("#light1EffectSpeedRange").value = light1UISpeed;
-			}
-
-			// Light 0 (index 0)
-			if (live.lights[0]) {
-				const light0 = live.lights[0];
-
-				// Brightness
-				if ($("#light0Brightness"))
-					$("#light0Brightness").value = light0.brightness;
-				if ($("#light0BrightnessRange"))
-					$("#light0BrightnessRange").value = light0.brightness;
-
-				// Color (RGB)
-				if ($("#light0R")) $("#light0R").value = light0.r;
-				if ($("#light0G")) $("#light0G").value = light0.g;
-				if ($("#light0B")) $("#light0B").value = light0.b;
-				const light0Hex = `#${light0.r.toString(16).padStart(2, "0")}${light0.g.toString(16).padStart(2, "0")}${light0.b.toString(16).padStart(2, "0")}`;
-				if ($("#light0ColorPick")) $("#light0ColorPick").value = light0Hex;
-
-				// Color cycle state
-				this.light0ColorCycleEnabled = light0.colorCycle === 1;
-				const light0CycleBtn = $("#btnLight0ColorCycle");
-				if (light0CycleBtn) {
-					if (this.light0ColorCycleEnabled) {
-						light0CycleBtn.classList.add("selected");
-					} else {
-						light0CycleBtn.classList.remove("selected");
-					}
-				}
-
-				// Effect mode
-				if ($("#light0EffectMode"))
-					$("#light0EffectMode").value = light0.effectMode;
-
-				// Effect speed (show/hide speed block based on mode)
-				const light0EffectSpeedBlock = $("#light0EffectSpeedBlock");
-				if (light0EffectSpeedBlock) {
-					light0EffectSpeedBlock.classList.toggle(
-						"hidden",
-						light0.effectMode === 1,
-					);
-				}
-				const light0UISpeed = deviceSpeedToUI(light0.effectSpeed);
-				if ($("#light0EffectSpeed"))
-					$("#light0EffectSpeed").value = light0UISpeed;
-				if ($("#light0EffectSpeedRange"))
-					$("#light0EffectSpeedRange").value = light0UISpeed;
+		// Light settings, for the profile's lights
+		if (Array.isArray(live.lights)) {
+			for (const ch of this.liveChannels) {
+				if (live.lights[ch]) this.showLiveLight(ch, live.lights[ch]);
 			}
 		}
 
