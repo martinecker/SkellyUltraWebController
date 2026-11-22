@@ -20,6 +20,7 @@ import {
 	supportsLightScenes,
 } from "./device-settings.js";
 import { $ } from "./dom.js";
+import { hideModal, showModal } from "./modal-stack.js";
 import {
 	clamp,
 	deviceSpeedToUI,
@@ -462,23 +463,6 @@ export class EditModalManager {
 		$("#edClose")?.addEventListener("click", () => this.close());
 		$("#edCloseTop")?.addEventListener("click", () => this.close());
 
-		// Escape key to close modal (but not when transfer modal is on top)
-		document.addEventListener("keydown", (e) => {
-			if (
-				e.key === "Escape" &&
-				!e.defaultPrevented &&
-				this.modal &&
-				!this.modal.classList.contains("hidden") &&
-				(document
-					.querySelector("#transferModal")
-					?.classList.contains("hidden") ??
-					true)
-			) {
-				e.preventDefault();
-				this.close();
-			}
-		});
-
 		// Delete button (C7)
 		$("#edDelete")?.addEventListener("click", async () => {
 			if (!this.connection.isConnected()) {
@@ -728,13 +712,14 @@ export class EditModalManager {
 		}
 
 		// Show modal
-		this.modal?.classList.remove("hidden");
+		// Escape closes it while it is the top dialog
+		showModal(this.modal, () => this.close());
 	}
 
 	/**
 	 * Close the edit modal
 	 */
 	close() {
-		this.modal?.classList.add("hidden");
+		hideModal(this.modal);
 	}
 }

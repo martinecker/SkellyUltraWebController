@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-22T23:06:25.890216
+ * Generated: 2026-11-22T23:14:51.583351
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -12,6 +12,7 @@
  *   - js/constants.js
  *   - js/protocol.js
  *   - js/dom.js
+ *   - js/modal-stack.js
  *   - js/device-settings.js
  *   - js/state-manager.js
  *   - js/ble-manager.js
@@ -849,6 +850,79 @@ function uiSpeedToDevice(uiSpeed) {
 
 /** The first element matching a CSS selector, or null */
 const $ = (selector) => document.querySelector(selector);
+
+  // ============================================================
+  // Modal Stack (js/modal-stack.js)
+  // ============================================================
+/**
+ * Modal stack: the open dialogs, last opened on top.
+ *
+ * One document keydown listener sends Escape to the top dialog only, so a
+ * dialog opened over another (overwrite over transfer, transfer over edit)
+ * no longer depends on listener order or checks of the other dialogs.
+ */
+
+/** Open dialogs, bottom first: { el, onEscape } */
+const openModals = [];
+let listening = false;
+
+/**
+ * Show a dialog on top of the others.
+ * @param {HTMLElement|null} el - The .modal element
+ * @param {Function|null} onEscape - Called on Escape while this dialog is on
+ *   top; null: Escape does nothing (and doesn't reach dialogs below)
+ */
+function showModal(el, onEscape = null) {
+	if (!el) return;
+	removeEntry(el);
+	openModals.push({ el, onEscape });
+	el.classList.remove("hidden");
+	if (!listening && typeof document !== "undefined") {
+		document.addEventListener("keydown", handleModalKey);
+		listening = true;
+	}
+}
+
+/**
+ * Hide a dialog and take it off the stack.
+ * @param {HTMLElement|null} el - The .modal element
+ */
+function hideModal(el) {
+	if (!el) return;
+	removeEntry(el);
+	el.classList.add("hidden");
+}
+
+/** The top open dialog, or null */
+function topModal() {
+	dropHidden();
+	return openModals.at(-1)?.el ?? null;
+}
+
+/**
+ * Document keydown handler: Escape goes to the top dialog.
+ * @param {KeyboardEvent} e
+ */
+function handleModalKey(e) {
+	if (e.key !== "Escape") return;
+	dropHidden();
+	const top = openModals.at(-1);
+	if (!top) return;
+	e.preventDefault();
+	top.onEscape?.();
+}
+
+function removeEntry(el) {
+	const i = openModals.findIndex((m) => m.el === el);
+	if (i >= 0) openModals.splice(i, 1);
+}
+
+// A dialog hidden without hideModal (e.g. by other code) leaves the stack
+function dropHidden() {
+	for (let i = openModals.length - 1; i >= 0; i--) {
+		if (openModals[i].el.classList.contains("hidden")) openModals.splice(i, 1);
+	}
+}
 
   // ============================================================
   // Device Settings Commands (js/device-settings.js)
@@ -4906,23 +4980,6 @@ class EditModalManager {
 		$("#edClose")?.addEventListener("click", () => this.close());
 		$("#edCloseTop")?.addEventListener("click", () => this.close());
 
-		// Escape key to close modal (but not when transfer modal is on top)
-		document.addEventListener("keydown", (e) => {
-			if (
-				e.key === "Escape" &&
-				!e.defaultPrevented &&
-				this.modal &&
-				!this.modal.classList.contains("hidden") &&
-				(document
-					.querySelector("#transferModal")
-					?.classList.contains("hidden") ??
-					true)
-			) {
-				e.preventDefault();
-				this.close();
-			}
-		});
-
 		// Delete button (C7)
 		$("#edDelete")?.addEventListener("click", async () => {
 			if (!this.connection.isConnected()) {
@@ -5172,14 +5229,15 @@ class EditModalManager {
 		}
 
 		// Show modal
-		this.modal?.classList.remove("hidden");
+		// Escape closes it while it is the top dialog
+		showModal(this.modal, () => this.close());
 	}
 
 	/**
 	 * Close the edit modal
 	 */
 	close() {
-		this.modal?.classList.add("hidden");
+		hideModal(this.modal);
 	}
 }
 
@@ -5314,14 +5372,17 @@ class TransferModalManager {
 			if (title) title.textContent = "Add File";
 		}
 
-		this.modal?.classList.remove("hidden");
+		// Escape closes it while it is the top dialog, unless a transfer runs
+		showModal(this.modal, () => {
+			if (!this.state.transfer.inProgress) this.close();
+		});
 	}
 
 	/**
 	 * Close and reset the File Transfer modal.
 	 */
 	close() {
-		this.modal?.classList.add("hidden");
+		hideModal(this.modal);
 		this._mode = null;
 		this._lockedFilename = "";
 		this.fileManager.clearFilePickerData();
@@ -5824,25 +5885,6 @@ class TransferModalManager {
 		$("#btnCloseTransferModalBottom")?.addEventListener("click", () => {
 			if (!this.state.transfer.inProgress) this.close();
 		});
-
-		// Escape key closes transfer modal (higher priority than edit modal
-		// handler, which skips an Escape handled here), unless the overwrite
-		// confirmation is open on top: its own handler cancels just that
-		document.addEventListener("keydown", (e) => {
-			const overwriteOpen = !(
-				$("#overwriteModal")?.classList.contains("hidden") ?? true
-			);
-			if (
-				e.key === "Escape" &&
-				!e.defaultPrevented &&
-				!overwriteOpen &&
-				!this.modal?.classList.contains("hidden") &&
-				!this.state.transfer.inProgress
-			) {
-				e.preventDefault();
-				this.close();
-			}
-		});
 	}
 
 	/**
@@ -6096,8 +6138,8 @@ class TransferModalManager {
 			// Update message with filename
 			message.textContent = `A file named "${fileName}" already exists on the device.`;
 
-			// Show modal
-			modal.classList.remove("hidden");
+			// Show modal (Escape cancels)
+			showModal(modal, () => handleCancel());
 
 			// Handle confirm
 			const handleConfirm = () => {
@@ -6111,26 +6153,16 @@ class TransferModalManager {
 				resolve(false);
 			};
 
-			// Handle escape key
-			const handleEscape = (e) => {
-				if (e.key === "Escape") {
-					e.preventDefault();
-					handleCancel();
-				}
-			};
-
 			// Cleanup function
 			const cleanup = () => {
-				modal.classList.add("hidden");
+				hideModal(modal);
 				confirmBtn.removeEventListener("click", handleConfirm);
 				cancelBtn.removeEventListener("click", handleCancel);
-				document.removeEventListener("keydown", handleEscape);
 			};
 
 			// Add event listeners
 			confirmBtn.addEventListener("click", handleConfirm);
 			cancelBtn.addEventListener("click", handleCancel);
-			document.addEventListener("keydown", handleEscape);
 		});
 	}
 
@@ -6514,15 +6546,15 @@ class SkellyApp {
 				msg.textContent = `You are switching from "${oldName}" to "${newName}".`;
 			}
 
-			modal.classList.remove("hidden");
+			showModal(modal, () => onCancel());
 
 			const onConfirm = () => {
-				modal.classList.add("hidden");
+				hideModal(modal);
 				cleanup();
 				apply();
 			};
 			const onCancel = () => {
-				modal.classList.add("hidden");
+				hideModal(modal);
 				cleanup();
 				// Revert select back to the current type
 				deviceTypeSelect.value = oldType;
@@ -6681,8 +6713,9 @@ class SkellyApp {
 	 */
 	initializeWarningModal() {
 		const riskModal = $("#riskModal");
-		const showRisk = () => riskModal?.classList.remove("hidden");
-		const hideRisk = () => riskModal?.classList.add("hidden");
+		// Must be answered: Escape does nothing
+		const showRisk = () => showModal(riskModal);
+		const hideRisk = () => hideModal(riskModal);
 
 		window.addEventListener("load", () => {
 			if (!localStorage.getItem(STORAGE_KEYS.RISK_ACK)) {
@@ -6702,7 +6735,7 @@ class SkellyApp {
 
 	initializeFirmwareWarningModal() {
 		$("#fwWarningOk")?.addEventListener("click", () => {
-			$("#fwWarningModal")?.classList.add("hidden");
+			hideModal($("#fwWarningModal"));
 		});
 	}
 
@@ -6798,23 +6831,14 @@ class SkellyApp {
 		updateFilterState();
 
 		// Close modal function
-		const closeModal = () => {
-			connectModal?.classList.add("hidden");
-		};
+		const closeModal = () => hideModal(connectModal);
 
 		// Cancel button
 		$("#connectCancel")?.addEventListener("click", closeModal);
 
-		// Escape key to close modal
-		document.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && !connectModal?.classList.contains("hidden")) {
-				closeModal();
-			}
-		});
-
 		// Connect button
 		$("#connectOk")?.addEventListener("click", async () => {
-			connectModal?.classList.add("hidden");
+			hideModal(connectModal);
 
 			// Determine connection type
 			const connectionType = connectionTypeRest?.checked
@@ -6874,8 +6898,8 @@ class SkellyApp {
 
 		if (!deviceSelectModal || !deviceList) return;
 
-		// Show modal
-		deviceSelectModal.classList.remove("hidden");
+		// Show modal (Escape closes it)
+		showModal(deviceSelectModal, () => hideModal(deviceSelectModal));
 
 		// Scan function
 		const scanForDevices = async () => {
@@ -6921,7 +6945,7 @@ class SkellyApp {
 					});
 
 					deviceItem.addEventListener("click", async () => {
-						deviceSelectModal.classList.add("hidden");
+						hideModal(deviceSelectModal);
 						await this.performConnection({
 							connectionType: ConnectionType.REST_PROXY,
 							restUrl,
@@ -6939,32 +6963,17 @@ class SkellyApp {
 		};
 
 		// Cancel button
-		const cancelHandler = () => {
-			deviceSelectModal.classList.add("hidden");
-		};
+		const cancelHandler = () => hideModal(deviceSelectModal);
 
 		// Rescan button
 		const rescanHandler = () => {
 			scanForDevices();
 		};
 
-		// Add event listeners
-		deviceSelectCancel.removeEventListener("click", cancelHandler);
-		deviceSelectCancel.addEventListener("click", cancelHandler);
-		deviceSelectRescan.removeEventListener("click", rescanHandler);
-		deviceSelectRescan.addEventListener("click", rescanHandler);
-
-		// Escape key to close
-		const escapeHandler = (e) => {
-			if (
-				e.key === "Escape" &&
-				!deviceSelectModal.classList.contains("hidden")
-			) {
-				deviceSelectModal.classList.add("hidden");
-			}
-		};
-		document.removeEventListener("keydown", escapeHandler);
-		document.addEventListener("keydown", escapeHandler);
+		// Handlers for this opening (onclick replaces the previous opening's;
+		// addEventListener added one more per opening)
+		deviceSelectCancel.onclick = cancelHandler;
+		deviceSelectRescan.onclick = rescanHandler;
 
 		// Start initial scan
 		await scanForDevices();
@@ -8274,7 +8283,7 @@ class SkellyApp {
 	 */
 	async handleConnect() {
 		const connectModal = $("#connectModal");
-		connectModal?.classList.remove("hidden");
+		showModal(connectModal, () => hideModal(connectModal));
 	}
 
 	/**
@@ -8432,7 +8441,8 @@ class SkellyApp {
 			if (!isTestedFirmware(this.state.deviceType, device.version)) {
 				const el = $("#fwWarningVersion");
 				if (el) el.textContent = `${device.version} (${this.state.deviceType})`;
-				$("#fwWarningModal")?.classList.remove("hidden");
+				const modal = $("#fwWarningModal");
+				showModal(modal, () => hideModal(modal));
 			}
 		}
 		if (device.volume != null) {

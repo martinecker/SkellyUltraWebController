@@ -68,6 +68,7 @@ def main():
         ('js/constants.js', 'Constants and Configuration'),
         ('js/protocol.js', 'Protocol Utilities'),
         ('js/dom.js', 'DOM Helpers'),
+        ('js/modal-stack.js', 'Modal Stack'),
         ('js/device-settings.js', 'Device Settings Commands'),
         ('js/state-manager.js', 'State Manager'),
         ('js/ble-manager.js', 'BLE Manager'),

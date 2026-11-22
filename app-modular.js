@@ -33,6 +33,7 @@ import {
 import { $ } from "./js/dom.js";
 import { EditModalManager } from "./js/edit-modal.js";
 import { AudioConverter, FileManager } from "./js/file-manager.js";
+import { hideModal, showModal } from "./js/modal-stack.js";
 import {
 	buildCommand,
 	bytesToHex,
@@ -341,15 +342,15 @@ class SkellyApp {
 				msg.textContent = `You are switching from "${oldName}" to "${newName}".`;
 			}
 
-			modal.classList.remove("hidden");
+			showModal(modal, () => onCancel());
 
 			const onConfirm = () => {
-				modal.classList.add("hidden");
+				hideModal(modal);
 				cleanup();
 				apply();
 			};
 			const onCancel = () => {
-				modal.classList.add("hidden");
+				hideModal(modal);
 				cleanup();
 				// Revert select back to the current type
 				deviceTypeSelect.value = oldType;
@@ -508,8 +509,9 @@ class SkellyApp {
 	 */
 	initializeWarningModal() {
 		const riskModal = $("#riskModal");
-		const showRisk = () => riskModal?.classList.remove("hidden");
-		const hideRisk = () => riskModal?.classList.add("hidden");
+		// Must be answered: Escape does nothing
+		const showRisk = () => showModal(riskModal);
+		const hideRisk = () => hideModal(riskModal);
 
 		window.addEventListener("load", () => {
 			if (!localStorage.getItem(STORAGE_KEYS.RISK_ACK)) {
@@ -529,7 +531,7 @@ class SkellyApp {
 
 	initializeFirmwareWarningModal() {
 		$("#fwWarningOk")?.addEventListener("click", () => {
-			$("#fwWarningModal")?.classList.add("hidden");
+			hideModal($("#fwWarningModal"));
 		});
 	}
 
@@ -625,23 +627,14 @@ class SkellyApp {
 		updateFilterState();
 
 		// Close modal function
-		const closeModal = () => {
-			connectModal?.classList.add("hidden");
-		};
+		const closeModal = () => hideModal(connectModal);
 
 		// Cancel button
 		$("#connectCancel")?.addEventListener("click", closeModal);
 
-		// Escape key to close modal
-		document.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && !connectModal?.classList.contains("hidden")) {
-				closeModal();
-			}
-		});
-
 		// Connect button
 		$("#connectOk")?.addEventListener("click", async () => {
-			connectModal?.classList.add("hidden");
+			hideModal(connectModal);
 
 			// Determine connection type
 			const connectionType = connectionTypeRest?.checked
@@ -701,8 +694,8 @@ class SkellyApp {
 
 		if (!deviceSelectModal || !deviceList) return;
 
-		// Show modal
-		deviceSelectModal.classList.remove("hidden");
+		// Show modal (Escape closes it)
+		showModal(deviceSelectModal, () => hideModal(deviceSelectModal));
 
 		// Scan function
 		const scanForDevices = async () => {
@@ -748,7 +741,7 @@ class SkellyApp {
 					});
 
 					deviceItem.addEventListener("click", async () => {
-						deviceSelectModal.classList.add("hidden");
+						hideModal(deviceSelectModal);
 						await this.performConnection({
 							connectionType: ConnectionType.REST_PROXY,
 							restUrl,
@@ -766,32 +759,17 @@ class SkellyApp {
 		};
 
 		// Cancel button
-		const cancelHandler = () => {
-			deviceSelectModal.classList.add("hidden");
-		};
+		const cancelHandler = () => hideModal(deviceSelectModal);
 
 		// Rescan button
 		const rescanHandler = () => {
 			scanForDevices();
 		};
 
-		// Add event listeners
-		deviceSelectCancel.removeEventListener("click", cancelHandler);
-		deviceSelectCancel.addEventListener("click", cancelHandler);
-		deviceSelectRescan.removeEventListener("click", rescanHandler);
-		deviceSelectRescan.addEventListener("click", rescanHandler);
-
-		// Escape key to close
-		const escapeHandler = (e) => {
-			if (
-				e.key === "Escape" &&
-				!deviceSelectModal.classList.contains("hidden")
-			) {
-				deviceSelectModal.classList.add("hidden");
-			}
-		};
-		document.removeEventListener("keydown", escapeHandler);
-		document.addEventListener("keydown", escapeHandler);
+		// Handlers for this opening (onclick replaces the previous opening's;
+		// addEventListener added one more per opening)
+		deviceSelectCancel.onclick = cancelHandler;
+		deviceSelectRescan.onclick = rescanHandler;
 
 		// Start initial scan
 		await scanForDevices();
@@ -2101,7 +2079,7 @@ class SkellyApp {
 	 */
 	async handleConnect() {
 		const connectModal = $("#connectModal");
-		connectModal?.classList.remove("hidden");
+		showModal(connectModal, () => hideModal(connectModal));
 	}
 
 	/**
@@ -2259,7 +2237,8 @@ class SkellyApp {
 			if (!isTestedFirmware(this.state.deviceType, device.version)) {
 				const el = $("#fwWarningVersion");
 				if (el) el.textContent = `${device.version} (${this.state.deviceType})`;
-				$("#fwWarningModal")?.classList.remove("hidden");
+				const modal = $("#fwWarningModal");
+				showModal(modal, () => hideModal(modal));
 			}
 		}
 		if (device.volume != null) {

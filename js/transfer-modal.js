@@ -11,6 +11,7 @@ import {
 } from "./constants.js";
 import { $ } from "./dom.js";
 import { ElevenLabsClient } from "./elevenlabs.js";
+import { hideModal, showModal } from "./modal-stack.js";
 
 /**
  * Truncate a filename to fit the device's length limit, preserving the
@@ -135,14 +136,17 @@ export class TransferModalManager {
 			if (title) title.textContent = "Add File";
 		}
 
-		this.modal?.classList.remove("hidden");
+		// Escape closes it while it is the top dialog, unless a transfer runs
+		showModal(this.modal, () => {
+			if (!this.state.transfer.inProgress) this.close();
+		});
 	}
 
 	/**
 	 * Close and reset the File Transfer modal.
 	 */
 	close() {
-		this.modal?.classList.add("hidden");
+		hideModal(this.modal);
 		this._mode = null;
 		this._lockedFilename = "";
 		this.fileManager.clearFilePickerData();
@@ -645,25 +649,6 @@ export class TransferModalManager {
 		$("#btnCloseTransferModalBottom")?.addEventListener("click", () => {
 			if (!this.state.transfer.inProgress) this.close();
 		});
-
-		// Escape key closes transfer modal (higher priority than edit modal
-		// handler, which skips an Escape handled here), unless the overwrite
-		// confirmation is open on top: its own handler cancels just that
-		document.addEventListener("keydown", (e) => {
-			const overwriteOpen = !(
-				$("#overwriteModal")?.classList.contains("hidden") ?? true
-			);
-			if (
-				e.key === "Escape" &&
-				!e.defaultPrevented &&
-				!overwriteOpen &&
-				!this.modal?.classList.contains("hidden") &&
-				!this.state.transfer.inProgress
-			) {
-				e.preventDefault();
-				this.close();
-			}
-		});
 	}
 
 	/**
@@ -917,8 +902,8 @@ export class TransferModalManager {
 			// Update message with filename
 			message.textContent = `A file named "${fileName}" already exists on the device.`;
 
-			// Show modal
-			modal.classList.remove("hidden");
+			// Show modal (Escape cancels)
+			showModal(modal, () => handleCancel());
 
 			// Handle confirm
 			const handleConfirm = () => {
@@ -932,26 +917,16 @@ export class TransferModalManager {
 				resolve(false);
 			};
 
-			// Handle escape key
-			const handleEscape = (e) => {
-				if (e.key === "Escape") {
-					e.preventDefault();
-					handleCancel();
-				}
-			};
-
 			// Cleanup function
 			const cleanup = () => {
-				modal.classList.add("hidden");
+				hideModal(modal);
 				confirmBtn.removeEventListener("click", handleConfirm);
 				cancelBtn.removeEventListener("click", handleCancel);
-				document.removeEventListener("keydown", handleEscape);
 			};
 
 			// Add event listeners
 			confirmBtn.addEventListener("click", handleConfirm);
 			cancelBtn.addEventListener("click", handleCancel);
-			document.addEventListener("keydown", handleEscape);
 		});
 	}
 
