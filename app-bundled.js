@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T00:19:37.252253
+ * Generated: 2026-11-23T00:25:13.413828
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -6527,8 +6527,21 @@ class ConnectDialog {
 	 * Show the connect dialog
 	 */
 	open() {
+		this.syncNameFilter();
 		const connectModal = $("#connectModal");
 		showModal(connectModal, () => hideModal(connectModal));
+	}
+
+	/**
+	 * Point the name filter at the persisted device type, which may have
+	 * changed since the dialog was last used (detected on connect, or picked
+	 * in the device type control). A name of that type stays selected.
+	 */
+	syncNameFilter() {
+		const select = $("#connectDefaultDevice");
+		if (!select) return;
+		const type = this.savedDeviceType();
+		if (select.value.split(":")[0] !== type) select.value = type;
 	}
 
 	/**
