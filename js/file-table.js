@@ -29,6 +29,16 @@ function lightSwatchHtml(light) {
 	return `<div style="width:24px;height:24px;border-radius:50%;background-color:rgb(${r}, ${g}, ${b});border:1px solid #444" title="RGB(${r},${g},${b})"></div>`;
 }
 
+/**
+ * The Stop button's text with the time left, e.g. "⏹ Stop (1:05)"
+ * @param {number} seconds - Seconds left
+ */
+function stopButtonLabel(seconds) {
+	const mins = Math.floor(seconds / 60);
+	const secs = seconds % 60;
+	return `⏹ Stop (${mins}:${secs.toString().padStart(2, "0")})`;
+}
+
 export class FileTable {
 	/**
 	 * @param {Object} options
@@ -429,10 +439,7 @@ export class FileTable {
 
 		// Update timer every second
 		this.playState.timerInterval = setInterval(() => {
-			const elapsed = Math.floor(
-				(Date.now() - this.playState.startTime) / 1000,
-			);
-			const remaining = Math.max(0, this.playState.duration - elapsed);
+			const remaining = this.remainingSeconds();
 
 			// Update the timer display
 			this.updatePlayTimer(serial, remaining);
@@ -445,6 +452,12 @@ export class FileTable {
 
 		// Initial update
 		this.updatePlayTimer(serial, this.playState.duration);
+	}
+
+	/** Seconds left of the playing file, from its reported duration */
+	remainingSeconds() {
+		const elapsed = Math.floor((Date.now() - this.playState.startTime) / 1000);
+		return Math.max(0, this.playState.duration - elapsed);
 	}
 
 	/**
@@ -464,12 +477,7 @@ export class FileTable {
 		const btn = document.querySelector(
 			`button[data-action="stop"][data-serial="${serial}"]`,
 		);
-		if (btn) {
-			const mins = Math.floor(seconds / 60);
-			const secs = seconds % 60;
-			const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-			btn.textContent = `⏹ Stop (${timeStr})`;
-		}
+		if (btn) btn.textContent = stopButtonLabel(seconds);
 	}
 
 	/** The active device profile */
@@ -573,11 +581,12 @@ export class FileTable {
 					});
 			}
 
-			// Determine if this file is currently playing
+			// Determine if this file is currently playing; its Stop button shows
+			// the time left (a re-render between countdown ticks keeps it)
 			const isPlaying =
 				this.playState.playing && this.playState.serial === file.serial;
 			const playButtonHtml = isPlaying
-				? `<button class="btn sm" data-action="stop" data-serial="${file.serial}">⏹ Stop</button>`
+				? `<button class="btn sm" data-action="stop" data-serial="${file.serial}">${stopButtonLabel(this.remainingSeconds())}</button>`
 				: `<button class="btn sm" data-action="play" data-serial="${file.serial}">▶ Play</button>`;
 
 			// Check if file is in the order array (enabled)
