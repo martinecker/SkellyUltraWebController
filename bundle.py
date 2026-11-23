@@ -82,6 +82,7 @@ def main():
         ('js/connect-dialog.js', 'Connect Dialog'),
         ('js/live-controls.js', 'Live Controls'),
         ('js/file-table.js', 'File Table'),
+        ('js/device-panel.js', 'Device Panel'),
         ('app-modular.js', 'Main Application'),
     ]
     
