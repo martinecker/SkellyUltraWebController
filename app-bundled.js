@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T00:25:13.413828
+ * Generated: 2026-11-23T02:16:42.821963
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -7231,6 +7231,39 @@ function lightSwatchHtml(light) {
 }
 
 /**
+ * The play order with a file enabled (added at the end) or disabled
+ * (removed), leaving the other files where they are
+ * @param {number[]} order - Enabled file serials, first to last
+ * @param {number} serial - The file to change
+ * @param {boolean} enabled - Whether it is to play
+ * @returns {number[]|null} The new order; null if no file would be left
+ *   enabled (the device needs at least one)
+ */
+function setFileEnabled(order, serial, enabled) {
+	const others = order.filter((s) => s !== serial);
+	const changed = enabled ? [...others, serial] : others;
+	return changed.length > 0 ? changed : null;
+}
+
+/**
+ * The play order with one file moved onto another's place: after it when
+ * moved down, before it when moved up (as a row dropped on another row)
+ * @param {number[]} order - Enabled file serials, first to last
+ * @param {number} serial - The file moved
+ * @param {number} targetSerial - The file it was dropped on
+ * @returns {number[]} The new order (unchanged if either isn't in it)
+ */
+function moveFile(order, serial, targetSerial) {
+	const from = order.indexOf(serial);
+	const to = order.indexOf(targetSerial);
+	if (from < 0 || to < 0 || from === to) return order;
+	const moved = order.filter((s) => s !== serial);
+	const at = moved.indexOf(targetSerial) + (from < to ? 1 : 0);
+	moved.splice(at, 0, serial);
+	return moved;
+}
+
+/**
  * The Stop button's text with the time left, e.g. "⏹ Stop (1:05)"
  * @param {number} seconds - Seconds left
  */
@@ -7330,7 +7363,10 @@ class FileTable {
 				return;
 			}
 
-			await this.saveEnabledFiles();
+			await this.saveEnabledFile(
+				parseInt(checkbox.dataset.serial, 10),
+				checkbox,
+			);
 		});
 	}
 
@@ -7542,24 +7578,15 @@ class FileTable {
 			return;
 		}
 
-		const tbody = draggedRow.parentElement;
-		const rows = Array.from(tbody.querySelectorAll("tr.draggable-row"));
-		const draggedIndex = rows.indexOf(draggedRow);
-		const targetIndex = rows.indexOf(targetRow);
-
-		if (draggedIndex === targetIndex) return;
-
-		// Reorder rows in DOM
-		if (draggedIndex < targetIndex) {
-			targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
-		} else {
-			targetRow.parentNode.insertBefore(draggedRow, targetRow);
-		}
-
-		// Collect new order from DOM
-		const enabledSerials = Array.from(
-			tbody.querySelectorAll("tr.draggable-row"),
-		).map((row) => parseInt(row.dataset.serial, 10));
+		// From the whole play order, not the rows shown: the filter may hide
+		// enabled files, and they keep their places
+		const order = this.state.device.order ?? [];
+		const enabledSerials = moveFile(
+			order,
+			parseInt(draggedRow.dataset.serial, 10),
+			parseInt(targetRow.dataset.serial, 10),
+		);
+		if (enabledSerials === order) return;
 
 		// Update state and device
 		this.state.updateDevice({ order: enabledSerials });
@@ -7573,24 +7600,22 @@ class FileTable {
 	}
 
 	/**
-	 * Handle file enable/disable toggle
-	 * Collects all checked files in display order and updates device
+	 * Enable or disable one file: an enabled file goes to the end of the
+	 * play order, a disabled one leaves it; the others stay as they are
+	 * (also the ones the filter hides)
+	 * @param {number} serial - The file
+	 * @param {HTMLInputElement} checkbox - Its checkbox (checked = enable)
 	 */
-	async saveEnabledFiles() {
-		// Collect all checked checkboxes in DOM order (which reflects sort order)
-		const checkboxes = Array.from(
-			document.querySelectorAll(".file-enabled-checkbox"),
+	async saveEnabledFile(serial, checkbox) {
+		const enabledSerials = setFileEnabled(
+			this.state.device.order ?? [],
+			serial,
+			checkbox.checked,
 		);
-		const enabledSerials = checkboxes
-			.filter((cb) => cb.checked)
-			.map((cb) => parseInt(cb.dataset.serial, 10));
 
-		if (enabledSerials.length === 0) {
+		if (!enabledSerials) {
 			this.log("At least one file must be enabled", LOG_CLASSES.WARNING);
-			// Find first checkbox and re-check it
-			if (checkboxes.length > 0) {
-				checkboxes[0].checked = true;
-			}
+			checkbox.checked = true;
 			return;
 		}
 
@@ -7828,9 +7853,11 @@ class FileTable {
 		const lastRefreshEl = $("#filesLastRefresh");
 
 		if (summary) {
-			const got = files.length;
+			// All files received; the filter only changes what is shown
+			const got = this.state.files.items.size;
 			const expected = this.state.files.expected;
-			summary.textContent = `Received ${got}${expected ? ` / ${expected}` : ""}`;
+			const shown = query ? ` (showing ${files.length})` : "";
+			summary.textContent = `Received ${got}${expected ? ` / ${expected}` : ""}${shown}`;
 		}
 
 		if (lastRefreshEl) {
