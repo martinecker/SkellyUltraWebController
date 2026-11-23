@@ -192,6 +192,21 @@ export function clamp(n, min, max) {
 }
 
 /**
+ * A number box's value as a whole number within min..max
+ * @param {string} text - The box's value
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number|null} null while the box is empty or holds no number
+ *   (e.g. while the user retypes it), so nothing gets sent then
+ */
+export function parseNumberInput(text, min, max) {
+	if (String(text ?? "").trim() === "") return null;
+	const n = Number(text);
+	if (!Number.isFinite(n)) return null;
+	return Math.round(clamp(n, min, max));
+}
+
+/**
  * A color as a color input's value ("#rrggbb")
  * @param {number} r - Red 0-255
  * @param {number} g - Green 0-255

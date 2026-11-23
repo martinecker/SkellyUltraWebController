@@ -6,6 +6,7 @@ import {
 	deviceSpeedToUI,
 	escapeHtml,
 	MAX_UI_EFFECT_SPEED,
+	parseNumberInput,
 	uiSpeedToDevice,
 } from "../js/protocol.js";
 
@@ -36,4 +37,18 @@ test("escapeHtml escapes both quote kinds", () => {
 		escapeHtml(`<a href="x" title='y'>&</a>`),
 		"&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;&amp;&lt;/a&gt;",
 	);
+});
+
+test("an empty or non-numeric number box gives no value", () => {
+	for (const text of ["", "  ", "abc", "-", undefined, null]) {
+		assert.equal(parseNumberInput(text, 0, 100), null, String(text));
+	}
+});
+
+test("number box values are whole numbers within range", () => {
+	assert.equal(parseNumberInput("0", 0, 100), 0);
+	assert.equal(parseNumberInput("42", 0, 100), 42);
+	assert.equal(parseNumberInput("42.6", 0, 100), 43);
+	assert.equal(parseNumberInput("250", 0, 100), 100);
+	assert.equal(parseNumberInput("-5", 0, 100), 0);
 });

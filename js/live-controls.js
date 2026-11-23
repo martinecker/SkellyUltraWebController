@@ -29,6 +29,7 @@ import {
 	deviceSpeedToUI,
 	escapeHtml,
 	MAX_UI_EFFECT_SPEED,
+	parseNumberInput,
 	rgbToHex,
 	uiSpeedToDevice,
 } from "./protocol.js";
@@ -200,13 +201,25 @@ export class LiveControls {
 
 		const sendBrightness = async (brightness) => {
 			if (!canSend()) return;
-			await sendSetLightBrightness(this.connection, 0, "", channel, brightness);
+			await sendSetLightBrightness(
+				this.latest(`brightness:${channel}`),
+				0,
+				"",
+				channel,
+				brightness,
+			);
 			this.log(`Set ${label} brightness to ${brightness}`);
 		};
 		const sendSpeed = async (uiSpeed) => {
 			if (!canSend()) return;
 			const deviceSpeed = uiSpeedToDevice(uiSpeed);
-			await sendSetLightSpeed(this.connection, 0, "", channel, deviceSpeed);
+			await sendSetLightSpeed(
+				this.latest(`speed:${channel}`),
+				0,
+				"",
+				channel,
+				deviceSpeed,
+			);
 			this.log(`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`);
 		};
 		// A color the user sets turns color cycle off; the cycle button doesn't
@@ -215,7 +228,7 @@ export class LiveControls {
 			if (stopCycle) this.setColorCycle(channel, false);
 			const { r, g, b, colorCycle } = this.readColor(channel);
 			await sendSetLightRgb(
-				this.connection,
+				this.latest(`color:${channel}`),
 				0,
 				"",
 				channel,
@@ -250,7 +263,9 @@ export class LiveControls {
 			sendColor(true);
 		});
 		for (const field of ["R", "G", "B"]) {
-			el(field)?.addEventListener("input", () => {
+			el(field)?.addEventListener("input", (e) => {
+				// Nothing to send while the box is empty (being retyped)
+				if (parseNumberInput(e.target.value, 0, 255) === null) return;
 				const { r, g, b } = this.readColor(channel);
 				el("ColorPick").value = rgbToHex(r, g, b);
 				sendColor(true);
@@ -278,19 +293,32 @@ export class LiveControls {
 
 	/**
 	 * A slider and its number box: each follows the other, and every change
-	 * is sent (the number box clamped to 0..max).
+	 * is sent (the number box clamped to 0..max; nothing while it's empty).
 	 */
 	bindRangeAndNumber(range, number, max, send) {
 		if (!range || !number) return;
 		range.addEventListener("input", (e) => {
 			number.value = e.target.value;
-			send(parseInt(e.target.value, 10));
+			send(parseNumberInput(e.target.value, 0, max));
 		});
 		number.addEventListener("input", (e) => {
-			const clamped = clamp(e.target.value, 0, max);
-			range.value = clamped;
-			send(clamped);
+			// Nothing to send while the box is empty (being retyped)
+			const value = parseNumberInput(e.target.value, 0, max);
+			if (value === null) return;
+			range.value = value;
+			send(value);
 		});
+	}
+
+	/**
+	 * A stand-in for the connection whose sends replace a still-queued send
+	 * with the same key (ConnectionManager.sendLatest), for controls that
+	 * send a value many times per second while dragged
+	 * @param {string} key - What the sends set, e.g. "brightness:0"
+	 * @returns {{send: (bytes: Uint8Array) => Promise<void>}}
+	 */
+	latest(key) {
+		return { send: (bytes) => this.connection.sendLatest(key, bytes) };
 	}
 
 	/** Set a live light's color cycle flag and its button */
@@ -420,7 +448,10 @@ export class LiveControls {
 	async sendLights(scene) {
 		// F1 takes the lights in channel order from 0
 		const lights = this.channels.map((ch) => this.readLight(ch));
-		await this.connection.send(buildSetAllLights(lights, 0, scene));
+		await this.connection.sendLatest(
+			"lights",
+			buildSetAllLights(lights, 0, scene),
+		);
 		this.log(
 			`Set all lights (F1) scene=${scene}: ${lights
 				.map(

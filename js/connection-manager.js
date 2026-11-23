@@ -39,6 +39,9 @@ export class ConnectionManager {
 		// can reach the device out of order. Each send waits for the one
 		// before it; a failed send doesn't hold up the ones after it.
 		this.writeQueue = Promise.resolve();
+
+		// sendLatest: per key, the write still waiting in the queue
+		this.latestWrites = new Map();
 	}
 
 	/**
@@ -78,6 +81,7 @@ export class ConnectionManager {
 		// Writes still queued for the old connection fail on their own; the
 		// new one doesn't wait for them
 		this.writeQueue = Promise.resolve();
+		this.latestWrites.clear();
 
 		if (type === ConnectionType.REST_PROXY) {
 			if (!restUrl) {
@@ -139,6 +143,40 @@ export class ConnectionManager {
 		}
 
 		const write = this.writeQueue.then(() => connection.send(commandBytes));
+		this.writeQueue = write.catch(() => {});
+		return write;
+	}
+
+	/**
+	 * Like send(), for a value that only matters at its latest (a slider,
+	 * say): if a write with the same key is still waiting in the queue, it
+	 * sends these bytes instead and no new write is queued. A write already
+	 * going out is left alone.
+	 * @param {string} key - What the write sets, e.g. "volume"
+	 * @param {Uint8Array} commandBytes - Command bytes to send
+	 * @returns {Promise<void>} Settles when the write carrying these bytes
+	 *   (or later ones for the same key) has gone out or failed
+	 */
+	sendLatest(key, commandBytes) {
+		const waiting = this.latestWrites.get(key);
+		if (waiting) {
+			waiting.bytes = commandBytes;
+			return waiting.write;
+		}
+
+		const connection = this.activeConnection;
+		if (!connection) {
+			return Promise.reject(new Error("No active connection"));
+		}
+
+		const entry = { bytes: commandBytes };
+		const write = this.writeQueue.then(() => {
+			// From here on, a new value for the key queues a new write
+			this.latestWrites.delete(key);
+			return connection.send(entry.bytes);
+		});
+		entry.write = write;
+		this.latestWrites.set(key, entry);
 		this.writeQueue = write.catch(() => {});
 		return write;
 	}

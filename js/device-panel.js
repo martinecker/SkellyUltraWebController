@@ -7,7 +7,12 @@ import { ConnectionType } from "./connection-manager.js";
 import { COMMANDS, isTestedFirmware, LOG_CLASSES } from "./constants.js";
 import { $ } from "./dom.js";
 import { hideModal, showModal } from "./modal-stack.js";
-import { buildCommand, bytesToHex, clamp, intToHex } from "./protocol.js";
+import {
+	buildCommand,
+	bytesToHex,
+	intToHex,
+	parseNumberInput,
+} from "./protocol.js";
 
 export class DevicePanel {
 	/**
@@ -231,26 +236,27 @@ export class DevicePanel {
 		const volRange = $("#volRange");
 		const volNum = $("#vol");
 
-		const sendVolumeCommand = async (value) => {
-			if (!this.connection.isConnected()) {
+		// A drag sends many values; only the latest one still waiting goes out
+		const sendVolumeCommand = async (volume) => {
+			if (volume === null || !this.connection.isConnected()) {
 				return;
 			}
-			const v = Math.max(0, Math.min(100, parseInt(value, 10)));
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_VOLUME, intToHex(v, 1), 8),
+			await this.connection.sendLatest(
+				"volume",
+				buildCommand(COMMANDS.SET_VOLUME, intToHex(volume, 1), 8),
 			);
-			this.log(`Set volume to ${v}`);
+			this.log(`Set volume to ${volume}`);
 		};
 
 		if (volRange && volNum) {
 			volRange.addEventListener("input", (e) => {
 				volNum.value = e.target.value;
-				sendVolumeCommand(e.target.value);
+				sendVolumeCommand(parseNumberInput(e.target.value, 0, 100));
 			});
 			volNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 100);
-				volRange.value = clamped;
-				sendVolumeCommand(clamped);
+				const volume = parseNumberInput(e.target.value, 0, 100);
+				if (volume !== null) volRange.value = volume;
+				sendVolumeCommand(volume);
 			});
 		}
 

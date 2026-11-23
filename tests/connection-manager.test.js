@@ -100,3 +100,55 @@ test("pause holds back the next write, not the caller", async () => {
 	assert.deepEqual(connection.sent, [1, 2]);
 	assert.ok(times[1] - times[0] >= 40, `gap ${times[1] - times[0]} ms`);
 });
+
+test("sendLatest replaces a queued write with the same key", async () => {
+	const connection = slowConnection();
+	const cm = manager(connection);
+	const writes = [
+		cm.send(Uint8Array.of(1)), // going out first
+		cm.sendLatest("volume", Uint8Array.of(10)),
+		cm.sendLatest("volume", Uint8Array.of(11)),
+		cm.sendLatest("volume", Uint8Array.of(12)),
+	];
+	await Promise.all(writes);
+	assert.deepEqual(connection.sent, [1, 12]);
+});
+
+test("sendLatest leaves a write that is already going out alone", async () => {
+	const connection = slowConnection();
+	const cm = manager(connection);
+	const first = cm.sendLatest("volume", Uint8Array.of(10));
+	await new Promise((resolve) => setImmediate(resolve)); // 10 starts
+	const second = cm.sendLatest("volume", Uint8Array.of(11));
+	await Promise.all([first, second]);
+	assert.deepEqual(connection.sent, [10, 11]);
+});
+
+test("sendLatest keeps its place among other sends and keys", async () => {
+	const connection = slowConnection();
+	const cm = manager(connection);
+	await Promise.all([
+		cm.send(Uint8Array.of(1)),
+		cm.sendLatest("volume", Uint8Array.of(10)),
+		cm.send(Uint8Array.of(2)),
+		cm.sendLatest("brightness:0", Uint8Array.of(20)),
+		cm.sendLatest("volume", Uint8Array.of(11)),
+		cm.sendLatest("brightness:0", Uint8Array.of(21)),
+	]);
+	assert.deepEqual(connection.sent, [1, 11, 2, 21]);
+});
+
+test("a failed sendLatest write rejects every caller it carried", async () => {
+	const connection = slowConnection({ failOn: 11 });
+	const cm = manager(connection);
+	const results = await Promise.allSettled([
+		cm.sendLatest("volume", Uint8Array.of(10)),
+		cm.sendLatest("volume", Uint8Array.of(11)),
+		cm.send(Uint8Array.of(1)),
+	]);
+	assert.deepEqual(
+		results.map((r) => r.status),
+		["rejected", "rejected", "fulfilled"],
+	);
+	assert.deepEqual(connection.sent, [1]);
+});

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T02:54:31.923281
+ * Generated: 2026-11-23T03:16:16.582585
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -765,6 +765,21 @@ function chunkToHex(u8, offset, length) {
  */
 function clamp(n, min, max) {
 	return Math.max(min, Math.min(max, Number(n) || 0));
+}
+
+/**
+ * A number box's value as a whole number within min..max
+ * @param {string} text - The box's value
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number|null} null while the box is empty or holds no number
+ *   (e.g. while the user retypes it), so nothing gets sent then
+ */
+function parseNumberInput(text, min, max) {
+	if (String(text ?? "").trim() === "") return null;
+	const n = Number(text);
+	if (!Number.isFinite(n)) return null;
+	return Math.round(clamp(n, min, max));
 }
 
 /**
@@ -2679,6 +2694,9 @@ class ConnectionManager {
 		// can reach the device out of order. Each send waits for the one
 		// before it; a failed send doesn't hold up the ones after it.
 		this.writeQueue = Promise.resolve();
+
+		// sendLatest: per key, the write still waiting in the queue
+		this.latestWrites = new Map();
 	}
 
 	/**
@@ -2718,6 +2736,7 @@ class ConnectionManager {
 		// Writes still queued for the old connection fail on their own; the
 		// new one doesn't wait for them
 		this.writeQueue = Promise.resolve();
+		this.latestWrites.clear();
 
 		if (type === ConnectionType.REST_PROXY) {
 			if (!restUrl) {
@@ -2779,6 +2798,40 @@ class ConnectionManager {
 		}
 
 		const write = this.writeQueue.then(() => connection.send(commandBytes));
+		this.writeQueue = write.catch(() => {});
+		return write;
+	}
+
+	/**
+	 * Like send(), for a value that only matters at its latest (a slider,
+	 * say): if a write with the same key is still waiting in the queue, it
+	 * sends these bytes instead and no new write is queued. A write already
+	 * going out is left alone.
+	 * @param {string} key - What the write sets, e.g. "volume"
+	 * @param {Uint8Array} commandBytes - Command bytes to send
+	 * @returns {Promise<void>} Settles when the write carrying these bytes
+	 *   (or later ones for the same key) has gone out or failed
+	 */
+	sendLatest(key, commandBytes) {
+		const waiting = this.latestWrites.get(key);
+		if (waiting) {
+			waiting.bytes = commandBytes;
+			return waiting.write;
+		}
+
+		const connection = this.activeConnection;
+		if (!connection) {
+			return Promise.reject(new Error("No active connection"));
+		}
+
+		const entry = { bytes: commandBytes };
+		const write = this.writeQueue.then(() => {
+			// From here on, a new value for the key queues a new write
+			this.latestWrites.delete(key);
+			return connection.send(entry.bytes);
+		});
+		entry.write = write;
+		this.latestWrites.set(key, entry);
 		this.writeQueue = write.catch(() => {});
 		return write;
 	}
@@ -6861,13 +6914,25 @@ class LiveControls {
 
 		const sendBrightness = async (brightness) => {
 			if (!canSend()) return;
-			await sendSetLightBrightness(this.connection, 0, "", channel, brightness);
+			await sendSetLightBrightness(
+				this.latest(`brightness:${channel}`),
+				0,
+				"",
+				channel,
+				brightness,
+			);
 			this.log(`Set ${label} brightness to ${brightness}`);
 		};
 		const sendSpeed = async (uiSpeed) => {
 			if (!canSend()) return;
 			const deviceSpeed = uiSpeedToDevice(uiSpeed);
-			await sendSetLightSpeed(this.connection, 0, "", channel, deviceSpeed);
+			await sendSetLightSpeed(
+				this.latest(`speed:${channel}`),
+				0,
+				"",
+				channel,
+				deviceSpeed,
+			);
 			this.log(`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`);
 		};
 		// A color the user sets turns color cycle off; the cycle button doesn't
@@ -6876,7 +6941,7 @@ class LiveControls {
 			if (stopCycle) this.setColorCycle(channel, false);
 			const { r, g, b, colorCycle } = this.readColor(channel);
 			await sendSetLightRgb(
-				this.connection,
+				this.latest(`color:${channel}`),
 				0,
 				"",
 				channel,
@@ -6911,7 +6976,9 @@ class LiveControls {
 			sendColor(true);
 		});
 		for (const field of ["R", "G", "B"]) {
-			el(field)?.addEventListener("input", () => {
+			el(field)?.addEventListener("input", (e) => {
+				// Nothing to send while the box is empty (being retyped)
+				if (parseNumberInput(e.target.value, 0, 255) === null) return;
 				const { r, g, b } = this.readColor(channel);
 				el("ColorPick").value = rgbToHex(r, g, b);
 				sendColor(true);
@@ -6939,19 +7006,32 @@ class LiveControls {
 
 	/**
 	 * A slider and its number box: each follows the other, and every change
-	 * is sent (the number box clamped to 0..max).
+	 * is sent (the number box clamped to 0..max; nothing while it's empty).
 	 */
 	bindRangeAndNumber(range, number, max, send) {
 		if (!range || !number) return;
 		range.addEventListener("input", (e) => {
 			number.value = e.target.value;
-			send(parseInt(e.target.value, 10));
+			send(parseNumberInput(e.target.value, 0, max));
 		});
 		number.addEventListener("input", (e) => {
-			const clamped = clamp(e.target.value, 0, max);
-			range.value = clamped;
-			send(clamped);
+			// Nothing to send while the box is empty (being retyped)
+			const value = parseNumberInput(e.target.value, 0, max);
+			if (value === null) return;
+			range.value = value;
+			send(value);
 		});
+	}
+
+	/**
+	 * A stand-in for the connection whose sends replace a still-queued send
+	 * with the same key (ConnectionManager.sendLatest), for controls that
+	 * send a value many times per second while dragged
+	 * @param {string} key - What the sends set, e.g. "brightness:0"
+	 * @returns {{send: (bytes: Uint8Array) => Promise<void>}}
+	 */
+	latest(key) {
+		return { send: (bytes) => this.connection.sendLatest(key, bytes) };
 	}
 
 	/** Set a live light's color cycle flag and its button */
@@ -7081,7 +7161,10 @@ class LiveControls {
 	async sendLights(scene) {
 		// F1 takes the lights in channel order from 0
 		const lights = this.channels.map((ch) => this.readLight(ch));
-		await this.connection.send(buildSetAllLights(lights, 0, scene));
+		await this.connection.sendLatest(
+			"lights",
+			buildSetAllLights(lights, 0, scene),
+		);
 		this.log(
 			`Set all lights (F1) scene=${scene}: ${lights
 				.map(
@@ -8203,26 +8286,27 @@ class DevicePanel {
 		const volRange = $("#volRange");
 		const volNum = $("#vol");
 
-		const sendVolumeCommand = async (value) => {
-			if (!this.connection.isConnected()) {
+		// A drag sends many values; only the latest one still waiting goes out
+		const sendVolumeCommand = async (volume) => {
+			if (volume === null || !this.connection.isConnected()) {
 				return;
 			}
-			const v = Math.max(0, Math.min(100, parseInt(value, 10)));
-			await this.connection.send(
-				buildCommand(COMMANDS.SET_VOLUME, intToHex(v, 1), 8),
+			await this.connection.sendLatest(
+				"volume",
+				buildCommand(COMMANDS.SET_VOLUME, intToHex(volume, 1), 8),
 			);
-			this.log(`Set volume to ${v}`);
+			this.log(`Set volume to ${volume}`);
 		};
 
 		if (volRange && volNum) {
 			volRange.addEventListener("input", (e) => {
 				volNum.value = e.target.value;
-				sendVolumeCommand(e.target.value);
+				sendVolumeCommand(parseNumberInput(e.target.value, 0, 100));
 			});
 			volNum.addEventListener("input", (e) => {
-				const clamped = clamp(e.target.value, 0, 100);
-				volRange.value = clamped;
-				sendVolumeCommand(clamped);
+				const volume = parseNumberInput(e.target.value, 0, 100);
+				if (volume !== null) volRange.value = volume;
+				sendVolumeCommand(volume);
 			});
 		}
 
