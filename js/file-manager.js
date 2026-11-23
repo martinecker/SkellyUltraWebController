@@ -343,7 +343,8 @@ export class FileManager {
 	 * @param {string} fileName - Target filename
 	 * @param {number|null} chunkSizeOverride - Optional chunk size override
 	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
-	 * @returns {Promise<void>}
+	 * @returns {Promise<void>} Rejects without sending anything if another
+	 *   transfer is running (the device takes one at a time)
 	 */
 	async sendFile(
 		fileBytes,
@@ -354,6 +355,10 @@ export class FileManager {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected — cannot send file.", LOG_CLASSES.WARNING);
 			throw new Error("Device not connected");
+		}
+		if (this.state.transfer.inProgress) {
+			this.log("A transfer is already running.", LOG_CLASSES.WARNING);
+			throw new Error("A transfer is already running");
 		}
 
 		// If this upload overwrites an existing file, the device resets that

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T02:16:42.821963
+ * Generated: 2026-11-23T02:41:11.590558
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -3175,7 +3175,8 @@ class FileManager {
 	 * @param {string} fileName - Target filename
 	 * @param {number|null} chunkSizeOverride - Optional chunk size override
 	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
-	 * @returns {Promise<void>}
+	 * @returns {Promise<void>} Rejects without sending anything if another
+	 *   transfer is running (the device takes one at a time)
 	 */
 	async sendFile(
 		fileBytes,
@@ -3186,6 +3187,10 @@ class FileManager {
 		if (!this.connection.isConnected()) {
 			this.log("Not connected — cannot send file.", LOG_CLASSES.WARNING);
 			throw new Error("Device not connected");
+		}
+		if (this.state.transfer.inProgress) {
+			this.log("A transfer is already running.", LOG_CLASSES.WARNING);
+			throw new Error("A transfer is already running");
 		}
 
 		// If this upload overwrites an existing file, the device resets that
@@ -5300,6 +5305,10 @@ class TransferModalManager {
 		this._mode = null;
 		this._lockedFilename = "";
 		this._onReplaceSuccess = null;
+		// True from a Send click until that upload ends, including the speech
+		// synthesis, conversion and overwrite question before the transfer
+		// itself starts, so a second click can't start a second upload
+		this._sending = false;
 		// Tracks whether the user has manually typed into the filename field,
 		// so picking a new file only auto-fills it when they haven't.
 		this._fileNameUserEdited = false;
@@ -5376,9 +5385,9 @@ class TransferModalManager {
 			if (title) title.textContent = "Add File";
 		}
 
-		// Escape closes it while it is the top dialog, unless a transfer runs
+		// Escape closes it while it is the top dialog, unless an upload runs
 		showModal(this.modal, () => {
-			if (!this.state.transfer.inProgress) this.close();
+			if (!this.isBusy()) this.close();
 		});
 	}
 
@@ -5402,13 +5411,21 @@ class TransferModalManager {
 	}
 
 	/**
+	 * Whether an upload is under way: being prepared after a Send click, or
+	 * transferring
+	 */
+	isBusy() {
+		return this._sending || this.state.transfer.inProgress;
+	}
+
+	/**
 	 * Update disabled state of send/cancel buttons based on transfer state
 	 */
 	updateButtons(transfer) {
 		const btnSend = $("#btnSendFile");
 		const btnCancel = $("#btnCancelFile");
 
-		if (btnSend) btnSend.disabled = transfer.inProgress;
+		if (btnSend) btnSend.disabled = this._sending || transfer.inProgress;
 		if (btnCancel) btnCancel.disabled = !transfer.inProgress;
 	}
 
@@ -5870,7 +5887,16 @@ class TransferModalManager {
 	 */
 	initializeButtons() {
 		$("#btnSendFile")?.addEventListener("click", async () => {
-			const success = await this.handleFileSend();
+			if (this.isBusy()) return;
+			this._sending = true;
+			this.updateButtons(this.state.transfer);
+			let success = false;
+			try {
+				success = await this.handleFileSend();
+			} finally {
+				this._sending = false;
+				this.updateButtons(this.state.transfer);
+			}
 			if (success) {
 				const wasReplace = this._mode === "replace";
 				this.close();
@@ -5884,10 +5910,10 @@ class TransferModalManager {
 
 		// Transfer modal close buttons (top X and bottom Close)
 		$("#btnCloseTransferModal")?.addEventListener("click", () => {
-			if (!this.state.transfer.inProgress) this.close();
+			if (!this.isBusy()) this.close();
 		});
 		$("#btnCloseTransferModalBottom")?.addEventListener("click", () => {
-			if (!this.state.transfer.inProgress) this.close();
+			if (!this.isBusy()) this.close();
 		});
 	}
 

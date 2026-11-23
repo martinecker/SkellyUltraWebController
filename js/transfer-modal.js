@@ -60,6 +60,10 @@ export class TransferModalManager {
 		this._mode = null;
 		this._lockedFilename = "";
 		this._onReplaceSuccess = null;
+		// True from a Send click until that upload ends, including the speech
+		// synthesis, conversion and overwrite question before the transfer
+		// itself starts, so a second click can't start a second upload
+		this._sending = false;
 		// Tracks whether the user has manually typed into the filename field,
 		// so picking a new file only auto-fills it when they haven't.
 		this._fileNameUserEdited = false;
@@ -136,9 +140,9 @@ export class TransferModalManager {
 			if (title) title.textContent = "Add File";
 		}
 
-		// Escape closes it while it is the top dialog, unless a transfer runs
+		// Escape closes it while it is the top dialog, unless an upload runs
 		showModal(this.modal, () => {
-			if (!this.state.transfer.inProgress) this.close();
+			if (!this.isBusy()) this.close();
 		});
 	}
 
@@ -162,13 +166,21 @@ export class TransferModalManager {
 	}
 
 	/**
+	 * Whether an upload is under way: being prepared after a Send click, or
+	 * transferring
+	 */
+	isBusy() {
+		return this._sending || this.state.transfer.inProgress;
+	}
+
+	/**
 	 * Update disabled state of send/cancel buttons based on transfer state
 	 */
 	updateButtons(transfer) {
 		const btnSend = $("#btnSendFile");
 		const btnCancel = $("#btnCancelFile");
 
-		if (btnSend) btnSend.disabled = transfer.inProgress;
+		if (btnSend) btnSend.disabled = this._sending || transfer.inProgress;
 		if (btnCancel) btnCancel.disabled = !transfer.inProgress;
 	}
 
@@ -630,7 +642,16 @@ export class TransferModalManager {
 	 */
 	initializeButtons() {
 		$("#btnSendFile")?.addEventListener("click", async () => {
-			const success = await this.handleFileSend();
+			if (this.isBusy()) return;
+			this._sending = true;
+			this.updateButtons(this.state.transfer);
+			let success = false;
+			try {
+				success = await this.handleFileSend();
+			} finally {
+				this._sending = false;
+				this.updateButtons(this.state.transfer);
+			}
 			if (success) {
 				const wasReplace = this._mode === "replace";
 				this.close();
@@ -644,10 +665,10 @@ export class TransferModalManager {
 
 		// Transfer modal close buttons (top X and bottom Close)
 		$("#btnCloseTransferModal")?.addEventListener("click", () => {
-			if (!this.state.transfer.inProgress) this.close();
+			if (!this.isBusy()) this.close();
 		});
 		$("#btnCloseTransferModalBottom")?.addEventListener("click", () => {
-			if (!this.state.transfer.inProgress) this.close();
+			if (!this.isBusy()) this.close();
 		});
 	}
 
