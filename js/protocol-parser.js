@@ -182,6 +182,7 @@ export class ProtocolParser {
 			showMode,
 			name: name || this.state.device.name,
 			pinCode: pin,
+			wifiPassword, // Sent back unchanged when setting the PIN or name
 		});
 
 		this.log(

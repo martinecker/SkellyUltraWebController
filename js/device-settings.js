@@ -10,14 +10,18 @@
 import {
 	CAPABILITIES,
 	COMMANDS,
+	DEFAULT_WIFI_PASSWORD,
 	hasCapability,
 	LIGHT_SCENE_COLORS,
 	LIGHT_SCENES,
+	LIVE_NAME_SUFFIX,
+	MAX_LIVE_NAME_LENGTH,
 } from "./constants.js";
 import {
 	buildCommand,
 	buildFilenamePayload,
 	byteHex,
+	bytesToHex,
 	intToHex,
 } from "./protocol.js";
 
@@ -404,4 +408,73 @@ export async function applyFileSettings(
 				),
 		);
 	}
+}
+
+// Printable ASCII: the device takes the PIN, password and name as ASCII
+const PRINTABLE_ASCII = /^[\x20-\x7E]*$/;
+
+/**
+ * A live name without the suffix the device shows it with
+ * @param {string} name - e.g. "Skelly(Live)" or "Skelly"
+ * @returns {string} e.g. "Skelly"
+ */
+export function liveNameBase(name) {
+	const trimmed = (name ?? "").trim();
+	return trimmed.endsWith(LIVE_NAME_SUFFIX)
+		? trimmed.slice(0, -LIVE_NAME_SUFFIX.length).trimEnd()
+		: trimmed;
+}
+
+/**
+ * Why a classic Bluetooth name can't be sent, or null if it can
+ * @param {string} name - With or without the "(Live)" suffix
+ * @returns {string|null}
+ */
+export function liveNameError(name) {
+	const base = liveNameBase(name);
+	if (!base) return "Device name cannot be empty";
+	if (!PRINTABLE_ASCII.test(base)) {
+		return "Device name can only use plain ASCII characters";
+	}
+	if (base.length > MAX_LIVE_NAME_LENGTH) {
+		return `Device name cannot exceed ${MAX_LIVE_NAME_LENGTH} characters`;
+	}
+	return null;
+}
+
+/**
+ * Build the command that sets the classic Bluetooth PIN and name (AAFB):
+ * PIN (4 ASCII), Wi-Fi password (8 ASCII), name length, name (ASCII) with
+ * the "(Live)" suffix.
+ * @param {string} pin - 4 digits
+ * @param {string} name - With or without the "(Live)" suffix
+ * @param {string|null} [wifiPassword] - The device's (from BBE0), so it is
+ *   sent back unchanged; DEFAULT_WIFI_PASSWORD if unknown
+ * @returns {{bytes: Uint8Array, name: string}} The command, and the name as sent
+ * @throws {Error} For a PIN that isn't 4 digits or a name liveNameError refuses
+ */
+export function buildSetPinAndName(pin, name, wifiPassword = null) {
+	if (!/^\d{4}$/.test(pin ?? "")) {
+		throw new Error("PIN must be exactly 4 digits");
+	}
+	const error = liveNameError(name);
+	if (error) throw new Error(error);
+	const fullName = liveNameBase(name) + LIVE_NAME_SUFFIX;
+	const password =
+		typeof wifiPassword === "string" &&
+		wifiPassword.length === 8 &&
+		PRINTABLE_ASCII.test(wifiPassword)
+			? wifiPassword
+			: DEFAULT_WIFI_PASSWORD;
+
+	const ascii = (text) => bytesToHex(new TextEncoder().encode(text));
+	const payload =
+		ascii(pin) +
+		ascii(password) +
+		intToHex(fullName.length, 1) +
+		ascii(fullName);
+	return {
+		bytes: buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8),
+		name: fullName,
+	};
 }

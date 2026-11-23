@@ -6,6 +6,7 @@ import { DEVICE_TYPES, LIGHT_SCENES } from "../js/constants.js";
 import {
 	applyFileSettings,
 	buildSetAllLights,
+	buildSetPinAndName,
 	currentLightScene,
 	isScenePreset,
 	sceneLightColor,
@@ -199,4 +200,47 @@ test("scene colors as the app sends them: channel 0 first, the rest second", () 
 	});
 	assert.equal(sceneLightColor(LIGHT_SCENES.CUSTOM, 0), null);
 	assert.equal(sceneLightColor(7, 0), null);
+});
+
+// "Skelly(Live)" as ASCII hex
+const SKELLY_LIVE = "536B656C6C79284C69766529";
+
+test("the PIN and name command is ASCII with the (Live) suffix", () => {
+	const { bytes, name } = buildSetPinAndName("1234", "Skelly", "abcdefgh");
+	const hex = bytesToHex(bytes);
+	assert.equal(name, "Skelly(Live)");
+	assert.equal(
+		hex.slice(0, -2),
+		`AAFB31323334${"6162636465666768"}0C${SKELLY_LIVE}`,
+	);
+	assert.equal(hex.slice(-2), crc8(bytes.subarray(0, -1)));
+});
+
+test("a name that has the suffix already doesn't get it twice", () => {
+	const { name } = buildSetPinAndName("1234", "Skelly(Live)");
+	assert.equal(name, "Skelly(Live)");
+});
+
+test("without a known Wi-Fi password the default goes out", () => {
+	for (const wifi of [null, "", "short", "töö long!"]) {
+		const hex = bytesToHex(buildSetPinAndName("0000", "Skelly", wifi).bytes);
+		// "01234567" after the PIN
+		assert.equal(hex.slice(12, 28), "3031323334353637", String(wifi));
+	}
+});
+
+test("names the device can't take are refused", () => {
+	assert.throws(() => buildSetPinAndName("1234", "Skélly"), /ASCII/);
+	assert.throws(() => buildSetPinAndName("1234", "   "), /empty/);
+	assert.throws(() => buildSetPinAndName("1234", "(Live)"), /empty/);
+	assert.throws(() => buildSetPinAndName("1234", "x".repeat(23)), /22/);
+	// 22 characters plus the suffix is fine
+	const { name } = buildSetPinAndName("1234", "x".repeat(22));
+	assert.equal(name.length, 28);
+});
+
+test("a PIN that isn't 4 digits is refused", () => {
+	for (const pin of ["", "123", "12345", "12a4"]) {
+		assert.throws(() => buildSetPinAndName(pin, "Skelly"), /4 digits/);
+	}
 });

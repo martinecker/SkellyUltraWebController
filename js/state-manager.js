@@ -20,6 +20,7 @@ function unknownDevice() {
 		filesReceived: null, // Count of files actually received in file list
 		order: null, // Play order: enabled file serials, first to last
 		pinCode: null, // Device PIN
+		wifiPassword: null, // From BBE0, sent back with AAFB
 	};
 }
 

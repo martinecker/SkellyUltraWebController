@@ -1,5 +1,6 @@
 // File info (BBD0) in both firmware layouts and live status (BBE1) with and
-// without the scene byte. Run with `npm test` (node:test).
+// without the scene byte, and device parameters (BBE0). Run with `npm test`
+// (node:test).
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -71,4 +72,16 @@ test("BBE1 without the scene byte", () => {
 	assert.equal(state.live.eyeIcon, 4);
 	assert.equal(state.live.scene, null);
 	assert.equal(state.live.lights.length, 6);
+});
+
+test("BBE0 keeps the PIN and the Wi-Fi password", () => {
+	const { state, parser } = setup();
+	const name = "536B656C6C79"; // "Skelly"
+	parser.parse(
+		withCrc(
+			`BBE0010100000000${"31323334"}${"6162636465666768"}00${"00".repeat(7)}06${name}`,
+		),
+	);
+	assert.equal(state.device.pinCode, "1234");
+	assert.equal(state.device.wifiPassword, "abcdefgh");
 });

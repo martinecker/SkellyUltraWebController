@@ -4,15 +4,20 @@
  */
 
 import { ConnectionType } from "./connection-manager.js";
-import { COMMANDS, isTestedFirmware, LOG_CLASSES } from "./constants.js";
+import {
+	COMMANDS,
+	isTestedFirmware,
+	LOG_CLASSES,
+	MAX_LIVE_NAME_LENGTH,
+} from "./constants.js";
+import {
+	buildSetPinAndName,
+	liveNameBase,
+	liveNameError,
+} from "./device-settings.js";
 import { $, trySend } from "./dom.js";
 import { hideModal, showModal } from "./modal-stack.js";
-import {
-	buildCommand,
-	bytesToHex,
-	intToHex,
-	parseNumberInput,
-} from "./protocol.js";
+import { buildCommand, intToHex, parseNumberInput } from "./protocol.js";
 
 export class DevicePanel {
 	/**
@@ -117,20 +122,10 @@ export class DevicePanel {
 				return;
 			}
 
-			const deviceNameInput = $("#deviceNameInput");
-			const deviceName = deviceNameInput?.value || "";
-
-			// Validate device name: must not be empty and max 22 chars
-			if (!deviceName || deviceName.trim().length === 0) {
-				this.log("Device name cannot be empty", LOG_CLASSES.WARNING);
-				return;
-			}
-
-			if (deviceName.length > 22) {
-				this.log(
-					"Device name cannot exceed 22 characters",
-					LOG_CLASSES.WARNING,
-				);
+			const deviceName = $("#deviceNameInput")?.value || "";
+			const nameError = liveNameError(deviceName);
+			if (nameError) {
+				this.log(nameError, LOG_CLASSES.WARNING);
 				return;
 			}
 
@@ -159,13 +154,18 @@ export class DevicePanel {
 			const deviceNameInput = $("#deviceNameInput");
 			const deviceName = deviceNameInput?.value || "";
 
-			// Use current device name if available, otherwise use entered name or default to btName
+			// The entered name, else the device's current one
 			const btName = deviceName || this.state.device.liveName || "";
 			if (!btName) {
 				this.log(
 					"Device name not available. Enter a device name first.",
 					LOG_CLASSES.WARNING,
 				);
+				return;
+			}
+			const nameError = liveNameError(btName);
+			if (nameError) {
+				this.log(nameError, LOG_CLASSES.WARNING);
 				return;
 			}
 
@@ -181,52 +181,27 @@ export class DevicePanel {
 			});
 		}
 
-		// Device name input validation - enforce max length
-		const deviceNameInput = $("#deviceNameInput");
-		if (deviceNameInput) {
-			deviceNameInput.addEventListener("input", (e) => {
-				// Enforce max length of 22 characters
-				if (e.target.value.length > 22) {
-					e.target.value = e.target.value.substring(0, 22);
-				}
-			});
-		}
+		// Device name input: at most MAX_LIVE_NAME_LENGTH (without "(Live)")
+		$("#deviceNameInput")?.setAttribute(
+			"maxlength",
+			String(MAX_LIVE_NAME_LENGTH),
+		);
 	}
 
 	/**
-	 * Set device PIN and Bluetooth name
+	 * Set the classic Bluetooth PIN and name (AAFB), then read them back.
+	 * The device's Wi-Fi password goes back unchanged.
 	 * @param {string} pin - 4-digit PIN
-	 * @param {string} btName - Bluetooth name (should end with "(Live)" suffix)
+	 * @param {string} btName - Name, with or without the "(Live)" suffix
 	 */
 	async setPinAndName(pin, btName) {
-		// Ensure BT name ends with "(Live)"
-		if (!btName.endsWith("(Live)")) {
-			btName += "(Live)";
-		}
-
-		// Build the AAFB command payload
-		// Format: <4 bytes PIN in ASCII> <8 bytes wifi password in ASCII> <1 byte name length> <BT name in ASCII with "(Live)">
-
-		// Convert PIN to ASCII bytes and then to hex
-		const pinBytes = new TextEncoder().encode(pin);
-		const pinHex = bytesToHex(pinBytes);
-
-		// Hardcoded wifi password "01234567" as ASCII bytes
-		const wifiBytes = new TextEncoder().encode("01234567");
-		const wifiHex = bytesToHex(wifiBytes);
-
-		const nameLengthHex = intToHex(btName.length, 1);
-
-		// BT name as ASCII bytes
-		const nameBytes = new TextEncoder().encode(btName);
-		const nameHex = bytesToHex(nameBytes);
-
-		const payload = pinHex + wifiHex + nameLengthHex + nameHex;
-
-		await this.connection.send(
-			buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8),
+		const { bytes, name } = buildSetPinAndName(
+			pin,
+			btName,
+			this.state.device.wifiPassword,
 		);
-		this.log(`Set PIN to ${pin} with BT name "${btName}"`);
+		await this.connection.send(bytes);
+		this.log(`Set PIN to ${pin} with BT name "${name}"`);
 
 		// Query device params to get the updated name and PIN back from the device
 		await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8));
@@ -411,7 +386,7 @@ export class DevicePanel {
 			device.liveName &&
 			device.liveName !== this.shownLiveName
 		) {
-			const displayName = device.liveName.replace(/\s*\(Live\)\s*$/i, "");
+			const displayName = liveNameBase(device.liveName);
 			$("#deviceNameInput").value = displayName;
 			this.shownLiveName = device.liveName;
 		}

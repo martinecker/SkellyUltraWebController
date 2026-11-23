@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T16:37:10.173167
+ * Generated: 2026-11-23T16:42:17.438493
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -445,6 +445,16 @@ const TRANSFER_CONFIG = {
 // Delay between per-file setting commands in "Apply All" - AAF4/AACA/etc. are
 // write-without-response with no ACK, so back-to-back writes can be dropped without warning.
 const APPLY_ALL_COMMAND_DELAY_MS = 40;
+
+// Classic Bluetooth (live mode) name and PIN, set with AAFB. The device shows
+// the name with LIVE_NAME_SUFFIX, which the phone app appends too. The name
+// limit is without the suffix (what this page always allowed; the device's
+// own limit is unknown).
+const LIVE_NAME_SUFFIX = "(Live)";
+const MAX_LIVE_NAME_LENGTH = 22;
+// Sent when the device didn't report its Wi-Fi password (no known product
+// uses Wi-Fi)
+const DEFAULT_WIFI_PASSWORD = "01234567";
 
 // Timeout Values (milliseconds)
 const TIMEOUTS = {
@@ -1377,6 +1387,75 @@ async function applyFileSettings(
 	}
 }
 
+// Printable ASCII: the device takes the PIN, password and name as ASCII
+const PRINTABLE_ASCII = /^[\x20-\x7E]*$/;
+
+/**
+ * A live name without the suffix the device shows it with
+ * @param {string} name - e.g. "Skelly(Live)" or "Skelly"
+ * @returns {string} e.g. "Skelly"
+ */
+function liveNameBase(name) {
+	const trimmed = (name ?? "").trim();
+	return trimmed.endsWith(LIVE_NAME_SUFFIX)
+		? trimmed.slice(0, -LIVE_NAME_SUFFIX.length).trimEnd()
+		: trimmed;
+}
+
+/**
+ * Why a classic Bluetooth name can't be sent, or null if it can
+ * @param {string} name - With or without the "(Live)" suffix
+ * @returns {string|null}
+ */
+function liveNameError(name) {
+	const base = liveNameBase(name);
+	if (!base) return "Device name cannot be empty";
+	if (!PRINTABLE_ASCII.test(base)) {
+		return "Device name can only use plain ASCII characters";
+	}
+	if (base.length > MAX_LIVE_NAME_LENGTH) {
+		return `Device name cannot exceed ${MAX_LIVE_NAME_LENGTH} characters`;
+	}
+	return null;
+}
+
+/**
+ * Build the command that sets the classic Bluetooth PIN and name (AAFB):
+ * PIN (4 ASCII), Wi-Fi password (8 ASCII), name length, name (ASCII) with
+ * the "(Live)" suffix.
+ * @param {string} pin - 4 digits
+ * @param {string} name - With or without the "(Live)" suffix
+ * @param {string|null} [wifiPassword] - The device's (from BBE0), so it is
+ *   sent back unchanged; DEFAULT_WIFI_PASSWORD if unknown
+ * @returns {{bytes: Uint8Array, name: string}} The command, and the name as sent
+ * @throws {Error} For a PIN that isn't 4 digits or a name liveNameError refuses
+ */
+function buildSetPinAndName(pin, name, wifiPassword = null) {
+	if (!/^\d{4}$/.test(pin ?? "")) {
+		throw new Error("PIN must be exactly 4 digits");
+	}
+	const error = liveNameError(name);
+	if (error) throw new Error(error);
+	const fullName = liveNameBase(name) + LIVE_NAME_SUFFIX;
+	const password =
+		typeof wifiPassword === "string" &&
+		wifiPassword.length === 8 &&
+		PRINTABLE_ASCII.test(wifiPassword)
+			? wifiPassword
+			: DEFAULT_WIFI_PASSWORD;
+
+	const ascii = (text) => bytesToHex(new TextEncoder().encode(text));
+	const payload =
+		ascii(pin) +
+		ascii(password) +
+		intToHex(fullName.length, 1) +
+		ascii(fullName);
+	return {
+		bytes: buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8),
+		name: fullName,
+	};
+}
+
   // ============================================================
   // State Manager (js/state-manager.js)
   // ============================================================
@@ -1400,6 +1479,7 @@ function unknownDevice() {
 		filesReceived: null, // Count of files actually received in file list
 		order: null, // Play order: enabled file serials, first to last
 		pinCode: null, // Device PIN
+		wifiPassword: null, // From BBE0, sent back with AAFB
 	};
 }
 
@@ -4425,6 +4505,7 @@ class ProtocolParser {
 			showMode,
 			name: name || this.state.device.name,
 			pinCode: pin,
+			wifiPassword, // Sent back unchanged when setting the PIN or name
 		});
 
 		this.log(
@@ -8227,20 +8308,10 @@ class DevicePanel {
 				return;
 			}
 
-			const deviceNameInput = $("#deviceNameInput");
-			const deviceName = deviceNameInput?.value || "";
-
-			// Validate device name: must not be empty and max 22 chars
-			if (!deviceName || deviceName.trim().length === 0) {
-				this.log("Device name cannot be empty", LOG_CLASSES.WARNING);
-				return;
-			}
-
-			if (deviceName.length > 22) {
-				this.log(
-					"Device name cannot exceed 22 characters",
-					LOG_CLASSES.WARNING,
-				);
+			const deviceName = $("#deviceNameInput")?.value || "";
+			const nameError = liveNameError(deviceName);
+			if (nameError) {
+				this.log(nameError, LOG_CLASSES.WARNING);
 				return;
 			}
 
@@ -8269,13 +8340,18 @@ class DevicePanel {
 			const deviceNameInput = $("#deviceNameInput");
 			const deviceName = deviceNameInput?.value || "";
 
-			// Use current device name if available, otherwise use entered name or default to btName
+			// The entered name, else the device's current one
 			const btName = deviceName || this.state.device.liveName || "";
 			if (!btName) {
 				this.log(
 					"Device name not available. Enter a device name first.",
 					LOG_CLASSES.WARNING,
 				);
+				return;
+			}
+			const nameError = liveNameError(btName);
+			if (nameError) {
+				this.log(nameError, LOG_CLASSES.WARNING);
 				return;
 			}
 
@@ -8291,52 +8367,27 @@ class DevicePanel {
 			});
 		}
 
-		// Device name input validation - enforce max length
-		const deviceNameInput = $("#deviceNameInput");
-		if (deviceNameInput) {
-			deviceNameInput.addEventListener("input", (e) => {
-				// Enforce max length of 22 characters
-				if (e.target.value.length > 22) {
-					e.target.value = e.target.value.substring(0, 22);
-				}
-			});
-		}
+		// Device name input: at most MAX_LIVE_NAME_LENGTH (without "(Live)")
+		$("#deviceNameInput")?.setAttribute(
+			"maxlength",
+			String(MAX_LIVE_NAME_LENGTH),
+		);
 	}
 
 	/**
-	 * Set device PIN and Bluetooth name
+	 * Set the classic Bluetooth PIN and name (AAFB), then read them back.
+	 * The device's Wi-Fi password goes back unchanged.
 	 * @param {string} pin - 4-digit PIN
-	 * @param {string} btName - Bluetooth name (should end with "(Live)" suffix)
+	 * @param {string} btName - Name, with or without the "(Live)" suffix
 	 */
 	async setPinAndName(pin, btName) {
-		// Ensure BT name ends with "(Live)"
-		if (!btName.endsWith("(Live)")) {
-			btName += "(Live)";
-		}
-
-		// Build the AAFB command payload
-		// Format: <4 bytes PIN in ASCII> <8 bytes wifi password in ASCII> <1 byte name length> <BT name in ASCII with "(Live)">
-
-		// Convert PIN to ASCII bytes and then to hex
-		const pinBytes = new TextEncoder().encode(pin);
-		const pinHex = bytesToHex(pinBytes);
-
-		// Hardcoded wifi password "01234567" as ASCII bytes
-		const wifiBytes = new TextEncoder().encode("01234567");
-		const wifiHex = bytesToHex(wifiBytes);
-
-		const nameLengthHex = intToHex(btName.length, 1);
-
-		// BT name as ASCII bytes
-		const nameBytes = new TextEncoder().encode(btName);
-		const nameHex = bytesToHex(nameBytes);
-
-		const payload = pinHex + wifiHex + nameLengthHex + nameHex;
-
-		await this.connection.send(
-			buildCommand(COMMANDS.SET_PIN_AND_NAME, payload, 8),
+		const { bytes, name } = buildSetPinAndName(
+			pin,
+			btName,
+			this.state.device.wifiPassword,
 		);
-		this.log(`Set PIN to ${pin} with BT name "${btName}"`);
+		await this.connection.send(bytes);
+		this.log(`Set PIN to ${pin} with BT name "${name}"`);
 
 		// Query device params to get the updated name and PIN back from the device
 		await this.connection.send(buildCommand(COMMANDS.QUERY_LIVE_NAME, "", 8));
@@ -8521,7 +8572,7 @@ class DevicePanel {
 			device.liveName &&
 			device.liveName !== this.shownLiveName
 		) {
-			const displayName = device.liveName.replace(/\s*\(Live\)\s*$/i, "");
+			const displayName = liveNameBase(device.liveName);
 			$("#deviceNameInput").value = displayName;
 			this.shownLiveName = device.liveName;
 		}

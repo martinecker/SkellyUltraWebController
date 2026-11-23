@@ -408,6 +408,16 @@ export const TRANSFER_CONFIG = {
 // write-without-response with no ACK, so back-to-back writes can be dropped without warning.
 export const APPLY_ALL_COMMAND_DELAY_MS = 40;
 
+// Classic Bluetooth (live mode) name and PIN, set with AAFB. The device shows
+// the name with LIVE_NAME_SUFFIX, which the phone app appends too. The name
+// limit is without the suffix (what this page always allowed; the device's
+// own limit is unknown).
+export const LIVE_NAME_SUFFIX = "(Live)";
+export const MAX_LIVE_NAME_LENGTH = 22;
+// Sent when the device didn't report its Wi-Fi password (no known product
+// uses Wi-Fi)
+export const DEFAULT_WIFI_PASSWORD = "01234567";
+
 // Timeout Values (milliseconds)
 export const TIMEOUTS = {
 	ACK: 5000,
