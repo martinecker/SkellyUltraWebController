@@ -4,7 +4,12 @@
  */
 
 import { LOG_CLASSES, PROTOCOL_MARKERS, RESPONSES } from "./constants.js";
-import { decodeUtf16le, getAsciiFromHex, hexToBytes } from "./protocol.js";
+import {
+	decodeUtf16le,
+	getAsciiFromHex,
+	hexToBytes,
+	parsePlayOrder,
+} from "./protocol.js";
 
 /**
  * Parse the light block of BBE1 and BBD0: 6 channels of 7 bytes (mode,
@@ -261,16 +266,7 @@ export class ProtocolParser {
 	 * Parse play order (BBD1)
 	 */
 	parseOrder(hex) {
-		let count = parseInt(hex.slice(4, 6), 16);
-		const data = hex.slice(6);
-		if (data.length < count * 4) {
-			count = Math.floor(data.length / 4);
-		}
-
-		const orders = Array.from({ length: count }, (_, i) =>
-			parseInt(data.slice(i * 4, i * 4 + 4), 16),
-		);
-
+		const orders = parsePlayOrder(hex);
 		this.state.updateDevice({ order: orders });
 		this.log(`File Order by Serial: ${JSON.stringify(orders)}`);
 

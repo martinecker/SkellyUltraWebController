@@ -19,6 +19,7 @@ import {
 	buildFilenamePayload,
 	chunkToHex,
 	intToHex,
+	parsePlayOrder,
 	sleep,
 } from "./protocol.js";
 
@@ -344,7 +345,9 @@ export class FileManager {
 	 * @param {number|null} chunkSizeOverride - Optional chunk size override
 	 * @param {number|null} chunkDelayOverride - Optional pause between chunks (ms)
 	 * @returns {Promise<void>} Rejects without sending anything if another
-	 *   transfer is running (the device takes one at a time)
+	 *   transfer is running (the device takes one at a time). A failure after
+	 *   the device accepted the upload sends C4 first. Failing to restore an
+	 *   overwritten file's settings doesn't fail the upload.
 	 */
 	async sendFile(
 		fileBytes,
@@ -366,14 +369,20 @@ export class FileManager {
 		// they can be restored once the new upload lands.
 		const existingFile = this.state.hasFileName(fileName);
 
-		// A new file makes the device rewrite the play order, and it gets that
-		// wrong (it drops the first entry and lists the last one twice).
-		// Remember the order by name, so it can be put right afterwards.
-		const previousOrderNames = existingFile ? null : this.orderedFileNames();
-
 		this.state.startTransfer();
 
+		// Whether the device has an upload open (C0 accepted, not yet confirmed
+		// or cancelled), so a failure can close it with C4
+		const upload = { open: false };
+
 		try {
+			// A new file makes the device rewrite the play order, and it gets
+			// that wrong (it drops the first entry and lists the last one twice).
+			// Remember the order by name, so it can be put right afterwards.
+			const previousOrderNames = existingFile
+				? null
+				: await this.readOrderedFileNames();
+
 			const size = fileBytes.length;
 			let chunkSize = this.getChunkSize(chunkSizeOverride); // Use dynamic chunk size based on MTU or override
 			const chunkDelay = this.getChunkDelay(chunkDelayOverride);
@@ -385,11 +394,20 @@ export class FileManager {
 			// === Phases 1-3: Start (C0), Data Chunks (C1), End (C2) ===
 			// If the device keeps losing chunks, start over with smaller ones
 			for (let attempt = 1; ; attempt++) {
-				if (await this.sendOnce(fileBytes, fileName, chunkSize, chunkDelay)) {
+				if (
+					await this.sendOnce(
+						fileBytes,
+						fileName,
+						chunkSize,
+						chunkDelay,
+						upload,
+					)
+				) {
 					break;
 				}
 				if (attempt >= TRANSFER_CONFIG.MAX_ATTEMPTS) {
 					// Leave nothing open on the device
+					upload.open = false;
 					await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 					throw new Error(
 						`Transfer failed after ${attempt} attempts with smaller chunks`,
@@ -403,6 +421,7 @@ export class FileManager {
 					`Transfer failed, starting over with ${chunkSize}-byte chunks (retry ${attempt}/${TRANSFER_CONFIG.MAX_ATTEMPTS - 1})`,
 					LOG_CLASSES.WARNING,
 				);
+				upload.open = false;
 				await this.connection.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8));
 				await sleep(1000); // Give the device time to reset
 				this.checkTransferGoing();
@@ -419,17 +438,26 @@ export class FileManager {
 			if (c3Failed !== 0) {
 				throw new Error("Device failed to confirm transfer");
 			}
+			upload.open = false;
 
 			this.log("File transfer complete ✔", LOG_CLASSES.WARNING);
 
 			// If this was an overwrite, restore the previous light/movement/eye
 			// settings right away — the device resets them to default on upload.
+			// The upload itself is done, so a failure here only gets logged.
 			if (existingFile) {
-				await this.restoreFileSettings(
-					existingFile.cluster,
-					fileName,
-					existingFile,
-				);
+				try {
+					await this.restoreFileSettings(
+						existingFile.cluster,
+						fileName,
+						existingFile,
+					);
+				} catch (error) {
+					this.log(
+						`Failed to restore the file's settings: ${error.message}`,
+						LOG_CLASSES.WARNING,
+					);
+				}
 			}
 
 			// Refresh file list
@@ -454,6 +482,12 @@ export class FileManager {
 			}
 		} catch (error) {
 			this.log(`File send error: ${error.message}`, LOG_CLASSES.WARNING);
+			// Close the upload on the device, unless Cancel already did
+			if (upload.open && !this.state.transfer.cancel) {
+				await this.connection
+					.send(buildCommand(COMMANDS.CANCEL_SEND, "", 8))
+					.catch(() => {});
+			}
 			throw error;
 		} finally {
 			this.state.endTransfer();
@@ -461,12 +495,37 @@ export class FileManager {
 	}
 
 	/**
+	 * Ask the device for its play order (D1) and return the enabled file names
+	 * in that order. The cached order can be stale (another app or Skelly
+	 * session may have changed it), so it is only used if the device doesn't
+	 * answer.
+	 * @returns {Promise<string[]|null>} null if no play order is known
+	 */
+	async readOrderedFileNames() {
+		try {
+			const reply = await this.sendAndWait(
+				buildCommand(COMMANDS.QUERY_FILE_ORDER, "", 8),
+				RESPONSES.FILE_ORDER,
+				TIMEOUTS.ORDER_QUERY,
+			);
+			this.state.updateDevice({ order: parsePlayOrder(reply) });
+		} catch (error) {
+			this.log(
+				`No play order from the device (${error.message}); using the last one read.`,
+				LOG_CLASSES.WARNING,
+			);
+		}
+		return this.orderedFileNames();
+	}
+
+	/**
 	 * One upload attempt: C0, the chunks (C1) and C2, resending lost chunks
 	 * like the phone app (see TRANSFER_CONFIG.LOSS_WAIT_MS).
+	 * @param {{open: boolean}} upload - Set to open once the device accepts C0
 	 * @returns {Promise<boolean>} true once BBC2 says ok; false if the device
 	 *   kept losing chunks, so the caller starts over with smaller ones
 	 */
-	async sendOnce(fileBytes, fileName, chunkSize, chunkDelay) {
+	async sendOnce(fileBytes, fileName, chunkSize, chunkDelay, upload) {
 		const size = fileBytes.length;
 		const maxPackets = Math.ceil(size / chunkSize);
 		const { fullPayload: filenamePart } = buildFilenamePayload(fileName);
@@ -480,6 +539,7 @@ export class FileManager {
 		if (parseInt(c0Response.slice(4, 6), 16) !== 0) {
 			throw new Error("Device rejected transfer start");
 		}
+		upload.open = true;
 
 		// Only replies from this attempt count
 		const reports = new TransferReports(this.connection);

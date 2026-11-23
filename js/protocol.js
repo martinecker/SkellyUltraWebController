@@ -269,3 +269,20 @@ export function uiSpeedToDevice(uiSpeed) {
 	const speed = clamp(uiSpeed, 0, MAX_UI_EFFECT_SPEED);
 	return MAX_UI_EFFECT_SPEED - speed;
 }
+
+/**
+ * Read the play order from a BBD1 reply: a count, then that many serials
+ * (u16). A reply cut short gives as many serials as it holds.
+ * @param {string} hex - The reply as hex
+ * @returns {number[]} Serials in play order
+ */
+export function parsePlayOrder(hex) {
+	const data = hex.slice(6);
+	const count = Math.min(
+		parseInt(hex.slice(4, 6), 16) || 0,
+		Math.floor(data.length / 4),
+	);
+	return Array.from({ length: count }, (_, i) =>
+		parseInt(data.slice(i * 4, i * 4 + 4), 16),
+	);
+}

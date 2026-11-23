@@ -414,6 +414,7 @@ export const TIMEOUTS = {
 	FILE_TRANSFER: 240000,
 	FILE_LIST: 6000,
 	FILE_ORDER: 5000, // Wait for the play order (BBD1) once the file list is complete
+	ORDER_QUERY: 2000, // Ask for the play order (D1) before an upload
 };
 
 // Audio Configuration
