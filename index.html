@@ -66,6 +66,9 @@
     .log .rx { color:#93c5fd; }
     .log .tx { color:#a7f3d0; }
     .log .warn { color:#fbbf24; }
+    /* Log filter (applyLogFilter): hide the unchecked kinds of lines */
+    #log.hide-normal .line.normal, #log.hide-warn .line.warn,
+    #log.hide-tx .line.tx, #log.hide-rx .line.rx { display: none; }
     .small { font-size:12px; }
     .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
     .spacer { height:8px; }

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T02:41:11.590558
+ * Generated: 2026-11-23T02:45:38.630519
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -8313,36 +8313,45 @@ class DevicePanel {
  * Orchestrates all modules and initializes the application
  */
 
+// Lines the log keeps; older ones are dropped
+const MAX_LOG_LINES = 5000;
+
 /**
  * Simple Logger
+ *
+ * Each line gets the class of its kind ("normal", "warn", "tx" or "rx").
+ * The log filter hides kinds with classes on the log element (see
+ * applyLogFilter), so adding a line costs the same however long the log is.
  */
 class Logger {
 	constructor(logElement, autoscrollElement) {
 		this.logElement = logElement;
 		this.autoscrollElement = autoscrollElement;
-		this.filterCallback = null;
-	}
-
-	setFilterCallback(callback) {
-		this.filterCallback = callback;
+		this.scrollPending = false;
 	}
 
 	log(message, className = LOG_CLASSES.NORMAL) {
 		if (!this.logElement) return;
 		const div = document.createElement("div");
-		div.className = `line ${className}`;
+		div.className = `line ${className || "normal"}`;
 		const time = new Date().toLocaleTimeString();
 		div.textContent = `[${time}] ${message}`;
 		this.logElement.appendChild(div);
 
-		// Apply filter to the new line
-		if (this.filterCallback) {
-			this.filterCallback();
+		while (this.logElement.childElementCount > MAX_LOG_LINES) {
+			this.logElement.firstElementChild.remove();
 		}
 
-		// Auto-scroll if enabled
-		if (!this.autoscrollElement || this.autoscrollElement.checked) {
-			this.logElement.scrollTop = this.logElement.scrollHeight;
+		// Auto-scroll if enabled, once per frame however many lines came
+		if (
+			(!this.autoscrollElement || this.autoscrollElement.checked) &&
+			!this.scrollPending
+		) {
+			this.scrollPending = true;
+			requestAnimationFrame(() => {
+				this.scrollPending = false;
+				this.logElement.scrollTop = this.logElement.scrollHeight;
+			});
 		}
 	}
 }
@@ -8368,7 +8377,6 @@ class SkellyApp {
 		try {
 			// Initialize logger
 			this.logger = new Logger($("#log"), $("#chkAutoscroll"));
-			this.logger.setFilterCallback(() => this.applyLogFilter());
 
 			// Initialize state manager
 			this.state = new StateManager();
@@ -8879,39 +8887,24 @@ class SkellyApp {
 	}
 
 	/**
-	 * Apply log filter visibility
+	 * Apply the log filter: a hide-<kind> class on the log for each kind
+	 * that is unchecked (the CSS hides those lines, new ones included)
 	 */
 	applyLogFilter() {
-		const logFilterNormal = $("#logFilterNormal");
-		const logFilterWarning = $("#logFilterWarning");
-		const logFilterTx = $("#logFilterTx");
-		const logFilterRx = $("#logFilterRx");
-
 		const logEl = $("#log");
 		if (!logEl) return;
-
-		// Apply filter to all log lines
-		logEl.querySelectorAll(".line").forEach((line) => {
-			const classes = line.classList;
-			let visible = true;
-
-			if (classes.contains("warn") && !logFilterWarning?.checked) {
-				visible = false;
-			} else if (classes.contains("tx") && !logFilterTx?.checked) {
-				visible = false;
-			} else if (classes.contains("rx") && !logFilterRx?.checked) {
-				visible = false;
-			} else if (
-				!classes.contains("warn") &&
-				!classes.contains("tx") &&
-				!classes.contains("rx") &&
-				!logFilterNormal?.checked
-			) {
-				visible = false;
-			}
-
-			line.style.display = visible ? "" : "none";
-		});
+		const filters = {
+			normal: $("#logFilterNormal"),
+			warn: $("#logFilterWarning"),
+			tx: $("#logFilterTx"),
+			rx: $("#logFilterRx"),
+		};
+		for (const [kind, checkbox] of Object.entries(filters)) {
+			logEl.classList.toggle(
+				`hide-${kind}`,
+				checkbox ? !checkbox.checked : false,
+			);
+		}
 	}
 
 	/**
@@ -8921,10 +8914,10 @@ class SkellyApp {
 		const logEl = $("#log");
 		if (!logEl) return;
 
-		// Get all log lines and filter out hidden ones
+		// The lines the filter shows
 		const lines = logEl.querySelectorAll(".line");
 		const logContent = Array.from(lines)
-			.filter((line) => line.style.display !== "none")
+			.filter((line) => getComputedStyle(line).display !== "none")
 			.map((line) => line.textContent)
 			.join("\n");
 
