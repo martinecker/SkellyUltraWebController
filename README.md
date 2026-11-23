@@ -59,7 +59,7 @@ This project also has a [REST Server](https://github.com/martinecker/SkellyUltra
 
 - **Classic Bluetooth Audio**: Enable live mode to stream audio from your phone via Bluetooth
 - **Real-time Adjustments**: Change lights, colors, effects, and animations on-the-fly
-- **Volume Control**: Adjust playback volume (0-255)
+- **Volume Control**: Adjust playback volume (0-100)
 - **Quick Eye Selection**: Fast access to eye icon switching during live mode
 - **Device Status**: Monitor connection state and device parameters
 
