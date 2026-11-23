@@ -23,7 +23,7 @@ import {
 	sendSetMovementAction,
 	supportsLightScenes,
 } from "./device-settings.js";
-import { $ } from "./dom.js";
+import { $, trySend } from "./dom.js";
 import {
 	clamp,
 	deviceSpeedToUI,
@@ -108,8 +108,11 @@ export class LiveControls {
 					return;
 				}
 
-				await sendSetEyeIcon(this.connection, 0, "", this.selectedEye);
-				this.log(`Set eye to ${this.selectedEye} (live mode)`);
+				const eye = this.selectedEye;
+				await trySend(this.log, "Set eye", async () => {
+					await sendSetEyeIcon(this.connection, 0, "", eye);
+					this.log(`Set eye to ${eye} (live mode)`);
+				});
 			});
 		}
 	}
@@ -199,48 +202,51 @@ export class LiveControls {
 		const canSend = () =>
 			this.connection.isConnected() && !this.sendLightsInScene();
 
-		const sendBrightness = async (brightness) => {
-			if (!canSend()) return;
-			await sendSetLightBrightness(
-				this.latest(`brightness:${channel}`),
-				0,
-				"",
-				channel,
-				brightness,
-			);
-			this.log(`Set ${label} brightness to ${brightness}`);
-		};
-		const sendSpeed = async (uiSpeed) => {
-			if (!canSend()) return;
-			const deviceSpeed = uiSpeedToDevice(uiSpeed);
-			await sendSetLightSpeed(
-				this.latest(`speed:${channel}`),
-				0,
-				"",
-				channel,
-				deviceSpeed,
-			);
-			this.log(`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`);
-		};
+		const sendBrightness = (brightness) =>
+			trySend(this.log, `Set ${label} brightness`, async () => {
+				if (!canSend()) return;
+				await sendSetLightBrightness(
+					this.latest(`brightness:${channel}`),
+					0,
+					"",
+					channel,
+					brightness,
+				);
+				this.log(`Set ${label} brightness to ${brightness}`);
+			});
+		const sendSpeed = (uiSpeed) =>
+			trySend(this.log, `Set ${label} speed`, async () => {
+				if (!canSend()) return;
+				const deviceSpeed = uiSpeedToDevice(uiSpeed);
+				await sendSetLightSpeed(
+					this.latest(`speed:${channel}`),
+					0,
+					"",
+					channel,
+					deviceSpeed,
+				);
+				this.log(`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`);
+			});
 		// A color the user sets turns color cycle off; the cycle button doesn't
-		const sendColor = async (stopCycle) => {
-			if (!this.connection.isConnected()) return;
-			if (stopCycle) this.setColorCycle(channel, false);
-			const { r, g, b, colorCycle } = this.readColor(channel);
-			await sendSetLightRgb(
-				this.latest(`color:${channel}`),
-				0,
-				"",
-				channel,
-				r,
-				g,
-				b,
-				colorCycle,
-			);
-			this.log(
-				`Set ${label} color to RGB(${r}, ${g}, ${b}) with cycle ${colorCycle ? "ON" : "OFF"}`,
-			);
-		};
+		const sendColor = (stopCycle) =>
+			trySend(this.log, `Set ${label} color`, async () => {
+				if (!this.connection.isConnected()) return;
+				if (stopCycle) this.setColorCycle(channel, false);
+				const { r, g, b, colorCycle } = this.readColor(channel);
+				await sendSetLightRgb(
+					this.latest(`color:${channel}`),
+					0,
+					"",
+					channel,
+					r,
+					g,
+					b,
+					colorCycle,
+				);
+				this.log(
+					`Set ${label} color to RGB(${r}, ${g}, ${b}) with cycle ${colorCycle ? "ON" : "OFF"}`,
+				);
+			});
 
 		this.bindRangeAndNumber(
 			el("BrightnessRange"),
@@ -276,9 +282,11 @@ export class LiveControls {
 			const mode = parseInt(el("EffectMode").value, 10);
 			el("EffectSpeedBlock")?.classList.toggle("hidden", mode === 1); // Static
 			if (!canSend()) return;
-			await sendSetLightMode(this.connection, 0, "", channel, mode);
-			const modeLabel = this.profile.lightModes[mode - 1];
-			this.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
+			await trySend(this.log, `Set ${label} mode`, async () => {
+				await sendSetLightMode(this.connection, 0, "", channel, mode);
+				const modeLabel = this.profile.lightModes[mode - 1];
+				this.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
+			});
 		});
 
 		$(`#btnLight${channel}ColorCycle`)?.addEventListener("click", async () => {
@@ -537,25 +545,28 @@ export class LiveControls {
 			grid.querySelectorAll('[data-part]:not([data-part="all"])'),
 		);
 
-		const sendMovementCommand = async () => {
-			if (!this.connection.isConnected()) return;
-			if (allBtn?.classList.contains("selected")) {
-				await sendSetMovementAction(this.connection, 0, "", 255);
-				this.log("Applied movement: all");
-				return;
-			}
-			const selected = partBtns.filter((b) => b.classList.contains("selected"));
-			const bitfield = selected.reduce(
-				(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
-				0,
-			);
-			await sendSetMovementAction(this.connection, 0, "", bitfield);
-			this.log(
-				bitfield > 0
-					? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
-					: "Disabled movement",
-			);
-		};
+		const sendMovementCommand = () =>
+			trySend(this.log, "Set movement", async () => {
+				if (!this.connection.isConnected()) return;
+				if (allBtn?.classList.contains("selected")) {
+					await sendSetMovementAction(this.connection, 0, "", 255);
+					this.log("Applied movement: all");
+					return;
+				}
+				const selected = partBtns.filter((b) =>
+					b.classList.contains("selected"),
+				);
+				const bitfield = selected.reduce(
+					(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
+					0,
+				);
+				await sendSetMovementAction(this.connection, 0, "", bitfield);
+				this.log(
+					bitfield > 0
+						? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
+						: "Disabled movement",
+				);
+			});
 
 		allBtn?.addEventListener("click", () => {
 			allBtn.classList.toggle("selected");

@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T16:28:51.921238
+ * Generated: 2026-11-23T16:37:10.173167
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -887,6 +887,25 @@ function parsePlayOrder(hex) {
 
 /** The first element matching a CSS selector, or null */
 const $ = (selector) => document.querySelector(selector);
+
+/**
+ * Run what a UI control does when it talks to the device. A failure (a
+ * write that didn't go out, no reply) is logged as "<action> failed: …"
+ * instead of ending up as an unhandled rejection in the console.
+ * @param {(message: string, className?: string) => void} log
+ * @param {string} action - What the control does, e.g. "Set volume"
+ * @param {() => Promise<*>} fn
+ * @returns {Promise<boolean>} true if fn finished, false if it failed
+ */
+async function trySend(log, action, fn) {
+	try {
+		await fn();
+		return true;
+	} catch (error) {
+		log(`${action} failed: ${error.message}`, LOG_CLASSES.WARNING);
+		return false;
+	}
+}
 
   // ============================================================
   // Modal Stack (js/modal-stack.js)
@@ -5279,26 +5298,33 @@ class EditModalManager {
 			const profile = this.profile;
 			const lights = this.channels.map(readLight);
 
-			await applyFileSettings(
-				this.connection,
-				cluster,
-				name,
-				{
-					action: actionBits,
-					eyeIcon: this.currentFile.eyeIcon,
-					lights,
-				},
-				{
-					hasEyeImage: profile?.hasEyeImage,
-					delayMs: APPLY_ALL_COMMAND_DELAY_MS,
-					onStep: (label) => this.log(`✓ ${label}`),
-					scene: currentLightScene(
-						this.state.deviceType,
-						this.state.device?.version,
-						this.currentFile.scene,
+			// On a failure the dialog stays open with its log, to try again
+			const applied = await trySend(
+				(message, className) => this.log(message, className),
+				"Apply All",
+				() =>
+					applyFileSettings(
+						this.connection,
+						cluster,
+						name,
+						{
+							action: actionBits,
+							eyeIcon: this.currentFile.eyeIcon,
+							lights,
+						},
+						{
+							hasEyeImage: profile?.hasEyeImage,
+							delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+							onStep: (label) => this.log(`✓ ${label}`),
+							scene: currentLightScene(
+								this.state.deviceType,
+								this.state.device?.version,
+								this.currentFile.scene,
+							),
+						},
 					),
-				},
 			);
+			if (!applied) return;
 
 			this.log(
 				`All settings applied successfully for file "${name || "(no name)"}"`,
@@ -6843,8 +6869,11 @@ class LiveControls {
 					return;
 				}
 
-				await sendSetEyeIcon(this.connection, 0, "", this.selectedEye);
-				this.log(`Set eye to ${this.selectedEye} (live mode)`);
+				const eye = this.selectedEye;
+				await trySend(this.log, "Set eye", async () => {
+					await sendSetEyeIcon(this.connection, 0, "", eye);
+					this.log(`Set eye to ${eye} (live mode)`);
+				});
 			});
 		}
 	}
@@ -6934,48 +6963,51 @@ class LiveControls {
 		const canSend = () =>
 			this.connection.isConnected() && !this.sendLightsInScene();
 
-		const sendBrightness = async (brightness) => {
-			if (!canSend()) return;
-			await sendSetLightBrightness(
-				this.latest(`brightness:${channel}`),
-				0,
-				"",
-				channel,
-				brightness,
-			);
-			this.log(`Set ${label} brightness to ${brightness}`);
-		};
-		const sendSpeed = async (uiSpeed) => {
-			if (!canSend()) return;
-			const deviceSpeed = uiSpeedToDevice(uiSpeed);
-			await sendSetLightSpeed(
-				this.latest(`speed:${channel}`),
-				0,
-				"",
-				channel,
-				deviceSpeed,
-			);
-			this.log(`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`);
-		};
+		const sendBrightness = (brightness) =>
+			trySend(this.log, `Set ${label} brightness`, async () => {
+				if (!canSend()) return;
+				await sendSetLightBrightness(
+					this.latest(`brightness:${channel}`),
+					0,
+					"",
+					channel,
+					brightness,
+				);
+				this.log(`Set ${label} brightness to ${brightness}`);
+			});
+		const sendSpeed = (uiSpeed) =>
+			trySend(this.log, `Set ${label} speed`, async () => {
+				if (!canSend()) return;
+				const deviceSpeed = uiSpeedToDevice(uiSpeed);
+				await sendSetLightSpeed(
+					this.latest(`speed:${channel}`),
+					0,
+					"",
+					channel,
+					deviceSpeed,
+				);
+				this.log(`Set ${label} speed to ${uiSpeed} (device: ${deviceSpeed})`);
+			});
 		// A color the user sets turns color cycle off; the cycle button doesn't
-		const sendColor = async (stopCycle) => {
-			if (!this.connection.isConnected()) return;
-			if (stopCycle) this.setColorCycle(channel, false);
-			const { r, g, b, colorCycle } = this.readColor(channel);
-			await sendSetLightRgb(
-				this.latest(`color:${channel}`),
-				0,
-				"",
-				channel,
-				r,
-				g,
-				b,
-				colorCycle,
-			);
-			this.log(
-				`Set ${label} color to RGB(${r}, ${g}, ${b}) with cycle ${colorCycle ? "ON" : "OFF"}`,
-			);
-		};
+		const sendColor = (stopCycle) =>
+			trySend(this.log, `Set ${label} color`, async () => {
+				if (!this.connection.isConnected()) return;
+				if (stopCycle) this.setColorCycle(channel, false);
+				const { r, g, b, colorCycle } = this.readColor(channel);
+				await sendSetLightRgb(
+					this.latest(`color:${channel}`),
+					0,
+					"",
+					channel,
+					r,
+					g,
+					b,
+					colorCycle,
+				);
+				this.log(
+					`Set ${label} color to RGB(${r}, ${g}, ${b}) with cycle ${colorCycle ? "ON" : "OFF"}`,
+				);
+			});
 
 		this.bindRangeAndNumber(
 			el("BrightnessRange"),
@@ -7011,9 +7043,11 @@ class LiveControls {
 			const mode = parseInt(el("EffectMode").value, 10);
 			el("EffectSpeedBlock")?.classList.toggle("hidden", mode === 1); // Static
 			if (!canSend()) return;
-			await sendSetLightMode(this.connection, 0, "", channel, mode);
-			const modeLabel = this.profile.lightModes[mode - 1];
-			this.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
+			await trySend(this.log, `Set ${label} mode`, async () => {
+				await sendSetLightMode(this.connection, 0, "", channel, mode);
+				const modeLabel = this.profile.lightModes[mode - 1];
+				this.log(`Set ${label} mode to ${mode} (${modeLabel ?? "?"})`);
+			});
 		});
 
 		$(`#btnLight${channel}ColorCycle`)?.addEventListener("click", async () => {
@@ -7272,25 +7306,28 @@ class LiveControls {
 			grid.querySelectorAll('[data-part]:not([data-part="all"])'),
 		);
 
-		const sendMovementCommand = async () => {
-			if (!this.connection.isConnected()) return;
-			if (allBtn?.classList.contains("selected")) {
-				await sendSetMovementAction(this.connection, 0, "", 255);
-				this.log("Applied movement: all");
-				return;
-			}
-			const selected = partBtns.filter((b) => b.classList.contains("selected"));
-			const bitfield = selected.reduce(
-				(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
-				0,
-			);
-			await sendSetMovementAction(this.connection, 0, "", bitfield);
-			this.log(
-				bitfield > 0
-					? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
-					: "Disabled movement",
-			);
-		};
+		const sendMovementCommand = () =>
+			trySend(this.log, "Set movement", async () => {
+				if (!this.connection.isConnected()) return;
+				if (allBtn?.classList.contains("selected")) {
+					await sendSetMovementAction(this.connection, 0, "", 255);
+					this.log("Applied movement: all");
+					return;
+				}
+				const selected = partBtns.filter((b) =>
+					b.classList.contains("selected"),
+				);
+				const bitfield = selected.reduce(
+					(bits, btn) => bits | parseInt(btn.dataset.bit || "0", 10),
+					0,
+				);
+				await sendSetMovementAction(this.connection, 0, "", bitfield);
+				this.log(
+					bitfield > 0
+						? `Applied movement: ${selected.map((b) => b.dataset.part).join(", ")}`
+						: "Disabled movement",
+				);
+			});
 
 		allBtn?.addEventListener("click", () => {
 			allBtn.classList.toggle("selected");
@@ -7755,15 +7792,12 @@ class FileTable {
 
 		// Send '01' to play, '00' to stop
 		const playPauseByte = isPlaying ? "00" : "01";
-		await this.connection.send(
-			buildCommand(COMMANDS.PLAY_STOP_FILE, serialHex + playPauseByte, 8),
-		);
-
-		if (isPlaying) {
-			this.log(`Stopping file #${serial}`);
-		} else {
-			this.log(`Playing file #${serial}`);
-		}
+		await trySend(this.log, isPlaying ? "Stop" : "Play", async () => {
+			await this.connection.send(
+				buildCommand(COMMANDS.PLAY_STOP_FILE, serialHex + playPauseByte, 8),
+			);
+			this.log(`${isPlaying ? "Stopping" : "Playing"} file #${serial}`);
+		});
 	}
 
 	/**
@@ -7795,7 +7829,9 @@ class FileTable {
 			`Reordered files: ${enabledSerials.length} files`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.setFileOrder(enabledSerials);
+		await trySend(this.log, "Set play order", () =>
+			this.fileManager.setFileOrder(enabledSerials),
+		);
 	}
 
 	/**
@@ -7826,7 +7862,9 @@ class FileTable {
 			`Updating file order: ${enabledSerials.length} files enabled`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.setFileOrder(enabledSerials);
+		await trySend(this.log, "Set play order", () =>
+			this.fileManager.setFileOrder(enabledSerials),
+		);
 	}
 
 	/**
@@ -8132,7 +8170,9 @@ class DevicePanel {
 					return;
 				}
 				const tag = btn.getAttribute("data-q");
-				await this.connection.send(buildCommand(tag, "", 8));
+				await trySend(this.log, `Query ${tag}`, () =>
+					this.connection.send(buildCommand(tag, "", 8)),
+				);
 			});
 		});
 
@@ -8154,13 +8194,14 @@ class DevicePanel {
 				COMMANDS.QUERY_FILE_ORDER,
 			];
 
-			for (const tag of queries) {
-				await this.connection.send(buildCommand(tag, "", 8));
-				// Give the device a moment between queries
-				this.connection.pause(100);
-			}
-
-			this.log("All queries completed", LOG_CLASSES.SUCCESS);
+			const sent = await trySend(this.log, "Get All", async () => {
+				for (const tag of queries) {
+					await this.connection.send(buildCommand(tag, "", 8));
+					// Give the device a moment between queries
+					this.connection.pause(100);
+				}
+			});
+			if (sent) this.log("All queries completed", LOG_CLASSES.SUCCESS);
 		});
 
 		// Raw command send button
@@ -8171,10 +8212,12 @@ class DevicePanel {
 			}
 			const tag = $("#tag")?.value || COMMANDS.QUERY_DEVICE_PARAMS;
 			const payload = $("#payload")?.value || "";
-			await this.connection.send(buildCommand(tag, payload, 8));
-			this.log(
-				`Sent raw command: ${tag} with payload: ${payload || "(empty)"}`,
-			);
+			await trySend(this.log, "Raw command", async () => {
+				await this.connection.send(buildCommand(tag, payload, 8));
+				this.log(
+					`Sent raw command: ${tag} with payload: ${payload || "(empty)"}`,
+				);
+			});
 		});
 
 		// Set Device Name button
@@ -8202,7 +8245,9 @@ class DevicePanel {
 			}
 
 			const pin = this.state.device.pinCode || "0000";
-			await this.setPinAndName(pin, deviceName);
+			await trySend(this.log, "Set name", () =>
+				this.setPinAndName(pin, deviceName),
+			);
 		});
 
 		// Set PIN button
@@ -8234,7 +8279,7 @@ class DevicePanel {
 				return;
 			}
 
-			await this.setPinAndName(pin, btName);
+			await trySend(this.log, "Set PIN", () => this.setPinAndName(pin, btName));
 		});
 
 		// PIN input validation - only allow digits
@@ -8313,11 +8358,13 @@ class DevicePanel {
 			if (volume === null || !this.connection.isConnected()) {
 				return;
 			}
-			await this.connection.sendLatest(
-				"volume",
-				buildCommand(COMMANDS.SET_VOLUME, intToHex(volume, 1), 8),
-			);
-			this.log(`Set volume to ${volume}`);
+			await trySend(this.log, "Set volume", async () => {
+				await this.connection.sendLatest(
+					"volume",
+					buildCommand(COMMANDS.SET_VOLUME, intToHex(volume, 1), 8),
+				);
+				this.log(`Set volume to ${volume}`);
+			});
 		};
 
 		if (volRange && volNum) {
@@ -8346,7 +8393,9 @@ class DevicePanel {
 			this.log("Not connected", LOG_CLASSES.WARNING);
 			return;
 		}
-		await this.connection.send(buildCommand(tag, payload, 8));
+		await trySend(this.log, `Command ${tag}`, () =>
+			this.connection.send(buildCommand(tag, payload, 8)),
+		);
 	}
 
 	/**

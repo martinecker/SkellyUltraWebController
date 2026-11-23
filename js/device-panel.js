@@ -5,7 +5,7 @@
 
 import { ConnectionType } from "./connection-manager.js";
 import { COMMANDS, isTestedFirmware, LOG_CLASSES } from "./constants.js";
-import { $ } from "./dom.js";
+import { $, trySend } from "./dom.js";
 import { hideModal, showModal } from "./modal-stack.js";
 import {
 	buildCommand,
@@ -60,7 +60,9 @@ export class DevicePanel {
 					return;
 				}
 				const tag = btn.getAttribute("data-q");
-				await this.connection.send(buildCommand(tag, "", 8));
+				await trySend(this.log, `Query ${tag}`, () =>
+					this.connection.send(buildCommand(tag, "", 8)),
+				);
 			});
 		});
 
@@ -82,13 +84,14 @@ export class DevicePanel {
 				COMMANDS.QUERY_FILE_ORDER,
 			];
 
-			for (const tag of queries) {
-				await this.connection.send(buildCommand(tag, "", 8));
-				// Give the device a moment between queries
-				this.connection.pause(100);
-			}
-
-			this.log("All queries completed", LOG_CLASSES.SUCCESS);
+			const sent = await trySend(this.log, "Get All", async () => {
+				for (const tag of queries) {
+					await this.connection.send(buildCommand(tag, "", 8));
+					// Give the device a moment between queries
+					this.connection.pause(100);
+				}
+			});
+			if (sent) this.log("All queries completed", LOG_CLASSES.SUCCESS);
 		});
 
 		// Raw command send button
@@ -99,10 +102,12 @@ export class DevicePanel {
 			}
 			const tag = $("#tag")?.value || COMMANDS.QUERY_DEVICE_PARAMS;
 			const payload = $("#payload")?.value || "";
-			await this.connection.send(buildCommand(tag, payload, 8));
-			this.log(
-				`Sent raw command: ${tag} with payload: ${payload || "(empty)"}`,
-			);
+			await trySend(this.log, "Raw command", async () => {
+				await this.connection.send(buildCommand(tag, payload, 8));
+				this.log(
+					`Sent raw command: ${tag} with payload: ${payload || "(empty)"}`,
+				);
+			});
 		});
 
 		// Set Device Name button
@@ -130,7 +135,9 @@ export class DevicePanel {
 			}
 
 			const pin = this.state.device.pinCode || "0000";
-			await this.setPinAndName(pin, deviceName);
+			await trySend(this.log, "Set name", () =>
+				this.setPinAndName(pin, deviceName),
+			);
 		});
 
 		// Set PIN button
@@ -162,7 +169,7 @@ export class DevicePanel {
 				return;
 			}
 
-			await this.setPinAndName(pin, btName);
+			await trySend(this.log, "Set PIN", () => this.setPinAndName(pin, btName));
 		});
 
 		// PIN input validation - only allow digits
@@ -241,11 +248,13 @@ export class DevicePanel {
 			if (volume === null || !this.connection.isConnected()) {
 				return;
 			}
-			await this.connection.sendLatest(
-				"volume",
-				buildCommand(COMMANDS.SET_VOLUME, intToHex(volume, 1), 8),
-			);
-			this.log(`Set volume to ${volume}`);
+			await trySend(this.log, "Set volume", async () => {
+				await this.connection.sendLatest(
+					"volume",
+					buildCommand(COMMANDS.SET_VOLUME, intToHex(volume, 1), 8),
+				);
+				this.log(`Set volume to ${volume}`);
+			});
 		};
 
 		if (volRange && volNum) {
@@ -274,7 +283,9 @@ export class DevicePanel {
 			this.log("Not connected", LOG_CLASSES.WARNING);
 			return;
 		}
-		await this.connection.send(buildCommand(tag, payload, 8));
+		await trySend(this.log, `Command ${tag}`, () =>
+			this.connection.send(buildCommand(tag, payload, 8)),
+		);
 	}
 
 	/**

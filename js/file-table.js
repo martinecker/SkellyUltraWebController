@@ -13,7 +13,7 @@ import {
 	LOG_CLASSES,
 	movementIconPath,
 } from "./constants.js";
-import { $ } from "./dom.js";
+import { $, trySend } from "./dom.js";
 import { buildCommand, escapeHtml, intToHex } from "./protocol.js";
 
 /**
@@ -355,15 +355,12 @@ export class FileTable {
 
 		// Send '01' to play, '00' to stop
 		const playPauseByte = isPlaying ? "00" : "01";
-		await this.connection.send(
-			buildCommand(COMMANDS.PLAY_STOP_FILE, serialHex + playPauseByte, 8),
-		);
-
-		if (isPlaying) {
-			this.log(`Stopping file #${serial}`);
-		} else {
-			this.log(`Playing file #${serial}`);
-		}
+		await trySend(this.log, isPlaying ? "Stop" : "Play", async () => {
+			await this.connection.send(
+				buildCommand(COMMANDS.PLAY_STOP_FILE, serialHex + playPauseByte, 8),
+			);
+			this.log(`${isPlaying ? "Stopping" : "Playing"} file #${serial}`);
+		});
 	}
 
 	/**
@@ -395,7 +392,9 @@ export class FileTable {
 			`Reordered files: ${enabledSerials.length} files`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.setFileOrder(enabledSerials);
+		await trySend(this.log, "Set play order", () =>
+			this.fileManager.setFileOrder(enabledSerials),
+		);
 	}
 
 	/**
@@ -426,7 +425,9 @@ export class FileTable {
 			`Updating file order: ${enabledSerials.length} files enabled`,
 			LOG_CLASSES.INFO,
 		);
-		await this.fileManager.setFileOrder(enabledSerials);
+		await trySend(this.log, "Set play order", () =>
+			this.fileManager.setFileOrder(enabledSerials),
+		);
 	}
 
 	/**

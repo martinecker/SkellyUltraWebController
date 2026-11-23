@@ -19,7 +19,7 @@ import {
 	sceneLightColor,
 	supportsLightScenes,
 } from "./device-settings.js";
-import { $ } from "./dom.js";
+import { $, trySend } from "./dom.js";
 import { hideModal, showModal } from "./modal-stack.js";
 import {
 	clamp,
@@ -610,26 +610,33 @@ export class EditModalManager {
 			const profile = this.profile;
 			const lights = this.channels.map(readLight);
 
-			await applyFileSettings(
-				this.connection,
-				cluster,
-				name,
-				{
-					action: actionBits,
-					eyeIcon: this.currentFile.eyeIcon,
-					lights,
-				},
-				{
-					hasEyeImage: profile?.hasEyeImage,
-					delayMs: APPLY_ALL_COMMAND_DELAY_MS,
-					onStep: (label) => this.log(`✓ ${label}`),
-					scene: currentLightScene(
-						this.state.deviceType,
-						this.state.device?.version,
-						this.currentFile.scene,
+			// On a failure the dialog stays open with its log, to try again
+			const applied = await trySend(
+				(message, className) => this.log(message, className),
+				"Apply All",
+				() =>
+					applyFileSettings(
+						this.connection,
+						cluster,
+						name,
+						{
+							action: actionBits,
+							eyeIcon: this.currentFile.eyeIcon,
+							lights,
+						},
+						{
+							hasEyeImage: profile?.hasEyeImage,
+							delayMs: APPLY_ALL_COMMAND_DELAY_MS,
+							onStep: (label) => this.log(`✓ ${label}`),
+							scene: currentLightScene(
+								this.state.deviceType,
+								this.state.device?.version,
+								this.currentFile.scene,
+							),
+						},
 					),
-				},
 			);
+			if (!applied) return;
 
 			this.log(
 				`All settings applied successfully for file "${name || "(no name)"}"`,
