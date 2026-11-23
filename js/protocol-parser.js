@@ -272,8 +272,7 @@ export class ProtocolParser {
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
-			clearTimeout(this.state.files.fetchTimer);
-			this.state.updateFilesMetadata({ activeFetch: false, fetchTimer: null });
+			this.fileManager.endFetch();
 		}
 	}
 

@@ -83,6 +83,9 @@ export class ConnectionManager {
 		this.writeQueue = Promise.resolve();
 		this.latestWrites.clear();
 
+		// Nothing the last device reported counts for this one
+		this.state.resetDevice();
+
 		if (type === ConnectionType.REST_PROXY) {
 			if (!restUrl) {
 				throw new Error("REST server URL is required");

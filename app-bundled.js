@@ -2,7 +2,7 @@
  * Skelly Ultra - Bundled Version
  * All modules combined into a single file for file:// protocol compatibility
  * 
- * Generated: 2026-11-23T03:16:16.582585
+ * Generated: 2026-11-23T16:28:51.921238
  * 
  * This is an automatically generated file.
  * To modify, edit the source modules in js/ and app-modular.js, 
@@ -1366,6 +1366,34 @@ async function applyFileSettings(
  * Centralized application state with observer pattern for reactive updates
  */
 
+/** What is known about the device before it reports anything */
+function unknownDevice() {
+	return {
+		name: "",
+		liveName: "", // Classic BT (live mode) name
+		connected: false,
+		showMode: null,
+		version: null,
+		channels: [],
+		volume: null,
+		capacityKb: null, // Free space in KB
+		fileCount: null, // Count reported by device in capacity query
+		filesReceived: null, // Count of files actually received in file list
+		order: null, // Play order: enabled file serials, first to last
+		pinCode: null, // Device PIN
+	};
+}
+
+/** Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes) */
+function unknownLive() {
+	return {
+		action: null,
+		eyeIcon: null,
+		lights: [],
+		scene: null,
+	};
+}
+
 /**
  * Application State Manager
  * Manages device status, file list, and transfer state with change notifications
@@ -1373,31 +1401,12 @@ async function applyFileSettings(
 class StateManager {
 	constructor() {
 		// Device state
-		this.device = {
-			name: "",
-			liveName: "", // Classic BT (live mode) name
-			connected: false,
-			showMode: null,
-			version: null,
-			channels: [],
-			volume: null,
-			capacityKb: null, // Free space in KB
-			fileCount: null, // Count reported by device in capacity query
-			filesReceived: null, // Count of files actually received in file list
-			order: null, // Play order: enabled file serials, first to last
-			pinCode: null, // Device PIN
-		};
+		this.device = unknownDevice();
 
 		// Active device type (drives UI profile)
 		this.deviceType = DEVICE_TYPES.SKELLY;
 
-		// Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes)
-		this.live = {
-			action: null,
-			eyeIcon: null,
-			lights: [],
-			scene: null,
-		};
+		this.live = unknownLive();
 
 		// File list state
 		this.files = {
@@ -1514,6 +1523,23 @@ class StateManager {
 	setConnected(connected) {
 		this.device.connected = connected;
 		this.notify("device");
+	}
+
+	/**
+	 * Forget what the device reported (info, play order, live status, file
+	 * list), on disconnect and before a new connect, so none of it is taken
+	 * for the next device's. Keeps the connection flag, the device type (the
+	 * user's pick) and the transfer state.
+	 */
+	resetDevice() {
+		Object.assign(this.device, unknownDevice(), {
+			connected: this.device.connected,
+		});
+		Object.assign(this.live, unknownLive());
+		this.files.lastRefresh = null;
+		this.notify("device");
+		this.notify("live");
+		this.resetFiles();
 	}
 
 	/**
@@ -1888,10 +1914,7 @@ class BLEManager {
 
 		// Update state
 		this.state.setConnected(false);
-		this.state.updateFilesMetadata({ activeFetch: false });
-		if (this.state.files.fetchTimer) {
-			clearTimeout(this.state.files.fetchTimer);
-		}
+		this.state.resetDevice();
 	}
 
 	/**
@@ -2632,10 +2655,7 @@ class RestProxy {
 
 		// Update state
 		this.state.setConnected(false);
-		this.state.updateFilesMetadata({ activeFetch: false });
-		if (this.state.files.fetchTimer) {
-			clearTimeout(this.state.files.fetchTimer);
-		}
+		this.state.resetDevice();
 	}
 
 	/**
@@ -2737,6 +2757,9 @@ class ConnectionManager {
 		// new one doesn't wait for them
 		this.writeQueue = Promise.resolve();
 		this.latestWrites.clear();
+
+		// Nothing the last device reported counts for this one
+		this.state.resetDevice();
 
 		if (type === ConnectionType.REST_PROXY) {
 			if (!restUrl) {
@@ -4473,8 +4496,7 @@ class ProtocolParser {
 
 		// Order arrival completes the refresh - enable UI and trigger update
 		if (this.state.files.activeFetch) {
-			clearTimeout(this.state.files.fetchTimer);
-			this.state.updateFilesMetadata({ activeFetch: false, fetchTimer: null });
+			this.fileManager.endFetch();
 		}
 	}
 

@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ConnectionManager } from "../js/connection-manager.js";
+import { StateManager } from "../js/state-manager.js";
 
 // A connection whose writes take a while, like Web Bluetooth's, and that
 // fails if a write starts while another is still going (as Chrome does)
@@ -26,7 +27,7 @@ function slowConnection({ failOn = null } = {}) {
 }
 
 function manager(connection) {
-	const cm = new ConnectionManager({}, () => {});
+	const cm = new ConnectionManager(new StateManager(), () => {});
 	cm.activeConnection = connection;
 	return cm;
 }
@@ -53,7 +54,7 @@ test("a failed send rejects its caller only, the next ones still go out", async 
 });
 
 test("send without a connection rejects", async () => {
-	const cm = new ConnectionManager({}, () => {});
+	const cm = new ConnectionManager(new StateManager(), () => {});
 	await assert.rejects(cm.send(Uint8Array.of(1)), /No active connection/);
 });
 
@@ -71,7 +72,7 @@ test("a queued send goes to the connection it was made on", async () => {
 });
 
 test("a failed connect leaves no active connection", async () => {
-	const cm = new ConnectionManager({}, () => {});
+	const cm = new ConnectionManager(new StateManager(), () => {});
 	cm.bleManager = {
 		async connect() {
 			throw new Error("GATT connect failed");

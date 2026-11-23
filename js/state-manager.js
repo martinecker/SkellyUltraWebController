@@ -5,6 +5,34 @@
 
 import { DEVICE_TYPES } from "./constants.js";
 
+/** What is known about the device before it reports anything */
+function unknownDevice() {
+	return {
+		name: "",
+		liveName: "", // Classic BT (live mode) name
+		connected: false,
+		showMode: null,
+		version: null,
+		channels: [],
+		volume: null,
+		capacityKb: null, // Free space in KB
+		fileCount: null, // Count reported by device in capacity query
+		filesReceived: null, // Count of files actually received in file list
+		order: null, // Play order: enabled file serials, first to last
+		pinCode: null, // Device PIN
+	};
+}
+
+/** Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes) */
+function unknownLive() {
+	return {
+		action: null,
+		eyeIcon: null,
+		lights: [],
+		scene: null,
+	};
+}
+
 /**
  * Application State Manager
  * Manages device status, file list, and transfer state with change notifications
@@ -12,31 +40,12 @@ import { DEVICE_TYPES } from "./constants.js";
 export class StateManager {
 	constructor() {
 		// Device state
-		this.device = {
-			name: "",
-			liveName: "", // Classic BT (live mode) name
-			connected: false,
-			showMode: null,
-			version: null,
-			channels: [],
-			volume: null,
-			capacityKb: null, // Free space in KB
-			fileCount: null, // Count reported by device in capacity query
-			filesReceived: null, // Count of files actually received in file list
-			order: null, // Play order: enabled file serials, first to last
-			pinCode: null, // Device PIN
-		};
+		this.device = unknownDevice();
 
 		// Active device type (drives UI profile)
 		this.deviceType = DEVICE_TYPES.SKELLY;
 
-		// Live status (action, eye icon, lights, LIGHT_SCENES value or null without scenes)
-		this.live = {
-			action: null,
-			eyeIcon: null,
-			lights: [],
-			scene: null,
-		};
+		this.live = unknownLive();
 
 		// File list state
 		this.files = {
@@ -153,6 +162,23 @@ export class StateManager {
 	setConnected(connected) {
 		this.device.connected = connected;
 		this.notify("device");
+	}
+
+	/**
+	 * Forget what the device reported (info, play order, live status, file
+	 * list), on disconnect and before a new connect, so none of it is taken
+	 * for the next device's. Keeps the connection flag, the device type (the
+	 * user's pick) and the transfer state.
+	 */
+	resetDevice() {
+		Object.assign(this.device, unknownDevice(), {
+			connected: this.device.connected,
+		});
+		Object.assign(this.live, unknownLive());
+		this.files.lastRefresh = null;
+		this.notify("device");
+		this.notify("live");
+		this.resetFiles();
 	}
 
 	/**

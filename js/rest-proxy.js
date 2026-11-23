@@ -596,10 +596,7 @@ export class RestProxy {
 
 		// Update state
 		this.state.setConnected(false);
-		this.state.updateFilesMetadata({ activeFetch: false });
-		if (this.state.files.fetchTimer) {
-			clearTimeout(this.state.files.fetchTimer);
-		}
+		this.state.resetDevice();
 	}
 
 	/**
